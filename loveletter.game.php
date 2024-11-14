@@ -1218,7 +1218,7 @@ class loveletter extends Table
         
         self::incStat( 1, 'round_number' );
         
-        self::notifyAllPlayers( 'newRound', clienttranslate("A new round begins ..."), array() );
+        self::notifyAllPlayers( 'newRound', '', array() );
     
         self::setGameStateValue( 'last', 0 );
         
@@ -1239,16 +1239,18 @@ class loveletter extends Table
         foreach( $players as $player_id => $player )
         {
             $card = $this->cards->pickCard( 'deck', $player_id );    
-            self::notifyPlayer( $player_id, 'newCard', '', array( 'card' => $card ) );
+            self::notifyPlayer( $player_id, 'newCard', clienttranslate('A new round begins: you draw a ${card_name}'), array(
+                'i18n' => array( 'card_name'),
+                'card' => $card,
+                'card_name' => $this->card_types[ $card['type'] ]['name'])
+            );
         }
-        
+
         // +1 card for active player
         $card = $this->cards->pickCard( 'deck', self::getActivePlayerId() );    
         self::notifyPlayer( self::getActivePlayerId(), 'newCard', '', array( 'card' => $card ) );
 
         self::DbQuery( "UPDATE player SET player_alive='1', player_protected='0' " );
-        
-        // TODO : notify
 
         $this->updateCardCount();
         
