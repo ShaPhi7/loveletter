@@ -1,0 +1,491 @@
+/**
+ *------
+ * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
+ * loveletter implementation : © <Your name here> <Your email address here>
+ *
+ * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
+ * See http://en.boardgamearena.com/#!doc/Studio for more information.
+ * -----
+ *
+ * loveletter.css
+ *
+ * loveletter stylesheet
+ *
+ */
+
+/*
+    This is the CSS stylesheet of your game User Interface.
+    
+    Styles defined on this file will be applied to the HTML elements you define in your
+    HTML template (loveletter_loveletter.tpl), and to HTML elements you create dynamically
+    (in loveletter.js).
+    
+    Usually, you are using CSS to:
+    
+    1°) define the overall layout of your game
+        (ex: place the board on the top left, place player's hand beside, place the deck on the right, ...).
+
+    2°) create your CSS-sprites:
+        All images of your games should be gathered into a small number of image files. Then, using
+        background-image and background-position CSS properties, you create HTML blocks that can 
+        display these images correctly (see example below).
+    
+    3°) ... anything else:
+        It is really easy to add and remove CSS classes dynamically from your Javascript with
+        dojo.addClass and dojo.removeClass. It is also easy to check if an element has a class
+        (dojo.hasClass) or to get all elements with a specific class (dojo.query). This is why,
+        very often, using CSS classes for the logic of your user interface allow you to do complex
+        thing easily.
+        
+        
+     Note: on the production platform, this file will be compressed and comments will be removed.
+           Consequently, don't hesitate to put as many comments as necessary.
+*/
+
+@import url(../../../css/csslayer.css); /* Note: you must not use any @import directive other than this one */
+
+/********* You can start writing your CSS below this line: **********/
+
+#ll_background {
+    position: relative;
+    width: 921px;
+    height: 800px;
+    background-image: url('img/background.jpg');
+    margin: auto;
+}
+
+#playertables {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    margin: auto;
+}
+
+.playertable {
+    position: absolute;
+    text-align: center;
+    width: 180px;
+    height: 230px;
+}
+.playertablename {
+    font-weight: bold;
+}
+
+.playertable_N {
+    left: 50%;
+    top: 4%;
+    height: 133px;
+    margin-left: -90px; /* half of 180 */
+}
+.playertable_S {
+    left: 50%;
+    bottom: 3%;
+    margin-left: -140px; /* half of 280 */
+    width: 280px;
+}
+.playertable_W {
+    left: 5%;
+    top: 45%;
+    height: 133px;
+    margin-top: -55px; /* half of 130 */
+}
+.playertable_E {
+    right: 5%;
+    top: 45%;
+    height: 133px;
+    margin-top: -55px; /* half of 130 */
+}
+
+.playertable_NW {
+    left: 5%;
+    top: 14%;
+    height: 133px;
+}
+.playertable_NE {
+    right: 5%;
+    top: 14%;
+    height: 133px;
+}
+.playertable_SE {
+    right: 5%;
+    bottom: 18%;
+    height: 133px;
+}
+.playertable_SW {
+    left: 5%;
+    bottom: 18%;
+    height: 133px;
+}
+
+
+.playertable_center {
+    top: 40%;
+    left: 50%;
+    margin-top: -55px; /* half of 130 */
+    margin-left: -142px; /* half of 280 */
+    width: 284px;
+    height: 210px;
+}
+.playertable_center .playertablecard {
+    position: relative;
+    top: 11px;
+    background-color: rgba( 255,255,255,0.5 );
+    margin-right: 10px;
+    
+}
+#discard_name, #deck_name {
+    display: inline-block;
+    width: 138px;
+}
+
+.playertable_cover {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+.playertable_S .playertable_cover {
+    display: none;
+}
+
+
+.playertablecard {
+    display: inline-block;
+    position: relative;
+    margin-top: 5px;
+    width: 127px;
+    height: 175px;
+}
+.playertable_E .playertablecard,
+.playertable_N .playertablecard,
+.playertable_W .playertablecard,
+.playertable_SW .playertablecard,
+.playertable_NW .playertablecard,
+.playertable_SE .playertablecard,
+.playertable_NE .playertablecard
+{
+    width: 158px;
+    height: 80px;
+}
+.playertable_S .playertablecard {
+    width: 265px;
+}
+
+.playertablecard .stockitem {
+    border-radius: 8px;
+    box-shadow: 5px 5px 5px #656565;    
+}
+
+.currentactiveplayer {
+    outline : 2px solid white;
+}
+
+.selectable_playertable {
+    cursor: pointer;
+}
+.notouch-device .selectable_playertable:hover {
+/*    background-color:red; */
+}
+.selectedOpponent {
+    outline: 4px red solid;
+}
+.outOfTheRound {
+    background-color: black;
+}
+
+.guardchoiceicon {
+    width: 42px;
+    height: 42px;
+    display: inline-block;
+    background-image: url('img/cardnumbers.png');
+}
+.guardchoicename {
+    font-weight: bold;
+    position: relative;
+    top: -17px;
+    left: 10px;
+    display: inline-block;
+}
+
+/**** explanation card *****/
+
+#explanation_card, #explanation_card2 {
+    width: 220px;
+    height: 220px;
+    background-image: url('img/explanation_card_back.png');
+    position: absolute;
+    bottom: 8%;
+    left: 5%;
+    font-size: 70%;
+}
+
+#explanation_card2 {
+    display: none;
+    right: 5%;
+    left: auto;
+}
+
+.expansion #explanation_card2 {
+    display: block;
+}
+
+.players_nbr_7 #explanation_card,
+.players_nbr_7 #explanation_card2,
+.players_nbr_8 #explanation_card,
+.players_nbr_8 #explanation_card2
+{
+    bottom: -30%;
+}
+#ll_background.players_nbr_7,
+#ll_background.players_nbr_8 {
+    margin-bottom: 400px;
+}
+
+#explanation_card_content,
+#explanation_card_content2 {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+#explanation_card h4,
+#explanation_card2 h4 {
+    text-align: center;
+    margin-top: 5px;
+}
+
+.cardexpl_number {
+    width: 15px;
+    float: left;
+}
+.cardexpl_descr {
+    margin-left: 15px;
+}
+
+/***** deck *****/
+
+#deck, #discard {
+    position: relative;
+    border-radius: 8px;
+    
+}
+.deckcard {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: 127px;
+    height: 175px;
+    background-image: url('img/cards.jpg');
+    background-position: -1016px -0px;
+    border-radius: 8px;    
+}
+#deck_1 {    top: 0px; left: 0px;    }
+
+.visibleDeck {
+    display:none;
+}
+
+/**** discard (last card played) ****/
+
+.cardontable {
+    width: 127px;
+    height: 175px;
+    background-image: url('img/cards.jpg');
+    position: absolute;
+    border-radius: 8px;
+    
+}
+
+/****** player discarded cards ********/
+
+.discardcontent {
+    width: 105%;
+    height: 45px;
+    z-index:1;
+}
+
+/******* card content ********/
+
+.cardcontent {
+    width: 100%;
+}
+.cardtitle {
+    position: absolute;
+    top: 11px;
+    left: 32px;
+    right: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    
+}
+.tooltip_wrap {
+    max-width: 250px;
+}
+
+.player_protection, .player_jester, .player_sycophant {
+    display: none;
+}
+
+
+
+/***** small screens ******/
+
+@media only screen and (max-width: 1160px) {
+
+    #ll_background {
+        position: relative;
+        width: 737px;
+        height: 640px;
+        background-image: url('img/background.jpg');
+        background-size: 737px 640px;
+        margin: auto;
+    }
+
+    .cardontable {
+        width: 102px;
+        height: 140px;
+        background-size: 2040px 140px;
+    }
+    .deckcard {
+        width: 102px;
+        height: 140px;
+        background-size: 2040px 140px;
+        background-position: -816px;
+    }
+
+    .playertablecard {
+        width: 102px;
+        height: 140px;
+    }
+
+    .playertable_center {
+        width: 233px;
+        height: 168px;
+        margin-left: -125px; /* half of 228 */
+    }
+
+    #discard_name, #deck_name {
+        width: 102px;
+    }
+    .playertable {
+        height: auto;    
+    }
+    .discardcontent {
+        height: 30px;
+    }
+    .playertable_S {
+        bottom: 2%;
+        width: 230px;
+        margin-left: -126px; /* half of 230 */
+    }
+    .playertable_N {
+        top: 3%;
+    }
+    .playertable_E,
+    .playertable_W {
+        top: 41%;
+    }
+    
+    .playertable_NW {
+        top: 3%;
+        left: 10%;
+    }
+    .playertable_NE {
+        top: 3%;
+        right: 7%;
+    }
+    .playertable_SE {
+        bottom: 11%;
+    }
+    .playertable_SW {
+        bottom: 11%;
+    }
+
+    .cardtitle {
+        position: absolute;
+        top: 9px;
+        left: 25px;
+        right: 8px;
+        font-size: 10px;
+        font-weight: bold;
+        
+    }
+
+    #explanation_card, #explanation_card2  {
+        width: 196px;
+        height: 196px;
+        background-size: 196px 196px;
+        left: 5%;
+        font-size: 60%;
+    }
+    #explanation_card2 {
+        right: 5%;
+        left: auto;    
+    }
+
+
+}
+
+/******** 3 players mode **********/
+
+#ll_background.threeplayermode  {
+    overflow:hidden;
+}
+.threeplayermode #playertables {
+    top: -100px;
+}
+.threeplayermode .playertable_S {
+    bottom: 0%;
+}
+.threeplayermode #explanation_card {
+    bottom: 5%;
+}
+
+
+/******* other *******/
+
+.fa-heart {
+    color: red;
+}
+
+.fa-heart.player_jester {
+    color: #fced48;
+}
+.player_sycophant {
+    color: black;
+}
+
+/***** bubbles ********/
+
+.discussion_bubble {
+  position:absolute;
+  bottom: 100%;
+  left: 0px;
+  padding:5px;
+  padding-left: 15px;
+  padding-right: 15px;
+  color:#000;
+  background:white; /* default background for browsers without gradient support */
+  /* css3 */
+   
+  -webkit-border-radius:10px;
+  -moz-border-radius:10px;
+  border-radius:10px;
+  z-index: 100;
+  font-weight: normal;
+  display: none;
+}
+.discussion_bubble:after {
+  content:"";
+  position:absolute;
+  bottom:-10px; /* value = - border-top-width - border-bottom-width */
+  left:35%; /* controls horizontal position */
+  border-width:15px 15px 0; /* vary these values to change the angle of the vertex */
+  border-style:solid;
+  border-color:#ffffff transparent;
+  /* reduce the damage in FF3.0 */
+  display:block;
+  
+  width:0;
+}
+
