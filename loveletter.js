@@ -777,6 +777,13 @@ function (dojo, declare) {
                             return ;
                         }
                     }
+
+                    if( opponents.length > 2 )
+                    {
+                        this.showMessage( _("Please select no more than two target opponents"), 'info' );
+                        return ;
+                    }
+
                     var opponent_id = opponents.join(',');
 
                     if( ! this.isThereAtLeastOneSelectableOpponent() )
@@ -823,6 +830,12 @@ function (dojo, declare) {
                             this.showMessage( _("Please select two players (may be yourself)"), 'info' );
                             return ;
                         }
+                    }
+
+                    if( opponents.length > 2 )
+                    {
+                        this.showMessage( _("Please select no more than two target opponents"), 'info' );
+                        return ;
                     }
                     
                     var opponent_id = opponents.join(',');
