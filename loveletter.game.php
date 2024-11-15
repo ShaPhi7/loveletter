@@ -547,7 +547,7 @@ class loveletter extends Table
                 }
                 else
                 {
-                    self::notifyAllPlayers( 'cardPlayedResult', clienttranslate( 'Guard : ${player_name} is NOT a ${guess_name}' ), array(
+                    self::notifyAllPlayers( 'cardPlayedResult', clienttranslate( '${player_name} is not a ${guess_name}' ), array(
 						'i18n' => array( 'guess_name' ),
                         'player_name' => $players[ $opponent_id ]['player_name'],
                         'guess_name' =>  $target_name,
@@ -964,9 +964,11 @@ class loveletter extends Table
         
         $opponent_card = reset( $opponent_cards );
         
-        self::notifyAllPlayers( 'cardinalReveal', '', array(
+        self::notifyAllPlayers( 'cardinalReveal', clienttranslate( 'Cardinal : ${player_name2} reveals his card to ${player_name}'), array(
             'player_id' => $player_id,
-            'opponent_id' => $opponent_id
+            'opponent_id' => $opponent_id,
+            'player_name' => $players[$player_id]['player_name'],
+            'player_name2' => $players[$opponent_id]['player_name']
         ) );
         
         self::notifyPlayer( $player_id, 'reveal_long', clienttranslate( '${player_name} reveals a ${card_name}'), array(            
