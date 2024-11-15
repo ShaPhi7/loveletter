@@ -1168,6 +1168,7 @@ function (dojo, declare) {
             dojo.subscribe( 'protected', this, 'notif_protected' );
             dojo.subscribe( 'jester', this, 'notif_jester' );
             dojo.subscribe( 'sycophant', this, 'notif_sycophant' );
+            dojo.subscribe('bishopGuessKeptCard', this, 'notif_bishopGuessKeptCard')
 
             dojo.subscribe( 'cardPlayedResult', this, 'notif_cardPlayedResult' );
 
@@ -1473,6 +1474,10 @@ function (dojo, declare) {
         notif_sycophant: function( notif )
         {
             this.setSycophant( notif.args.player );
+        },
+        notif_bishopGuessKeptCard: function( notif )
+        {
+            //game log only.
         }
 
    });             

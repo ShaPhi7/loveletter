@@ -987,13 +987,11 @@ class loveletter extends Table
         self::checkAction( 'bishopdiscard' );
         
         $opponent_id = self::getActivePlayerId();
+        $players = self::loadPlayersBasicInfos();
         
         if( $bDiscard )
         {
             // Discard + pick another one
-
-            $players = self::loadPlayersBasicInfos();
-
             $cards = $this->cards->getCardsInLocation( 'hand', $opponent_id );
             
             if( count( $cards ) == 0 ) 
@@ -1059,7 +1057,9 @@ class loveletter extends Table
         }
         else
         {
-            // Do nothing
+            // Notify all players about the card played
+            self::notifyAllPlayers( "bishopGuessKeptCard", clienttranslate( 'Bishop : ${player_name} chooses to keep his card!' ),
+            array('player_name' => $players[ $opponent_id ]['player_name']));
         }
         
         // Give the hand to the player who discarded the bishop
