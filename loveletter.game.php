@@ -1240,15 +1240,19 @@ class loveletter extends Table
         {
             $card = $this->cards->pickCard( 'deck', $player_id );    
             self::notifyPlayer( $player_id, 'newCard', clienttranslate('A new round begins: you draw a ${card_name}'), array(
-                'i18n' => array( 'card_name'),
+                'i18n' => array('card_name'),
                 'card' => $card,
-                'card_name' => $this->card_types[ $card['type'] ]['name'])
+                'card_name' => $this->card_types[$card['type']]['name'])
             );
         }
 
         // +1 card for active player
         $card = $this->cards->pickCard( 'deck', self::getActivePlayerId() );    
-        self::notifyPlayer( self::getActivePlayerId(), 'newCard', '', array( 'card' => $card ) );
+        self::notifyPlayer( self::getActivePlayerId(), 'newCard', clienttranslate('At the start of your turn, you draw a ${card_name}'), array(
+            'i18n' => array('card_name'),
+            'card' => $card,
+            'card_name' => $this->card_types[$card['type']]['name'])
+        );
 
         self::DbQuery( "UPDATE player SET player_alive='1', player_protected='0' " );
 
@@ -1479,8 +1483,11 @@ class loveletter extends Table
             			self::giveExtraTime( $current_player );
 
                         self::DbQuery( "UPDATE player SET player_protected='0' WHERE player_id='$current_player'" );
-                        self::notifyPlayer( $current_player, 'newCard', '', array( 'card' => $card ) );
-                        
+                        self::notifyPlayer( $current_player, 'newCard', clienttranslate('At the start of your turn, you draw a ${card_name}'), array(
+                            'i18n' => array('card_name'),
+                            'card' => $card,
+                            'card_name' => $this->card_types[$card['type']]['name'])
+                        );
                         $this->gamestate->nextState( 'nextPlayer' );
                         $this->updateCardCount();
                         return ;
