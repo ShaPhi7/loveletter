@@ -1342,7 +1342,7 @@ class loveletter extends Table
                     $this->gamestate->changeActivePlayer( $current_player );
                     
                     // ... draw 1 card
-                    $card = $this->cards->pickCard( 'deck', $current_player ); // TODO : force end round
+                    $card = $this->cards->pickCard( 'deck', $current_player );
                     
                     
                     if( $card === null )
@@ -1430,7 +1430,7 @@ class loveletter extends Table
                             {
                                 // Very particular case : some player are STILL tie
                                 // => no winner for this round
-                                self::notifyAllPlayers( 'simpleNote', clienttranslate('IN-CRE-DI-BLE : several players discarded the SAME highest total. There is no winner for this round.'), array() );
+                                self::notifyAllPlayers( 'simpleNote', clienttranslate('IN-CRE-DI-BLE : several players discarded the SAME highest total. There is no winner for this round.'), array() );     
                             }
                             else
                             {                            
@@ -1469,11 +1469,16 @@ class loveletter extends Table
                             
                         }
 
-            			self::giveExtraTime( $winner_id );
-            			
-            			if( $winner_id == self::getGameStateValue( 'jester' ) )
-            			    self::jesterOwnerScore();
-                        
+            			if ($winner_id) {
+                            self::giveExtraTime( $winner_id );
+                            
+                            if( $winner_id == self::getGameStateValue( 'jester' ) )
+                                self::jesterOwnerScore();
+                        }
+                        else {
+                            self::giveExtraTime( $current_player );
+                        }
+
                         self::notifyAllPlayers( 'endOfRoundPause', '', array() );
                         
                         $this->gamestate->nextState( 'endRound' );
