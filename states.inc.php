@@ -80,7 +80,7 @@ $machinestates = array(
     		"descriptionmyturn" => clienttranslate('${you} must play a card and keep the other'),
     		"type" => "activeplayer",
     		"possibleactions" => array( "playCard"),
-    		"transitions" => array( "playCard" => 21, "bishoptargeted" => 29, "cardinalchoice" => 40 )
+    		"transitions" => array( "playCard" => 21, "bishopwillchoose" => 29, "cardinalchoice" => 40 )
     ),
 
     21 => array(
@@ -96,7 +96,7 @@ $machinestates = array(
         "name" => "bishopWillChoose",
         "description" => '',
         "type" => "game",
-        "transitions" => array( "" => 30 )
+        "transitions" => array( "bishoptargeted" => 30 )
     ),
     30 => array(
     		"name" => "bishoptargeted",
