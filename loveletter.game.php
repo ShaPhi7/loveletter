@@ -387,8 +387,10 @@ class loveletter extends Table
                         $target_name = clienttranslate("Baron or Baroness (3)");
                     else if( $guess_id == 2 )
                         $target_name = clienttranslate("Priest or Cardinal (2)");
-                    else if( $guess_id == 13 )
+                    else if( $guess_id == 13 && $card['type'] == 14)
                         $target_name = clienttranslate("Assassin or Jester (0)");
+                    else if( $guess_id == 13)
+                        $target_name = clienttranslate("Jester");
                 }
 
                 $text = clienttranslate( '${player_name} plays ${card_name} against ${player_name2} and ask : are you a ${guess_name}?' );

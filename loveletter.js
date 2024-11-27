@@ -678,7 +678,7 @@ function (dojo, declare) {
                                 { num: 4, nam: _(this.gamedatas.card_types[ 4 ].name)+' / '+_(this.gamedatas.card_types[ 17 ].name) },
                                 { num: 3, nam: _(this.gamedatas.card_types[ 3 ].name)+' / '+_(this.gamedatas.card_types[ 19 ].name) },
                                 { num: 2, nam: _(this.gamedatas.card_types[ 2 ].name)+' / '+_(this.gamedatas.card_types[ 20 ].name) },
-                                { num: 0, nam: _(this.gamedatas.card_types[ 13 ].name)+' / '+_(this.gamedatas.card_types[ 16 ].name) },
+                                { num: 0, nam: (card.type == 14 ? _(this.gamedatas.card_types[13].name) + ' / ' : '') +  _(this.gamedatas.card_types[16].name) },
                             ];
                         }
 
@@ -692,7 +692,7 @@ function (dojo, declare) {
                             if( num == 0 )
                             {   num = 13;   }
                         
-                            html += '<div id="guardchoicewrap_'+num+'">';
+                            html += '<div id="guardchoicewrap_'+num+'">'; 
                             html += '<a href="#" id="guardchoice_'+num+'" class="guardchoicelink">';
                             var backx = 42*(num-1);
                             html += '<div class="guardchoiceicon" style="background-position : -'+backx+'px -0px;"></div>';
@@ -700,7 +700,15 @@ function (dojo, declare) {
                             html += '</a>';
                             html += '</div>';
                         }
-                        html += '<p style="font-size:60%">('+_('You cannot target a Guard with a guard')+')</p>';
+                        
+                        if( card.type == 14 )
+                        {
+                            html += '<p style="font-size:60%">('+_('You cannot target a Guard with a Bishop')+')</p>';
+                        }
+                        else 
+                        {
+                            html += '<p style="font-size:60%">('+_('You cannot target a Guard with a guard')+')</p>';
+                        }
 
                         html += "<br/><div style='text-align: center;'>";
                         html += "<a class='bgabutton bgabutton_gray' id='cancel_btn' href='#'><span>"+_("Cancel")+"</a>";
