@@ -1196,6 +1196,7 @@ function (dojo, declare) {
             dojo.subscribe( 'endOfRoundPause', this, 'notif_endOfRoundPause' );
             this.notifqueue.setSynchronous( 'endOfRoundPause', 4000 );
 
+            //dojo.subscribe( 'endScore', this, 'notif_endScore' );
 
             
             // Example 2: standard notification handling + tell the user interface to wait
@@ -1206,6 +1207,11 @@ function (dojo, declare) {
             // 
         },  
         
+        // notif_endScore: function( notif )
+        // {
+        
+        // },
+
         notif_endOfRoundPause: function( notif )
         {
         

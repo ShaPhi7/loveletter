@@ -99,6 +99,14 @@ class loveletter extends Table
         //self::initStat( 'table', 'table_teststat1', 0 );    // Init a table statistics
         //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
 
+        //useful for testing only.
+        /*$end_score = $this->getEndScore();
+        $player_count = count($players);
+        self::notifyAllPlayers("endScore", clienttranslate( 'In a ${player_count} player game, first to ${end_score} wins!' ), array(
+            'i18n' => array(),
+            'end_score' => $end_score,
+            'player_count' => $player_count
+        ));*/
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -222,31 +230,17 @@ class loveletter extends Table
 
         $current_player = self::getCurrentPlayerId();
         
-        switch (count($players))
-        {
-            case 2:
-                $directions = array( 'S', 'N' );
-                break;
-            case 3:
-                $directions = array( 'S', 'W', 'E' );
-                break;
-            case 4: 
-                $directions = array( 'S', 'W', 'N', 'E' );
-                break;
-            case 5:
-                $directions = array( 'S', 'W', 'NW', 'N', 'E'  );
-                break;
-            case 6:
-                $directions = array( 'S', 'W', 'NW', 'N', 'NE','E'  );
-                break;
-            case 7:
-                $directions = array( 'S', 'W', 'NW', 'N', 'NE', 'E', 'SE'  );
-                break;
-            case 8:
-            default:
-                $directions = array( 'S', 'SW', 'W', 'NW', 'N', 'NE', 'E', 'SE'  );
-                break;
-        }
+        $all_directions = [
+            2 => ['S', 'N'],
+            3 => ['S', 'W', 'E'],
+            4 => ['S', 'W', 'N', 'E'],
+            5 => ['S', 'W', 'NW', 'N', 'E'],
+            6 => ['S', 'W', 'NW', 'N', 'NE', 'E'],
+            7 => ['S', 'W', 'NW', 'N', 'NE', 'E', 'SE'],
+            8 => ['S', 'SW', 'W', 'NW', 'N', 'NE', 'E', 'SE'],
+        ];
+
+        $directions = $all_directions[count($players)] ?? $all_directions[8]; // Default to 8 players
         
         if( ! isset( $nextPlayer[ $current_player ] ) )
         {
@@ -1206,18 +1200,14 @@ class loveletter extends Table
     function getEndScore()
     {
         $players = self::loadPlayersBasicInfos();
-    
-        switch (count($players)) {
-            case 2:
-                $end_score = 7;
-                break;
-            case 3:
-                $end_score = 5;
-                break;
-            default:
-                $end_score = 4;
-                break;
-        }
+
+        // Map player count to end score
+        $player_to_end_score_override = [
+        2 => 7,
+        3 => 5,
+        ];
+
+        $end_score = $player_to_end_score_override[count($players)] ?? 4; //first to 4 wins unless overridden.
 
         return $end_score;
     }
