@@ -1392,6 +1392,11 @@ class loveletter extends Table
                         {
                             // In ANY case, bishop is beaten by the princess, so remove the bishop from possible winners
                             unset( $player_to_value[ $bishop_player ] );
+                            
+                            self::notifyAllPlayers( 'simpleNote', 
+                            clienttranslate('At the end of a round, despite his impressive 9, the Princess still beats the Bishop when comparing the values of cards in players’ hands.'),
+                            array()
+                            );
                         }
 
                         // Get number of counts discarded, and add +1 for each
