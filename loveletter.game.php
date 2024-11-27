@@ -222,18 +222,31 @@ class loveletter extends Table
 
         $current_player = self::getCurrentPlayerId();
         
-        if( count( $players ) == 4 )
-            $directions = array( 'S', 'W', 'N', 'E' );
-        else if( count( $players ) == 3 )
-            $directions = array( 'S', 'W', 'E' );
-        else if( count( $players ) == 5 )
-            $directions = array( 'S', 'W', 'NW', 'N', 'E'  );
-        else if( count( $players ) == 6 )
-            $directions = array( 'S', 'W', 'NW', 'N', 'NE','E'  );
-        else if( count( $players ) == 7 )
-            $directions = array( 'S', 'W', 'NW', 'N', 'NE','E','SE'  );
-        else if( count( $players ) == 8 )
-            $directions = array( 'S', 'SW', 'W', 'NW', 'N', 'NE','E','SE'  );
+        switch (count($players))
+        {
+            case 2:
+                $directions = array( 'S', 'N' );
+                break;
+            case 3:
+                $directions = array( 'S', 'W', 'E' );
+                break;
+            case 4: 
+                $directions = array( 'S', 'W', 'N', 'E' );
+                break;
+            case 5:
+                $directions = array( 'S', 'W', 'NW', 'N', 'E'  );
+                break;
+            case 6:
+                $directions = array( 'S', 'W', 'NW', 'N', 'NE','E'  );
+                break;
+            case 7:
+                $directions = array( 'S', 'W', 'NW', 'N', 'NE', 'E', 'SE'  );
+                break;
+            case 8:
+            default:
+                $directions = array( 'S', 'SW', 'W', 'NW', 'N', 'NE', 'E', 'SE'  );
+                break;
+        }
         
         if( ! isset( $nextPlayer[ $current_player ] ) )
         {
@@ -1192,10 +1205,17 @@ class loveletter extends Table
     {
         $players = self::loadPlayersBasicInfos();
     
-        if( count( $players ) == 3 )
-            $end_score = 5;
-        if( count( $players ) >= 4 )
-            $end_score = 4;
+        switch (count($players)) {
+            case 2:
+                $end_score = 7;
+                break;
+            case 3:
+                $end_score = 5;
+                break;
+            default:
+                $end_score = 4;
+                break;
+        }
 
         return $end_score;
     }
