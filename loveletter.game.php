@@ -1201,13 +1201,15 @@ class loveletter extends Table
     {
         $players = self::loadPlayersBasicInfos();
 
-        // Map player count to end score
-        $player_to_end_score_override = [
-        2 => 7,
+        $player_to_end_score = [
+        2 => 6,
         3 => 5,
+        4 => 4,
+        5 => 3,
+        6 => 3
         ];
 
-        $end_score = $player_to_end_score_override[count($players)] ?? 4; //first to 4 wins unless overridden.
+        $end_score = $player_to_end_score[count($players)];
 
         return $end_score;
     }
