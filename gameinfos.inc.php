@@ -22,7 +22,7 @@ $gameinfos = array(
 'suggest_player_number' => 4,
 
 // Discourage players to play with these numbers of players. Must be null if there is no such advice.
-'not_recommend_player_number' => array( 2 ),
+'not_recommend_player_number' => null,
 
 // Estimated game duration, in minutes (used only for the launch, afterward the real duration is computed)
 'estimated_duration' => 15,           
