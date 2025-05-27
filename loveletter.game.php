@@ -22,6 +22,17 @@ require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
 class loveletter extends Table
 {
+    public const GUARD      = 21;
+    public const PRIEST     = 22;
+    public const BARON      = 23;
+    public const HANDMAID   = 24;
+    public const PRINCE     = 25;
+    public const CHANCELLOR = 26;
+    public const KING       = 27;
+    public const COUNTESS   = 28;
+    public const PRINCESS   = 29;
+    public const SPY        = 30;
+
 	function __construct( )
 	{
         	
@@ -272,660 +283,411 @@ class loveletter extends Table
         Each time a player is doing some game action, one of the methods below is called.
         (note: each method below must match an input method in loveletter.action.php)
     */
-    
+
+    function notifyPlayCard($card, $opponent_id) {
+        $player_id = self::getActivePlayerId();
+        $players = self::loadPlayersBasicInfos();
+        
+        if ($opponent_id)
+        {
+            self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name} against ${player_name2}'),
+            array(
+                'i18n' => array('card_name'),
+                'player_name' => $players[$player_id]['player_name'],
+                'player_id' => $player_id,
+                'card_type' => $this->card_types[$card['type']],
+                'card_name' => $this->card_types[$card['type']]['name'],
+                'card' => $card,
+                'player_name2' => $players[$opponent_id]['player_name'],
+                'opponent_id' => $opponent_id,
+            ));
+        }
+        else
+        {
+            self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name}'),
+            array(
+                'i18n' => array('card_name'),
+                'player_name' => $players[$player_id]['player_name'],
+                'player_id' => $player_id,
+                'card_type' => $this->card_types[$card['type']],
+                'card_name' => $this->card_types[$card['type']]['name'],
+                'card' => $card
+            ));
+        }
+    }
+
+    /** 
+     * If all other alive players are protected by Handmaid 
+     */
+    function notifyPlayCardWithNoOpponent($card)
+    {
+        $player_id = self::getActivePlayerId();
+        $players = self::loadPlayersBasicInfos();
+
+        self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name} with no effect (no possible target)'), array(
+            'i18n' => array('card_name'),
+            'player_name' => $players[$player_id]['player_name'],
+            'player_id' => $player_id,
+            'card_type' => $this->card_types[$card['type']],
+            'card_name' => $this->card_types[$card['type']]['name'],
+            'card' => $card,
+            'noeffect' => 1
+        ));
+    }
+        
+    function playGuard($card, int $opponent_id, int $guess_id)
+    {
+        $player_id = self::getActivePlayerId();
+        self::incStat(1, 'guard_played', $player_id);
+
+        if (!$opponent_id)
+        {
+            self::notifyPlayCardWithNoOpponent($card);
+            return;
+        }
+
+        self::notifyPlayCard($card, $opponent_id);
+        
+        $players = self::loadPlayersBasicInfos();
+        //TODO VALIDATION EVERYWHERE ELSE
+        if ($opponent_id == $player_id) {
+            throw new feException(self::_("You must choose an opponent"), true);
+        }
+
+        if (self::getUniqueValueFromDB("SELECT player_protected FROM player WHERE player_id='$opponent_id'") == 1) {
+            throw new feException("This player is protected (handmaid)");
+        }
+
+        $opponent_cards = $this->cards->getCardsInLocation('hand', $opponent_id);
+        if (count($opponent_cards) === 0) {
+            throw new feException("Error: cannot find opponent card");
+        }
+        $opponent_card = reset($opponent_cards);
+
+        if ($guess_id == self::GUARD) {
+            throw new feException("You cannot choose Guard");
+        }
+
+        $guess_name = $this->card_types[ $guess_id ]['name'];
+
+        $args['guess_name'] = $guess_name;
+
+        self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name} against ${player_name2} and asks, are you a ${guess_name}?'), array(
+            'i18n' => array('card_name','guess_name'),
+            'player_name' => $players[$player_id]['player_name'],
+            'player_name2' => $players[$opponent_id]['player_name'],
+            'guess_name' => $guess_name,
+            'card_type' => $this->card_types[$card['type']],
+            'card_name' => $this->card_types[$card['type']]['name'],
+            'card' => $card,
+            'player_id' => $player_id,
+            'opponent_id' => $opponent_id,
+        ));
+
+        if ($this->card_types[$opponent_card['type']]['value'] == $this->card_types[$guess_id]['value']) {
+            // Successfully guessed!
+            self::incStat(1, 'guard_success', $player_id);
+            $log = clienttranslate('Guard: ${player_name} is actually a ${guess_name} and is out of the round!');
+            self::notifyAllPlayers('cardPlayedResult', $log, array(
+                'i18n' => array('guess_name'),
+                'player_name' => $players[$opponent_id]['player_name'],
+                'player_name2' => $players[$player_id]['player_name'],
+                'guess_name' => $guess_name,
+                'success' => 1,
+                'card_type' => $card['type'],
+                'player_id' => $opponent_id
+            ));
+            self::outOfTheRound($opponent_id, $player_id);
+        } else {
+            self::notifyAllPlayers('cardPlayedResult', clienttranslate('${player_name} is not a ${guess_name}'), array(
+                'i18n' => array('guess_name'),
+                'player_name' => $players[$opponent_id]['player_name'],
+                'guess_name' => $guess_name,
+                'success' => 0,
+                'card_type' => $card['type'],
+                'player_id' => $opponent_id
+            ));
+        }
+    }
+
+    function playPriest($card, int $opponent_id)
+    {   
+        $player_id = self::getActivePlayerId();
+        self::incStat(1, 'priest_played', $player_id);
+        
+        if (!$opponent_id)
+        {
+            self::notifyPlayCardWithNoOpponent($card);
+            return;
+        }
+
+        self::notifyPlayCard($card, $opponent_id);
+        
+        $opponent_cards = $this->cards->getCardsInLocation( 'hand', $opponent_id );
+        $opponent_card = reset($opponent_cards);
+
+        $players = self::loadPlayersBasicInfos();
+        self::notifyPlayer($player_id, 'reveal_long', clienttranslate('${player_name} reveals a ${card_name}'), array(
+            'i18n' => array('card_name'),
+            'player_name' => $players[$opponent_id]['player_name'],
+            'player_id' => $opponent_id,
+            'card_type' => $opponent_card['type'],
+            'card_name' => $this->card_types[$opponent_card['type']]['name']
+        ));
+
+        self::notifyPlayer($player_id, 'unreveal', '', array('player_id' => $opponent_id));
+    }
+
+    function playBaron($card, int $opponent_id)
+    {
+        $player_id = self::getActivePlayerId();
+        self::incStat(1, 'baron_played', $player_id);
+        if (!$opponent_id)
+        {
+            self::notifyPlayCardWithNoOpponent($card);
+            return;
+        }
+
+        self::notifyPlayCard($card, $opponent_id);
+
+        $player_cards = $this->cards->getCardsInLocation( 'hand', $player_id );
+        $player_card = reset( $player_cards );
+
+        $opponent_cards = $this->cards->getCardsInLocation( 'hand', $opponent_id );
+        $opponent_card = reset($opponent_cards);
+
+        // Reveal both cards for these 2 players
+        self::notifyPlayer($player_id, 'reveal', clienttranslate('${player_name} reveals a ${card_name}'), array(
+            'i18n' => array('card_name'),
+            'player_name' => $opponent_id['player_name'],
+            'player_id' => $opponent_id,
+            'card_type' => $opponent_card['type'],
+            'card_name' => $this->card_types[$opponent_card['type']]['name']
+        ));
+        self::notifyPlayer($player_id, 'unreveal', '', array('player_id' => $opponent_id));
+
+        self::notifyPlayer($opponent_id, 'reveal', clienttranslate('${player_name} reveals a ${card_name}'), array(
+            'i18n' => array('card_name'),
+            'player_name' => $player_id['player_name'],
+            'player_id' => $player_id,
+            'card_type' => $player_card['type'],
+            'card_name' => $this->card_types[$player_card['type']]['name']
+        ));
+        self::notifyPlayer($opponent_id, 'unreveal', '', array('player_id' => $player_id));
+
+        $players = self::loadPlayersBasicInfos();
+
+        $winner_id = ($this->card_types[$player_card['type']]['value'] > $this->card_types[$opponent_card['type']]['value']) ? $player_id : $opponent_id;
+        $loser_id = ($this->card_types[$player_card['type']]['value'] < $this->card_types[$opponent_card['type']]['value']) ? $player_id : $opponent_id;
+
+        if ($winner_id === $loser_id) {
+            // Tie, nothing happens
+            $log = clienttranslate('Baron: ${player_name} and ${player_name2} have the same card, so nothing happens.');
+            self::notifyAllPlayers('cardPlayedResult', $log, array(
+                'player_name' => $players[$player_id]['player_name'],
+                'player_name2' => $players[$opponent_id]['player_name'],
+                'card_type' => $card['type'],
+                'player1' => $player_id,
+                'player2' => $opponent_id
+            ));
+        }
+        else {
+            // Notify players about the result
+            $log = clienttranslate('Baron: ${player_name} has a ${card_name}, lower than ${player_name2}`s card, and is out of this round.');
+            self::notifyAllPlayers('cardPlayedResult', $log, array(
+                'i18n' => array('card_name'),
+                'player_name' => $players[$loser_id]['player_name'],
+                'card_name' => $this->card_types[$loser_id === $player_id ? $player_card['type'] : $opponent_card['type']]['name'],
+                'player_name2' => $players[$winner_id]['player_name'],
+                'card_type' => $card['type'],
+                'winner_id' => $winner_id,
+                'loser_id' => $loser_id
+            ));
+            // Remove the loser from the round
+            self::outOfTheRound($loser_id, $winner_id);
+        }
+    }
+
+    function playHandmaid($card, int $opponent_id)
+    {
+        $player_id = self::getActivePlayerId();
+        self::incStat(1, 'handmaid_played', $player_id);
+
+        self::notifyPlayCard($card, $opponent_id);
+
+        self::DbQuery("UPDATE player SET player_protected='1' WHERE player_id='$player_id'");
+        self::notifyAllPlayers('protected', '', array( 'player' => $player_id));
+    }
+
+    function playPrince($card, int $opponent_id)
+    {
+        $player_id = self::getActivePlayerId();
+        self::incStat(1, 'prince_played', $player_id);
+
+        self::notifyPlayCard($card, $opponent_id);
+
+        $cards = $this->cards->getCardsInLocation('hand', $opponent_id);
+        $card = reset($cards);
+
+        // Alright, discard this card
+        $this->cards->insertCardOnExtremePosition($card['id'], 'discard'.$opponent_id, true);
+        self::setGameStateValue('last', $card['type']);
+        
+        $players = self::loadPlayersBasicInfos();
+        // Notify all players about the card played
+        self::notifyAllPlayers("cardPlayed", clienttranslate('Prince : ${player_name} discards ${card_name}'), array(
+            'i18n' => array('card_name'),
+            'player_id' => $opponent_id,
+            'player_name' => $players[$opponent_id]['player_name'],
+            'card_name' => $this->card_types[$card['type']]['name'],
+            'card' => $card,
+            'noeffect'=> 1
+        ));
+
+        if($card['type'] == self::PRINCESS)
+        {
+            // Discard the princess => out of the round!
+            self::notifyAllPlayers('simpleNote', clienttranslate('Princess : ${player_name} discards the Princess, and is now out of this round.'), array(
+                'player_name' => $players[$opponent_id]['player_name']
+            ));
+
+            self::outOfTheRound($opponent_id, $player_id, true);
+        }
+        else
+        {            
+            $card = $this->cards->pickCard('deck', $opponent_id);
+
+            if($card === null)
+            {
+                // No card => draw the card set aside at the beginning of the round
+                $card = $this->cards->pickCard('aside', $opponent_id);
+                self::notifyAllPlayers("simpleNote", clienttranslate('Prince: There are no more cards in the deck, so ${player_name} takes the card removed at the beginning of the round.'),
+                array(
+                    'player_name' => $players[$opponent_id]['player_name']
+                ));
+            }
+
+            self::notifyPlayer($opponent_id, 'newCard', clienttranslate('Prince: you draw a ${card_name}'), array(
+                'i18n' => array('card_name'),
+                'card' => $card,
+                'card_name' => $this->card_types[$card['type']]['name']
+            ));
+        }
+    }
+
+    function playChancellor($card, int $opponent_id)
+    {
+        $player_id = self::getActivePlayerId();
+        self::incStat(1, 'chancellor_played', $player_id);
+
+        self::notifyPlayCard($card, $opponent_id);
+
+        // TODO
+    }
+
+    function playKing($card, int $opponent_id)
+    {
+        $player_id = self::getActivePlayerId();
+        self::incStat(1, 'king_played', $player_id);
+
+        if (!$opponent_id)
+        {
+            self::notifyPlayCardWithNoOpponent($card);
+            return;
+        }
+
+        self::notifyPlayCard($card, $opponent_id);
+
+        $player_cards = $this->cards->getCardsInLocation( 'hand', $player_id );
+        $player_card = reset($player_cards);
+
+        $opponent_cards = $this->cards->getCardsInLocation( 'hand', $opponent_id );
+        $opponent_card = reset($opponent_cards);
+        
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers( 'cardexchange', clienttranslate('King: ${player_name} and ${player_name2} exchange their hand.'), array(
+            'player_name' => $players[ $player_id ]['player_name'],
+            'player_name2' => $players[ $opponent_id ]['player_name'],
+            'player_1' => $player_id,
+            'player_2' => $opponent_id
+        ));
+                
+        // Exchange hands
+        $this->cards->moveCard( $player_card['id'], 'hand', $opponent_id );
+        $this->cards->moveCard( $opponent_card['id'], 'hand', $player_id );
+                
+        self::notifyPlayer( $opponent_id, 'newCard', '', array( 'card' => $player_card, 'from' => $player_id, 'remove' => $opponent_card ) );
+        self::notifyPlayer( $player_id, 'newCard', '', array( 'card' => $opponent_card, 'from' => $opponent_id, 'remove' => $player_card ) );
+    }
+
+    function playCountess($card, int $opponent_id)
+    {
+        $player_id = self::getActivePlayerId();
+
+        self::notifyPlayCard($card, $opponent_id);
+        self::incStat(1, 'countess_played', $player_id);
+
+        // nothing happens
+    }
+
+    function playPrincess($card, int $opponent_id)
+    {
+        $player_id = self::getActivePlayerId();
+
+        self::notifyPlayCard($card, $opponent_id);
+        self::incStat(1, 'princess_played', $player_id);
+
+        self::outOfTheRound( $player_id, $player_id );
+    }
+
+    function playSpy($card, int $opponent_id)
+    {
+        $player_id = self::getActivePlayerId();
+
+        self::notifyPlayCard($card, $opponent_id);
+        self::incStat(1, 'spy_played', $player_id);
+
+        // nothing happens
+    }
+
     function playCard(int $card_id, array $opponents, int $guess_id)
     {
         // Check that this is the player's turn and that it is a "possible action" at this game state (see states.inc.php)
-        self::checkAction( 'playCard' ); 
+        self::checkAction('playCard'); 
         
-        $players = self::loadPlayersBasicInfos();
         $player_id = self::getActivePlayerId();
 
         $card = $this->cards->getCard( $card_id );
         if( $card === null )
-            throw new feException( 'This card does not exists' );
+            throw new feException( 'This card does not exist' );
         if( $card['location'] != 'hand' || $card['location_arg'] != $player_id )
             throw new feException( 'This card is not in your hand' );
-            
-        // Alright, can play this card
-        
+
+        //play card
         $this->cards->insertCardOnExtremePosition( $card_id, 'discard'.$player_id, true );
         self::setGameStateValue( 'last', $card['type'] );
+
+        $methodMap = [
+            self::GUARD      => 'playGuard',
+            self::PRIEST     => 'playPriest',
+            self::BARON      => 'playBaron',
+            self::HANDMAID   => 'playHandmaid',
+            self::PRINCE     => 'playPrince',
+            self::CHANCELLOR => 'playChancellor',
+            self::KING       => 'playKing',
+            self::COUNTESS   => 'playCountess',
+            self::PRINCESS   => 'playPrincess',
+            self::SPY        => 'playSpy',
+        ]; 
+    
+        $method = $methodMap[$card['type']];
+        $this->$method($card, $opponents[0] ?? null, $guess_id);
+        //check end of round
+        //check end of game
         
-        $bApplyCardEffect = true;
-        if( count( $opponents ) == 0 && 
-         ($card['type'] == 1 || $card['type'] == 2 || $card['type'] == 3 || $card['type'] == 6 || $card['type'] == 11 || $card['type'] == 12 || $card['type'] == 14 || $card['type'] == 16 || $card['type'] == 19 || $card['type'] == 20 )
-        )
-        {
-            // This player must play a card without an opponent because all opponents are protected or out of the round
-            $possible_opponents = self::getObjectListFromDb( "SELECT player_id FROM player WHERE player_id!='$player_id' AND player_protected='0' AND player_alive='1'", true );
-            
-            if( count( $possible_opponents ) > 0 )
-                throw new feException( "You must select an opponent among the ".count( $possible_opponents )." possibles" );
-            
-            $bApplyCardEffect = false;
-        }
-        
-        if( count( $opponents ) > 0 && self::getGameStateValue( 'sycophant' ) != 0 )
-        {
-            // Must target the sycophant victim
-            $victim = self::getGameStateValue( 'sycophant' );
-            if( ! in_array( $victim, $opponents ) )
-            {
-                if( $victim == $player_id && $card['type'] != 5 && $card['type'] != 17 && $card['type'] != 20 ) // Filter Particular case : the player is NOT forced to target himself if the card cannot target himself
-                {
-                }
-                else
-                {
-                   throw new feException( sprintf( _('You must target %s because of the Sycophant effect!'), $players[ $victim ]['player_name'] ), true );
-                }
-            }
-        }
-
-        if( self::getGameStateValue( 'sycophant' ) != 0 )
-        {
-            self::setGameStateValue( 'sycophant', 0 );
-            self::notifyAllPlayers( 'sycophant', '', array( 'player' => 0 ) );
-        }
-        
-        // Notify all players about the card played
-        $text = clienttranslate( '${player_name} plays ${card_name}' );
-        $args = array(
-            'i18n' => array( 'card_name' ),
-            'player_id' => $player_id,
-            'player_name' => self::getActivePlayerName(),
-            'card_name' => $this->card_types[ $card['type'] ]['name'],
-            'card' => $card
-        );
-        
-        
-        if( count( $opponents ) > 0 )
-        {
-            $opponent_id = reset( $opponents );
-
-            if( count( $opponents ) == 1 )
-            {
-                $text = clienttranslate( '${player_name} plays ${card_name} against ${player_name2}' );
-                $args['player_name2'] = $players[ $opponent_id ]['player_name'];
-                $args['opponent_id'] = $opponent_id;
-                $args['opponents'] = $opponents;
-            }
-            else if( count( $opponents ) == 2 )
-            {
-                $text = clienttranslate( '${player_name} plays ${card_name} against ${player_name2} and ${player_name3}' );
-                $args['player_name2'] = $players[ reset( $opponents ) ]['player_name'];
-                $args['player_name3'] = $players[ next( $opponents ) ]['player_name'];
-                $args['opponent_id'] = reset( $opponents );            
-                $args['opponents'] = $opponents;
-            }
-
-            
-            
-            if( $guess_id >= 0 )
-            {
-                $target_name = $this->card_types[ $guess_id ]['name'];
-                if( count( $players ) > 4 )
-                {
-                    // Specific names
-                    if( $guess_id == 14 )
-                        $target_name = clienttranslate("Bishop");
-                    else if( $guess_id == 7 )
-                        $target_name = clienttranslate("Countess or Dowager Queen (7)");
-                    else if( $guess_id == 6 )
-                        $target_name = clienttranslate("King or Constable (6)");
-                    else if( $guess_id == 5 )
-                        $target_name = clienttranslate("Prince or Count (5)");
-                    else if( $guess_id == 4 )
-                        $target_name = clienttranslate("Handmaid or Sycophant (4)");
-                    else if( $guess_id == 3 )
-                        $target_name = clienttranslate("Baron or Baroness (3)");
-                    else if( $guess_id == 2 )
-                        $target_name = clienttranslate("Priest or Cardinal (2)");
-                    else if( $guess_id == 13 && $card['type'] == 14)
-                        $target_name = clienttranslate("Assassin or Jester (0)");
-                    else if( $guess_id == 13)
-                        $target_name = clienttranslate("Jester");
-                }
-
-                $text = clienttranslate( '${player_name} plays ${card_name} against ${player_name2} and ask : are you a ${guess_name}?' );
-                $args['guess_name'] = $target_name;
-                $args['i18n'][] = 'guess_name';
-            }
-        }
-
-        if( ! $bApplyCardEffect )
-        {
-            $text = clienttranslate( '${player_name} plays ${card_name} with no effect (no possible target)' );
-            $args['noeffect'] = 1;
-        }
-        
-        $this->updateCardCount();
-        self::notifyAllPlayers( "cardPlayedLong", $text, $args );
-
-
-        if( $card['type'] == 5 || $card['type'] == 6  )
-        {
-            // If we are playing the Prince or the King, we must ensure that the other card is NOT the countess (because we MUST discard the countess in this case)
-            $player_cards = $this->cards->getCardsInLocation( 'hand', $player_id );
-            $player_card = reset( $player_cards );
-            
-            if( $player_card === null )
-                throw new feException( "Error: cannot find the other player card" );
-
-            if( $player_card['type'] == 7 )
-                throw new feException( self::_("If you have the Countess (7) in your hand with the King (6) or a Prince (5), you MUST discard the Countess."), true );            
-        }
-
-        
-        if( $bApplyCardEffect )
-        {
-            // Trigger card effect
-            
-            
-            if( $card['type'] == 1 || $card['type'] == 12 || $card['type'] == 14 )
-            {
-                // Guard / Bishop : try to guess another player's card
-
-                if( $opponent_id == $player_id )
-                    throw new feException( self::_("You must choose an opponent"), true );
-
-                if( self::getUniqueValueFromDB( "SELECT player_protected FROM player WHERE player_id='$opponent_id'" ) == 1 )
-                    throw new feException( "This player is protected (handmaid)" );
-
-                $opponent_cards = $this->cards->getCardsInLocation( 'hand', $opponent_id );
-                if( count( $opponent_cards ) === 0 )
-                    throw new feException( "Error: cannot find opponent card" );
-                $opponent_card = reset( $opponent_cards );
-                
-                if( $guess_id == 1 )
-                    throw new feException( "You cannot choose Guard" );
-                
-                if( $card['type'] == 1 || $card['type'] == 12 )
-                    self::incStat( 1, 'guard_played', $player_id );
-                else
-                    self::incStat( 1, 'bishop_played', $player_id );
-                
-                if( ( $card['type'] == 1 || $card['type'] == 12 ) && $opponent_card['type'] == 13 )
-                {
-                    // Assassin ! The Guard is killed.
-                    
-                    $log =  clienttranslate( 'Guard : ${player_name} is the Assassin! ${player_name2} is out of the round!' );
-
-                    self::notifyAllPlayers( 'cardPlayedResult', clienttranslate( 'Guard : ${player_name} is THE ASSASSIN : ${player_name2} is out of the round!' ), array(
-						'i18n' => array( 'guess_name' ),
-                        'player_name' => $players[ $opponent_id ]['player_name'],
-                        'player_name2' => $players[ $player_id ]['player_name'],
-                        'guess_name' =>  $target_name,
-                        'success' => 2,
-                        'card_type' => $card['type'],
-                        'player_id' => $opponent_id
-                    ) );
-
-                    self::outOfTheRound( $player_id, $opponent_id );      
-                    
-                    // The assassin player must discard his card and pick a new one
-
-                    // Alright, discard this card
-                    
-                    $this->cards->insertCardOnExtremePosition( $opponent_card['id'], 'discard'.$opponent_id, true );
-                    self::setGameStateValue( 'last', $opponent_card['type'] );
-                    
-                    // Notify all players about the card played
-                    self::notifyAllPlayers( "cardPlayed", clienttranslate( '${player_name} discards its Assassin card' ), array(
-                        'player_id' => $opponent_id,
-                        'player_name' => $players[ $opponent_id ]['player_name'],
-                        'card' => $opponent_card,
-                        'noeffect'=>1
-                    ) );
-
-                    // Pick another card
-
-                    // ... draw 1 card
-                    $card = $this->cards->pickCard( 'deck', $opponent_id );
-
-                    if( $card === null )
-                    {
-                        // No card => draw the card set aside at the beginning of the round
-                        $card = $this->cards->pickCard( 'aside', $opponent_id );
-                        
-                        if( $card === null )
-                            throw new feException( "Cannot find card set aside at the beginning of the round" );
-                        else
-                        {
-                            self::notifyAllPlayers( "simpleNote", clienttranslate('Bishop : no more card in the deck : ${player_name} picks the card removed at the beginning of the round.'), array(
-                                'player_name' => $players[ $opponent_id ]['player_name']
-                            ) ) ;
-                        }
-                    }
-
-                    self::notifyPlayer( $opponent_id, 'newCard', clienttranslate('You draw a ${card_name}'), array( 
-                        'i18n' => array( 'card_name' ),
-                        'card' => $card,
-                        'card_name' => $this->card_types[ $card['type'] ]['name']
-                    ) );
-                    
-                    
-                }
-                else if( $this->card_types[ $opponent_card['type'] ]['value'] == $this->card_types[ $guess_id ]['value'] )
-                {
-
-                    // Successfully guess !
-                    
-                    $log =  clienttranslate( 'Guard : ${player_name} is actually a ${guess_name} : out of the round!' );
-                    if( $card['type'] == 14 )
-                        $log =  clienttranslate( 'Bishop : ${player_name} is actually a ${guess_name}! ${player_name2} gets an affection token.' );
-                    
-                    self::notifyAllPlayers( 'cardPlayedResult', $log, array(
-						'i18n' => array( 'guess_name' ),
-                        'player_name' => $players[ $opponent_id ]['player_name'],
-                        'player_name2' => $players[ $player_id ]['player_name'],
-                        'guess_name' =>  $target_name,
-                        'success' => 1,
-                        'card_type' => $card['type'],
-                        'player_id' => $opponent_id
-                    ) );
-
-                    
-                    if( $card['type'] == 1 || $card['type'] == 12 )
-                    {
-                        // Guard
-                        self::incStat( 1, 'guard_success', $player_id );
-                        self::outOfTheRound( $opponent_id, $player_id );                            
-                    }
-                    else
-                    {
-                        // Bishop
-                        self::DbQuery( "UPDATE player SET player_score=player_score+1 WHERE player_id='$player_id'" );
-
-                        self::notifyAllPlayers( 'score', '', array(
-                            'player_name' => $players[ $player_id ]['player_name'],
-                            'player_id' => $player_id,
-                            'type' => 'bishop'
-                        ) );
-
-
-                        $this->gamestate->nextState( 'bishopwillchoose' );
-                        $this->gamestate->changeActivePlayer( $opponent_id );
-                        $this->gamestate->nextState( 'bishoptargeted' );
-
-                        return ;    // Return because we are switching state here
-
-                    }
-                }
-                else
-                {
-                    self::notifyAllPlayers( 'cardPlayedResult', clienttranslate( '${player_name} is not a ${guess_name}' ), array(
-						'i18n' => array( 'guess_name' ),
-                        'player_name' => $players[ $opponent_id ]['player_name'],
-                        'guess_name' =>  $target_name,
-                        'success' => 0,
-                        'card_type' => 1,
-                        'player_id' => $opponent_id
-                    ) );
-                }
-                
-            }
-            else if( $card['type'] == 2 || $card['type'] == 19 )
-            {
-                // Priest / Baroness: look at another player's hand
-
-                if( $card['type'] == 2 )
-                    self::incStat( 1, 'priest_played', $player_id );
-                else
-                    self::incStat( 1, 'baroness_played', $player_id );
-                
-                foreach( $opponents as $opponent_id )
-                {
-                    if( $opponent_id == $player_id )
-                        throw new feException( self::_("You must choose an opponent"), true );
-
-                    $opponent_cards = $this->cards->getCardsInLocation( 'hand', $opponent_id );
-                    if( count( $opponent_cards ) === 0 )
-                        throw new feException( "Error: cannot find opponent card" );
-
-                    
-                    $opponent_card = reset( $opponent_cards );
-                    
-                    self::notifyPlayer( $player_id, 'reveal_long', clienttranslate( '${player_name} reveals a ${card_name}'), array(            
-                        'i18n' => array( 'card_name' ),
-                        'player_name' => $players[ $opponent_id ]['player_name'],
-                        'player_id' => $opponent_id,
-                        'card_type' => $opponent_card['type'],
-                        'card_name' => $this->card_types[ $opponent_card['type'] ]['name']
-                    ) );
-                }
-                foreach( $opponents as $opponent_id )
-                {
-                    self::notifyPlayer( $player_id, 'unreveal', '', array( 'player_id' => $opponent_id ) );
-                }
-            }
-            else if( $card['type'] == 3 || $card['type'] == 11 )
-            {
-                // Baron : compare cards, the least lose
-
-                if( $opponent_id == $player_id )
-                    throw new feException( self::_("You must choose an opponent"), true );
-
-                $player_cards = $this->cards->getCardsInLocation( 'hand', $player_id );
-                $player_card = reset( $player_cards );
-                
-                if( $player_card === null )
-                    throw new feException( "Error: cannot find the other player card" );
-
-                if( $card['type'] == 3 )
-                    self::incStat( 1, 'baron_played', $player_id );
-                else
-                    self::incStat( 1, 'dowagerqueen_played', $player_id );
-
-                $opponent_cards = $this->cards->getCardsInLocation( 'hand', $opponent_id );
-                if( count( $opponent_cards ) === 0 )
-                    throw new feException( "Error: cannot find opponent card" );
-                $opponent_card = reset( $opponent_cards );
-                
-                // Reveal both cards for these 2 players
-                self::notifyPlayer( $player_id, 'reveal', clienttranslate( '${player_name} reveals a ${card_name}'), array(            
-                    'i18n' => array( 'card_name' ),
-                    'player_name' => $players[ $opponent_id ]['player_name'],
-                    'player_id' => $opponent_id,
-                    'card_type' => $opponent_card['type'],
-                    'card_name' => $this->card_types[ $opponent_card['type'] ]['name']
-                ) );
-                self::notifyPlayer( $player_id, 'unreveal', '', array( 'player_id' => $opponent_id ) );
-
-                self::notifyPlayer( $opponent_id, 'reveal', clienttranslate( '${player_name} reveals a ${card_name}'), array(            
-                    'i18n' => array( 'card_name' ),
-                    'player_name' => $players[ $player_id ]['player_name'],
-                    'player_id' => $player_id,
-                    'card_type' => $player_card['type'],
-                    'card_name' => $this->card_types[ $player_card['type'] ]['name']
-                ) );
-                self::notifyPlayer( $opponent_id, 'unreveal', '', array( 'player_id' => $player_id ) );
-                
-                if( 
-                    ( ( $card['type'] == 3 ) && (  $this->card_types[ $opponent_card['type'] ]['value'] > $this->card_types[ $player_card['type'] ]['value'] ) ) 
-                    ||
-                    ( ( $card['type'] == 11 ) && ( $this->card_types[ $opponent_card['type'] ]['value'] < $this->card_types[ $player_card['type'] ]['value'] ) ) 
-                  )
-                {
-                    // Opponent wins
-                    
-                    $log = clienttranslate('Baron : ${player_name} has a ${card_name}, lower than ${player_name2}`s card, and is out of this round.');
-                    if(  ( $card['type'] == 11 )  )
-                        $log = clienttranslate('Dowager Queen : ${player_name} has a ${card_name}, higher than ${player_name2}`s card, and is out of this round.');
-                    
-                    self::notifyAllPlayers( 'cardPlayedResult', $log , array(
-                        'i18n' => array( 'card_name' ),
-                        'player_name' => $players[ $player_id ]['player_name'],
-                        'card_name' => $this->card_types[ $player_card['type'] ]['name'],
-                        'player_name2' => $players[ $opponent_id ]['player_name'],
-                        'card_type' => $card['type'],
-                        'winner_id' => $opponent_id,
-                        'loser_id' => $player_id
-                    ) );
-                    
-                    self::outOfTheRound( $player_id, $opponent_id );            
-                }
-                else if( 
-                    ( ( $card['type'] == 3 ) && ( $this->card_types[ $opponent_card['type'] ]['value'] < $this->card_types[ $player_card['type'] ]['value'] ) ) 
-                    ||
-                    ( ( $card['type'] == 11 ) && ( $this->card_types[ $opponent_card['type'] ]['value'] > $this->card_types[ $player_card['type'] ]['value'] ) ) 
-                  )
-                {
-                    // Player wins
-                    
-                    if(  ( $card['type'] == 3 )  )
-                    {
-                        self::incStat( 1, 'baron_played_success', $player_id );                
-                        $log = clienttranslate('Baron : ${player_name} has a ${card_name}, lower than ${player_name2}`s card, and is out of this round.');
-                    }
-                    else
-                    {
-                        $log = clienttranslate('Dowager Queen : ${player_name} has a ${card_name}, higher than ${player_name2}`s card, and is out of this round.');
-                    }
-                    
-                    self::notifyAllPlayers( 'cardPlayedResult', $log, array(
-                        'i18n' => array( 'card_name' ),
-                        'player_name' => $players[ $opponent_id ]['player_name'],
-                        'card_name' => $this->card_types[ $opponent_card['type'] ]['name'],
-                        'player_name2' => $players[ $player_id ]['player_name'],
-                        'card_type' => $card['type'],
-                        'winner_id' => $player_id,
-                        'loser_id' => $opponent_id
-                    ) );
-                    
-                    self::outOfTheRound( $opponent_id, $player_id );            
-                }
-                else
-                {
-                    // Tie !
-
-                    if(  ( $card['type'] == 3 )  )
-                    {
-                        $log = clienttranslate('Baron : ${player_name} and ${player_name2} have the same card, so nothing happens.');
-                    }
-                    else
-                    {
-                        $log = clienttranslate('Dowager Queen : ${player_name} and ${player_name2} have the same card, so nothing happens.');
-                    }
-
-                    self::notifyAllPlayers( 'cardPlayedResult', $log, array(
-                        'player_name' => $players[ $opponent_id ]['player_name'],
-                        'player_name2' => $players[ $player_id ]['player_name'],
-                        'card_type' => 3,
-                        'winner_id' => null,
-                        'player1' => $player_id,
-                        'player2' => $opponent_id
-                    ) );
-
-                }
-                 
-            }
-            else if( $card['type'] == 4 )
-            {
-                // Handmaid : protection during 1 turn
-                self::DbQuery( "UPDATE player SET player_protected='1' WHERE player_id='$player_id'" );
-                self::notifyAllPlayers( 'protected', '', array( 'player' => $player_id ) );
-
-                self::incStat( 1, 'handmaid_played', $player_id );
-            }
-            else if( $card['type'] == 5 )
-            {
-                // Prince : make opponent discard and take a new card
-
-                $players = self::loadPlayersBasicInfos();
-
-                $cards = $this->cards->getCardsInLocation( 'hand', $opponent_id );
-                
-                if( count( $cards ) == 0 ) 
-                    throw new feException( "Cannot find card of player $opponent_id" );
-                
-                $card = reset( $cards );
-
-                // Alright, discard this card
-                
-                $this->cards->insertCardOnExtremePosition( $card['id'], 'discard'.$opponent_id, true );
-                self::setGameStateValue( 'last', $card['type'] );
-                
-                // Notify all players about the card played
-                self::notifyAllPlayers( "cardPlayed", clienttranslate( 'Prince : ${player_name} discards ${card_name}' ), array(
-                    'i18n' => array( 'card_name' ),
-                    'player_id' => $opponent_id,
-                    'player_name' => $players[ $opponent_id ]['player_name'],
-                    'card_name' => $this->card_types[ $card['type'] ]['name'],
-                    'card' => $card,
-                    'noeffect'=>1
-                ) );
-
-                self::incStat( 1, 'prince_played', $player_id );
-                
-                if( $card['type'] == 8 )
-                {
-                    // Discard the princess => out of the round!
-                    self::notifyAllPlayers( 'simpleNote', clienttranslate('Princess : ${player_name} discards the Princess, and is now out of this round.'), array(
-                        'player_name' => $players[ $opponent_id ]['player_name']
-                    ) );
-                    
-                    self::outOfTheRound( $opponent_id, $player_id, true );            
-
-                }
-                else
-                {            
-                    // Pick another card
-
-                    // ... draw 1 card
-                    $card = $this->cards->pickCard( 'deck', $opponent_id );
-
-                    if( $card === null )
-                    {
-                        // No card => draw the card set aside at the beginning of the round
-                        $card = $this->cards->pickCard( 'aside', $opponent_id );
-                        
-                        if( $card === null )
-                            throw new feException( "Cannot find card set aside at the beginning of the round" );
-                        else
-                        {
-                            self::notifyAllPlayers( "simpleNote", clienttranslate('Prince : no more card in the deck : ${player_name} picks the card removed at the beginning of the round.'), array(
-                                'player_name' => $players[ $opponent_id ]['player_name']
-                            ) ) ;
-                        }
-                    }
-
-                    self::notifyPlayer( $opponent_id, 'newCard', clienttranslate('Prince : you draw a ${card_name}'), array( 
-                        'i18n' => array( 'card_name' ),
-                        'card' => $card,
-                        'card_name' => $this->card_types[ $card['type'] ]['name']
-                    ) );
-                }
-            }
-            else if( $card['type'] == 6 || $card['type'] == 20 )
-            {
-                // King : exchange hands
-                
-                if( $card['type'] == 6 )
-                {                
-                    if( $opponent_id == $player_id )
-                        throw new feException( self::_("You must choose an opponent"), true );
-
-                    self::incStat( 1, 'king_played', $player_id );
-                    
-                    $opponent_1 = $player_id;
-                    $opponent_2 = $opponent_id;
-                }
-                else
-                {
-                    self::incStat( 1, 'cardinal_played', $player_id );
-
-                    $opponent_1 = reset( $opponents );
-                    $opponent_2 = next( $opponents );
-
-                }                
-
-                $player_cards = $this->cards->getCardsInLocation( 'hand', $opponent_1 );
-                $player_card = reset( $player_cards );
-                
-                if( $player_card === null )
-                    throw new feException( "Error: cannot find the other player card" );
-
-                $opponent_cards = $this->cards->getCardsInLocation( 'hand', $opponent_2 );
-                if( count( $opponent_cards ) === 0 )
-                    throw new feException( "Error: cannot find opponent card" );
-                $opponent_card = reset( $opponent_cards );
-
-                $log = clienttranslate('King : ${player_name} and ${player_name2} exchange their hand.');
-                
-                if(  $card['type'] == 20 )
-                    $log = clienttranslate('Cardinal : ${player_name} and ${player_name2} exchange their hand.');
-                
-
-                self::notifyAllPlayers( 'cardexchange', $log, array(
-                    'player_name' => $players[ $opponent_2 ]['player_name'],
-                    'player_name2' => $players[ $opponent_1 ]['player_name'],
-                    'player_1' => $opponent_1,
-                    'player_2' => $opponent_2
-                ) );
-                
-                // Exchange hands
-                $this->cards->moveCard( $player_card['id'], 'hand', $opponent_2 );
-                $this->cards->moveCard( $opponent_card['id'], 'hand', $opponent_1 );
-                
-                
-                self::notifyPlayer( $opponent_2, 'newCard', '', array( 'card' => $player_card, 'from' => $opponent_1, 'remove' => $opponent_card ) );
-                self::notifyPlayer( $opponent_1, 'newCard', '', array( 'card' => $opponent_card, 'from' => $opponent_2, 'remove' => $player_card ) );
-                
-                if(  $card['type'] == 20 )
-                {
-                    self::setGameStateValue( 'cardinal_1', $opponent_1 );
-                    self::setGameStateValue( 'cardinal_2', $opponent_2 );
-                    $this->gamestate->nextState( 'cardinalchoice' );
-                    return ;
-                }
-            }        
-            else if( $card['type'] == 7 )
-            {
-                self::incStat( 1, 'countess_played', $player_id );
-            }
-            else if( $card['type'] == 13 )
-            {
-                self::incStat( 1, 'assassin_played', $player_id );
-            }
-            else if( $card['type'] == 15 )
-            {
-                self::incStat( 1, 'constable_played', $player_id );
-            }
-            else if( $card['type'] == 18 )
-            {
-                self::incStat( 1, 'count_played', $player_id );
-            }
-            else if( $card['type'] == 8 )
-            {
-                // (suicide)
-
-                self::notifyAllPlayers( 'simpleNote', clienttranslate('Princess : ${player_name} plays the Princess, and is now out of this round.'), array(
-                    'player_name' => $players[ $player_id ]['player_name']
-                ) );
-
-                self::outOfTheRound( $player_id, $player_id );            
-
-
-//                throw new feException( self::_("You cannot discard the Princess (otherwise you are out of the round)"), true );
-            }
-            else if( $card['type'] == 16 )
-            {
-                // Jester : give a Jester token (yellow heart)
-
-                if( $opponent_id == $player_id )
-                    throw new feException( self::_("You must choose an opponent"), true );
-
-                self::incStat( 1, 'jester_played', $player_id );
-
-                self::notifyAllPlayers( 'jester', clienttranslate('Jester : if ${player_name} wins this round, ${player_name2} will score one point too.'), array(
-                    'player' => $opponent_id,
-                    'player_name' => $players[ $opponent_id ]['player_name'],
-                    'player_name2' => $players[ $player_id ]['player_name']
-                ) );
-
-
-                self::setGameStateValue( 'jester', $opponent_id );
-            }
-            else if( $card['type'] == 17 )
-            {
-                // Sycophant : give a Sycophan marker
-
-                self::incStat( 1, 'sycophant_played', $player_id );
-
-                self::notifyAllPlayers( 'sycophant', clienttranslate('Sycophant : the card played by next player should target ${player_name}.'), array(
-                    'player' => $opponent_id,
-                    'player_name' => $players[ $opponent_id ]['player_name']
-                ) );
-
-
-                self::setGameStateValue( 'sycophant', $opponent_id );
-            }
-
-        }
-                        
-        $this->gamestate->nextState( 'playCard' );
-        
+        $this->updateCardCount(); //TODO - what does this do?
+       
+        $this->gamestate->nextState('playCard');
     }
 
     function jesterOwnerScore()
