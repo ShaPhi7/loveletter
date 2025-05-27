@@ -45,7 +45,6 @@ class loveletter extends Table
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();self::initGameStateLabels( array(
             'last' => 10,
-            'sycophant' => 11, // player targeted by sycophant
             'jester' => 12,     // player targeted by jester
             'cardinal_1' => 13,
             'cardinal_2' => 14,
@@ -189,7 +188,6 @@ class loveletter extends Table
         }
         
         $result['jester'] = self::getGameStateValue( 'jester' );
-        $result['sycophant'] = self::getGameStateValue( 'sycophant' );
   
         return $result;
     }
@@ -978,28 +976,12 @@ class loveletter extends Table
     
     
     function stNewRound()
-    {
-        $max_score = self::getUniqueValueFromDB( "SELECT MAX( player_score ) FROM player" );
-        $players = self::loadPlayersBasicInfos();
-        
-        $end_score = $this->getEndScore();
-        
-        if( $max_score >= $end_score )
-        {
-            self::notifyAllPlayers( 'simpleNote', clienttranslate("This is the end!"), array() );
-        
-            $this->gamestate->nextState( 'endGame' );           
-            return ; 
-        }
-        
+    {   
         self::incStat( 1, 'round_number' );
         
         self::notifyAllPlayers( 'newRound', '', array() );
     
         self::setGameStateValue( 'last', 0 );
-        
-        self::setGameStateValue( 'jester', 0 );
-        self::setGameStateValue( 'sycophant', 0 );
     
         // Reform deck
         $this->cards->moveAllCardsInLocation( null, 'deck' );
@@ -1011,8 +993,8 @@ class loveletter extends Table
         $this->cards->pickCardForLocation( 'deck', 'aside' );
     
         // Draw one card for each player
-        
-        foreach( $players as $player_id => $player )
+        $players = self::loadPlayersBasicInfos();
+        foreach( $players as $player_id)
         {
             $card = $this->cards->pickCard( 'deck', $player_id );    
             self::notifyPlayer( $player_id, 'newCard', clienttranslate('A new round begins: you draw a ${card_name}'), array(
@@ -1037,255 +1019,183 @@ class loveletter extends Table
         $this->gamestate->nextState( 'newRound' );
     }
     
+    function roundShouldEnd()
+    {
+        // Check if the round should end
+        $alive_count = self::getUniqueValueFromDB( "SELECT COUNT(*) FROM player WHERE player_alive='1'" );
+        $deck_count = self::getUniqueValueFromDB( "SELECT COUNT(*) FROM card WHERE card_location='deck'" );
+
+        return ($alive_count <= 1 || $deck_count == 0);
+    }
+
     function stNextPlayer()
     {
-        $players = self::loadPlayersBasicInfos();
-        $player_to_alive = self::getCollectionFromDb( "SELECT player_id, player_alive FROM player WHERE 1", true );
-        $alive_count = 0;
-        foreach( $player_to_alive as $player_id => $alive )
+        if (self::roundShouldEnd())
         {
-            if( $alive == 1 )
-                $alive_count ++;
+            $this->gamestate->nextState('endRound');
         }
 
-        if( $alive_count == 1 )
-        {
-            // Round winner !
+        $next_player = self::getNextAlivePlayer();
 
-            foreach( $player_to_alive as $player_id => $alive )
-            {
-                if( $alive == 1 )
-                    $winner_id = $player_id;
+        $this->gamestate->changeActivePlayer($next_player);
+        
+        // ... draw 1 card
+        $card = $this->cards->pickCard('deck', $next_player);
+        $this->updateCardCount();
+
+        self::giveExtraTime($next_player);
+
+        self::DbQuery("UPDATE player SET player_protected='0' WHERE player_id='$next_player'");
+
+        self::notifyPlayer($next_player, 'newCard', clienttranslate('At the start of your turn, you draw a ${card_name}'), array(
+            'i18n' => array('card_name'),
+            'card' => $card,
+            'card_name' => $this->card_types[$card['type']]['name'])
+        );
+
+        $this->gamestate->nextState('nextPlayer');
+    }
+
+    function getNextAlivePlayer()
+    {
+        $next_player_table = self::getNextPlayerTable();
+        $current_player = self::getActivePlayerId();
+        $player_to_alive = self::getCollectionFromDB("SELECT player_id, player_alive FROM player");
+        
+        // Find the next alive active player
+        $found = false;
+        $start_player = $current_player;
+        do {
+            if ($player_to_alive[$current_player] == 1) {
+                $found = true;
+                break;
             }
+            $current_player = $next_player_table[$current_player];
+        } while ($current_player != $start_player);
 
-            
-         
-            $handcards = $this->cards->getCardsInLocation( 'hand' );
-            self::notifyAllPlayers( "endOfRoundExplanation", clienttranslate( 'There is only one player remaining : this is the end of the round' ), array(
-                'hands' => $handcards
-            ) );
+        if (!$found)
+        {
+            //TODO - PANIC
+        }
 
+        return $current_player;
+    }
 
-            self::DbQuery( "UPDATE player SET player_score=player_score+1 WHERE player_id='$winner_id'" );
-            $this->gamestate->changeActivePlayer( $winner_id );
-			self::giveExtraTime( $winner_id );
-            
-            self::notifyAllPlayers( 'score', clienttranslate('${player_name} is the only player remaining and wins the round'), array(
-                'player_name' => $players[ $winner_id ]['player_name'],
-                'player_id' => $winner_id,
-                'type' => 'remaining'
-            ) );
+    function gameShouldEnd()
+    {
+        $max_score = self::getUniqueValueFromDB( "SELECT MAX( player_score ) FROM player" );
+        $end_score = $this->getEndScore();
+        
+        if( $max_score >= $end_score )
+        {      
+            return true; 
+        }
+        return false;
+    }
 
-			if( $winner_id == self::getGameStateValue( 'jester' ) )
-			    self::jesterOwnerScore();
+    function stEndRound()
+    {
+        //either last player left in, or any players with the joint highest cards.
+        self::rewardRoundWinners();
+        self::rewardSpy();
 
-            
-            self::incStat( 1, 'round_victory_by_latest', $winner_id );
-            
-
-            $this->gamestate->nextState( 'endRound' );
+        if (self::gameShouldEnd())
+        {
+            self::notifyAllPlayers('simpleNote', clienttranslate("This is the end of the game!"), array());
+            $this->gamestate->nextState('endGame');
         }
         else
         {
-            // Check if some player(s) reach 4 points thanks to Constable or Bishop.
-            // In this case, this is the immediate end of the game!
+            $this->gamestate->nextState('newRound');
+        }
+    }
 
-            $end_score = $this->getEndScore();
+    function rewardSpy()
+    {
+        $alive_player_ids = self::getCollectionFromDB( "SELECT player_id FROM player WHERE player_alive='1'");
+        $sql = "SELECT card_location FROM `card` WHERE card_location LIKE 'discard%' AND card_type='".self::SPY."'";
+        $spy_locations = self::getObjectListFromDb( $sql, true );
+        if (count($spy_locations) === 1)
+        {
+            //TODO - award points
+            //does this cover the case where one player played both spies?
+        }
+    }
 
-            $max_score = self::getUniqueValueFromDB( "SELECT COUNT( player_id ) FROM player WHERE player_score>=$end_score" );
+    function rewardRoundWinners()
+    {
+        $alive_player_ids = self::getCollectionFromDB( "SELECT player_id FROM player WHERE player_alive='1'");
 
-            if( $max_score > 0 )
-            {
-                self::notifyAllPlayers( 'simpleNote', clienttranslate("A player has enough points to win the game : Immediate Victory!"), array() );
-                $this->gamestate->nextState( 'endGame' );           
+        if (count($alive_player_ids) === 1)
+        {
+            $winner_id = array_key_first($alive_player_ids);
             
-                return ;
-            }        
+            self::rewardLastPlayerStanding($winner_id);
+        }
+        else
+        {
+            self::rewardHighestCardWinners($alive_player_ids);
+        }
+    }
 
-        
-            // Go to next (alive) player
+    function rewardLastPlayerStanding($winner_id)
+    {
+        self::DbQuery("UPDATE player SET player_score=player_score+1 WHERE player_id='$winner_id'");
 
-            $next_player = self::getNextPlayerTable();
-            $current_player = self::getActivePlayerId();
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers( 'score', clienttranslate('${player_name} is the only player remaining and gains 1 favor token'), array(
+            'player_name' => $players[$winner_id]['player_name'],
+            'player_id' => $winner_id,
+            'type' => 'remaining'
+        ) );
 
-            while( true )
-            {
-                $current_player = $next_player[ $current_player ];
-                if( $player_to_alive[ $current_player ] == 1 )
-                {
-                    $this->gamestate->changeActivePlayer( $current_player );
-                    
-                    // ... draw 1 card
-                    $card = $this->cards->pickCard( 'deck', $current_player );
-                    
-                    
-                    if( $card === null )
-                    {
-                        // No more card in deck! End of round!
+        self::incStat( 1, 'round_victory_by_latest', $winner_id );
+    }
 
+    function rewardHighestCardWinners($alive_player_ids)
+    {
+        $winners = self::getAlivePlayersWithHighestCard($alive_player_ids);
 
-                        // Winner is the player alive with the highest card!
-                        $handcards = $this->cards->getCardsInLocation( 'hand' );
-                        self::notifyAllPlayers( "endOfRoundExplanation", clienttranslate( 'No more cards in the deck : this is the end of the round' ), array( 'hands' => $handcards ) );
-                        $player_to_value = array();
-                        $player_to_cardtype = array();
-                        $player_to_counts = array();
+        // Award a point to each winner
+        foreach ($winners as $winner_id)
+        {
+            self::DbQuery("UPDATE player SET player_score=player_score+1 WHERE player_id='$winner_id'");
+            $players = self::loadPlayersBasicInfos();
+            self::notifyAllPlayers('score', clienttranslate('${player_name} has the highest card (${card_type} - ${card_name}) and gains 1 favor token'), array(
+                'i18n' => array('card_name'),
+                'player_name' => $players[$winner_id]['player_name'],
+                'player_id' => $winner_id,
+                'card_type' =>  $this->cards->getCardsInLocation('hand', $winner_id)[0]['type'],
+                'card_name' => $this->cards->getCardsInLocation('hand', $winner_id)[0]['name'],
+                'type' => 'highest'
+            ));
 
-                        $bishop_player = null;
-                        $princess_player = null;
+            self::incStat( 1, 'round_victory_by_highest', $winner_id );
+        }
+    }
 
-
-                        foreach( $handcards as $handcard )
-                        {
-                            $player_to_value[ $handcard['location_arg'] ] = $this->card_types[ $handcard['type'] ]['value'];
-                            $player_to_cardtype[ $handcard['location_arg'] ] = $handcard['type'];
-                            $player_to_counts[ $handcard['location_arg'] ] = 0;
-                                                        
-                            if( $handcard['type'] == 14 )
-                            {
-                                $bishop_player = $handcard['location_arg'];
-                            }
-                            if( $handcard['type'] == 8 )
-                            {
-                                $princess_player = $handcard['location_arg'];
-                            }
-                        }
-
-
-                        if( $bishop_player !== null && $princess_player !== null )
-                        {
-                            // In ANY case, bishop is beaten by the princess, so remove the bishop from possible winners
-                            unset( $player_to_value[ $bishop_player ] );
-                            
-                            self::notifyAllPlayers( 'simpleNote', 
-                            clienttranslate('At the end of a round, despite his impressive 9, the Princess still beats the Bishop when comparing the values of cards in players’ hands.'),
-                            array()
-                            );
-                        }
-
-                        // Get number of counts discarded, and add +1 for each
-                        $sql = "SELECT card_location FROM `card` WHERE card_location LIKE 'discard%' AND card_type='18'";
-                        $counts_locations = self::getObjectListFromDb( $sql, true );
-                        foreach( $counts_locations as $count_location )
-                        {
-                            // discard<X>
-                            $count_player = substr( $count_location, 7 );
-                            if( isset( $player_to_value[ $count_player ] ) )
-                            {
-                                $player_to_value[ $count_player ]++;
-                                $player_to_counts[ $count_player ] ++;
-                                
-                                self::notifyAllPlayers( 'simpleNote', clienttranslate('${player_name} discarded a Count and get +1 to its last card value.'), array( 'player_name' =>  $players[ $count_player ]['player_name'] ) );
-                            }
-                        }
-                        
-                        $winner_id = getKeyWithMaximum( $player_to_value );
-
-                        if( $winner_id === null )
-                        {
-                            // Some players have the same card
-                            $possible_winners = getKeysWithMaximum( $player_to_value );
-                            
-                            // Winner = the one who discards the highest card values
-                            $player_to_discard_total = array();
-
-		                    foreach( $possible_winners as $player_id )
-		                    {
-		                        $player_to_discard_total[ $player_id ] = 0;
-		                        $discarded = $this->cards->getCardsInLocation( 'discard'.$player_id, null, 'card_location_arg' );
-		                        foreach( $discarded as $card_discarded )
-		                        {
-    		                        $player_to_discard_total[ $player_id ] += $this->card_types[ $card_discarded['type'] ]['value'];
-		                        }
-		                        
-		                    }
-
-		                    
-		                    self::notifyAllPlayers( 'simpleNote', clienttranslate('There are several players with the highest card : the winner is the one who discarded the highest total of cards among them.'), array() );
-
-                            $winner_id = getKeyWithMaximum( $player_to_discard_total );
-                            
-                            if( $winner_id === null )
-                            {
-                                // Very particular case : some player are STILL tie
-                                // => no winner for this round
-                                self::notifyAllPlayers( 'simpleNote', clienttranslate('IN-CRE-DI-BLE : several players discarded the SAME highest total. There is no winner for this round.'), array() );     
-                            }
-                            else
-                            {                            
-                                self::DbQuery( "UPDATE player SET player_score=player_score+1 WHERE player_id='$winner_id'" );
-                                $this->gamestate->changeActivePlayer( $winner_id );
-                                
-                                self::notifyAllPlayers( 'score', clienttranslate('${player_name} discarded the highest total (${total}) and wins the round'), array(
-                                    'player_name' => $players[ $winner_id ]['player_name'],
-                                    'player_id' => $winner_id,
-                                    'total' => $player_to_discard_total[ $winner_id ],
-                                    'type' => 'highestdiscarded'
-                                ) );
-
-                                self::incStat( 1, 'round_victory_by_highest', $winner_id );
-
-                            }
-                            
-                        }
-                        else
-                        {
-                            // There is a single winner !
-                            
-                            self::DbQuery( "UPDATE player SET player_score=player_score+1 WHERE player_id='$winner_id'" );
-                            $this->gamestate->changeActivePlayer( $winner_id );
-                            
-                            self::notifyAllPlayers( 'score', clienttranslate('${player_name} has the highest card (${card_type} - ${card_name}) and wins the round'), array(
-								'i18n' => array( 'card_name' ),
-                                'player_name' => $players[ $winner_id ]['player_name'],
-                                'player_id' => $winner_id,
-                                'card_type' =>  $this->card_types[ $player_to_cardtype[ $winner_id ] ]['value'],
-                                'card_name' => $this->card_types[$player_to_cardtype[ $winner_id ] ]['name'],
-                                'type' => 'highest'
-                            ) );
-
-                            self::incStat( 1, 'round_victory_by_highest', $winner_id );
-                            
-                        }
-
-            			if ($winner_id) {
-                            self::giveExtraTime( $winner_id );
-                            
-                            if( $winner_id == self::getGameStateValue( 'jester' ) )
-                                self::jesterOwnerScore();
-                        }
-                        else {
-                            self::giveExtraTime( $current_player );
-                        }
-
-                        self::notifyAllPlayers( 'endOfRoundPause', '', array() );
-                        
-                        $this->gamestate->nextState( 'endRound' );
-
-                        return ;
-                    }
-                    else
-                    {
-            			self::giveExtraTime( $current_player );
-
-                        self::DbQuery( "UPDATE player SET player_protected='0' WHERE player_id='$current_player'" );
-                        self::notifyPlayer( $current_player, 'newCard', clienttranslate('At the start of your turn, you draw a ${card_name}'), array(
-                            'i18n' => array('card_name'),
-                            'card' => $card,
-                            'card_name' => $this->card_types[$card['type']]['name'])
-                        );
-                        $this->gamestate->nextState( 'nextPlayer' );
-                        $this->updateCardCount();
-                        return ;
-                    }
+    function getAlivePlayersWithHighestCard($alive_player_ids)
+    {
+        $alive_player_ids = array_keys($alive_player_ids);
+        $highest_value = 0;
+        $winners = [];
+        foreach ($alive_player_ids as $player_id) {
+            $hand = $this->cards->getCardsInLocation('hand', $player_id);
+            if (count($hand) > 0) {
+                $card = reset($hand);
+                $value = $this->card_types[$card['type']]['value'];
+                if ($value > $highest_value) {
+                    $highest_value = $value;
+                    $winners = [$player_id];
+                } elseif ($value == $highest_value) {
+                    $winners[] = $player_id;
                 }
             }
-        
         }
-        
-    
+
+        return $winners;
     }
-    
+
     function s()
     {
         $this->cards->shuffle('deck');

@@ -57,9 +57,8 @@ $machinestates = array(
         "description" => clienttranslate("Game setup"),
         "type" => "manager",
         "action" => "stGameSetup",
-        "transitions" => array( "" => 10 )
+        "transitions" => array("" => 10)
     ),
-
 
     10 => array(
         "name" => "newRound",
@@ -67,20 +66,16 @@ $machinestates = array(
         "type" => "game",
         "action" => "stNewRound",
         "updateGameProgression" => true,   
-        "transitions" => array( "endGame" => 99, "newRound" => 20 )
+        "transitions" => array("endGame" => 99, "newRound" => 20)
     ),
-
-
-    
-    // Note: ID=2 => your first state
 
     20 => array(
     		"name" => "playerTurn",
     		"description" => clienttranslate('${actplayer} must play a card and keep the other'),
     		"descriptionmyturn" => clienttranslate('${you} must play a card and keep the other'),
     		"type" => "activeplayer",
-    		"possibleactions" => array( "playCard"),
-    		"transitions" => array( "playCard" => 21, "bishopwillchoose" => 29, "cardinalchoice" => 40 )
+    		"possibleactions" => array("playCard"),
+    		"transitions" => array("playCard" => 21, "bishopwillchoose" => 29, "cardinalchoice" => 40)
     ),
 
     21 => array(
@@ -88,15 +83,22 @@ $machinestates = array(
         "description" => '',
         "type" => "game",
         "action" => "stNextPlayer",
-        "transitions" => array( "endRound" => 10, "nextPlayer" => 20, "endGame" => 99 )
+        "transitions" => array("nextPlayer" => 20, "endRound" => 25)
     ),
 
+    25 => array(
+        "name" => "endRound",
+        "description" => '',
+        "type" => "game",
+        "action" => "stEndRound",
+        "transitions" => array("newRound" => 10, "endGame" => 99)
+    ),
 
     29 => array(
         "name" => "bishopWillChoose",
         "description" => '',
         "type" => "game",
-        "transitions" => array( "bishoptargeted" => 30 )
+        "transitions" => array("bishoptargeted" => 30)
     ),
     30 => array(
     		"name" => "bishoptargeted",
