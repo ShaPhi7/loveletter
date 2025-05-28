@@ -62,12 +62,14 @@ $stats_type = array(
     "player" => array(
 
         "round_victory_by_highest" => array("id"=> 10,
-                    "name" => totranslate("Rounds won by having the highest card"),
+                    "name" => totranslate("Tokens gained by having the highest card"),
                     "type" => "int" ),
         "round_victory_by_latest" => array("id"=> 11,
-                    "name" => totranslate("Rounds won by being the latest player"),
+                    "name" => totranslate("Tokens gained by being the latest player"),
                     "type" => "int" ),
-
+        "tokens_gained_from_spy" => array("id"=> 12,
+                    "name" => totranslate("Tokens gained from Spy"),
+                    "type" => "int" ),
 
         "killed" => array("id"=> 13,
                     "name" => totranslate("Has been knocked out of the round"),
@@ -91,7 +93,7 @@ $stats_type = array(
                     "name" => totranslate("Baron played"),
                     "type" => "int" ),
         "baron_played_success" => array("id"=> 19,
-                    "name" => totranslate("Baron played with sucess"),
+                    "name" => totranslate("Baron played with success"),
                     "type" => "int" ),
         "handmaid_played" => array("id"=> 20,
                     "name" => totranslate("Handmaid played"),
@@ -105,37 +107,14 @@ $stats_type = array(
         "countess_played" => array("id"=> 23,
                     "name" => totranslate("Countess played"),
                     "type" => "int" ),
-
-        "dowagerqueen_played" => array("id"=> 24,
-                    "name" => totranslate("Dowager Queen played"),
+        "princess_played" => array("id"=> 24,
+                    "name" => totranslate("Princess discarded"),
                     "type" => "int" ),
-        "assassin_played" => array("id"=> 25,
-                    "name" => totranslate("Assassin played"),
+        "spy_played" => array("id"=> 25,
+                    "name" => totranslate("Spy played"),
                     "type" => "int" ),
-        "bishop_played" => array("id"=> 26,
-                    "name" => totranslate("Bishop played"),
-                    "type" => "int" ),
-        "constable_played" => array("id"=> 27,
-                    "name" => totranslate("Constable played"),
-                    "type" => "int" ),
-        "jester_played" => array("id"=> 28,
-                    "name" => totranslate("Jester played"),
-                    "type" => "int" ),
-        "count_played" => array("id"=> 29,
-                    "name" => totranslate("Count played"),
-                    "type" => "int" ),
-        "sycophant_played" => array("id"=> 30,
-                    "name" => totranslate("Sycophant played"),
-                    "type" => "int" ),
-        "baroness_played" => array("id"=> 31,
-                    "name" => totranslate("Baroness played"),
-                    "type" => "int" ),
-        "cardinal_played" => array("id"=> 32,
-                    "name" => totranslate("Cardinal played"),
-                    "type" => "int" ),
-
-
-
+        "chancellor_played" => array("id"=> 26,
+                    "name" => totranslate("Chancellor played"),
+                    "type" => "int" )
     )
-
 );

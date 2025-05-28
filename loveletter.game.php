@@ -680,10 +680,8 @@ class loveletter extends Table
     
         $method = $methodMap[$card['type']];
         $this->$method($card, $opponents[0] ?? null, $guess_id);
-        //check end of round
-        //check end of game
         
-        $this->updateCardCount(); //TODO - what does this do?
+        $this->updateCardCount();
        
         $this->gamestate->nextState('playCard');
     }
@@ -1117,8 +1115,21 @@ class loveletter extends Table
         $spy_locations = self::getObjectListFromDb( $sql, true );
         if (count($spy_locations) === 1)
         {
-            //TODO - award points
-            //does this cover the case where one player played both spies?
+            $spy_player_id = substr($spy_locations[0], 7); //the card location looks like 'discard12345', so we need to remove the 'discard' part
+            if (isset($alive_player_ids[$spy_player_id]))
+            {
+                self::DbQuery("UPDATE player SET player_score=player_score+1 WHERE player_id='$spy_player_id'");
+                
+                $players = self::loadPlayersBasicInfos();
+                self::notifyAllPlayers('score', clienttranslate('Spy: ${player_name} played the only Spy and gains 1 favor token'), array(
+                    'player_name' => $players[$spy_player_id]['player_name'],
+                    'player_id' => $spy_player_id,
+                    'type' => 'spy'
+                ));
+
+                self::incStat( 1, 'tokens_gained_from_spy', $spy_player_id );
+            }
+            //TODO TEST - does this cover the case where one player played both spies?
         }
     }
 
