@@ -336,7 +336,6 @@ class loveletter extends Table
     function playGuard($card, int $opponent_id, int $guess_id)
     {
         $player_id = self::getActivePlayerId();
-        self::incStat(1, 'guard_played', $player_id);
 
         if (!$opponent_id)
         {
@@ -411,7 +410,6 @@ class loveletter extends Table
     function playPriest($card, int $opponent_id)
     {   
         $player_id = self::getActivePlayerId();
-        self::incStat(1, 'priest_played', $player_id);
         
         if (!$opponent_id)
         {
@@ -439,7 +437,6 @@ class loveletter extends Table
     function playBaron($card, int $opponent_id)
     {
         $player_id = self::getActivePlayerId();
-        self::incStat(1, 'baron_played', $player_id);
         if (!$opponent_id)
         {
             self::notifyPlayCardWithNoOpponent($card);
@@ -503,13 +500,16 @@ class loveletter extends Table
             ));
             // Remove the loser from the round
             self::outOfTheRound($loser_id, $winner_id);
+
+            if ($winner_id === $player_id) {
+                self::incStat(1, 'baron_played_success', $player_id);
+            }
         }
     }
 
     function playHandmaid($card, int $opponent_id)
     {
         $player_id = self::getActivePlayerId();
-        self::incStat(1, 'handmaid_played', $player_id);
 
         self::notifyPlayCard($card, $opponent_id);
 
@@ -520,7 +520,6 @@ class loveletter extends Table
     function playPrince($card, int $opponent_id)
     {
         $player_id = self::getActivePlayerId();
-        self::incStat(1, 'prince_played', $player_id);
 
         self::notifyPlayCard($card, $opponent_id);
 
@@ -576,7 +575,6 @@ class loveletter extends Table
     function playChancellor($card, int $opponent_id)
     {
         $player_id = self::getActivePlayerId();
-        self::incStat(1, 'chancellor_played', $player_id);
 
         self::notifyPlayCard($card, $opponent_id);
 
@@ -586,7 +584,6 @@ class loveletter extends Table
     function playKing($card, int $opponent_id)
     {
         $player_id = self::getActivePlayerId();
-        self::incStat(1, 'king_played', $player_id);
 
         if (!$opponent_id)
         {
@@ -620,10 +617,7 @@ class loveletter extends Table
 
     function playCountess($card, int $opponent_id)
     {
-        $player_id = self::getActivePlayerId();
-
         self::notifyPlayCard($card, $opponent_id);
-        self::incStat(1, 'countess_played', $player_id);
 
         // nothing happens
     }
@@ -633,17 +627,13 @@ class loveletter extends Table
         $player_id = self::getActivePlayerId();
 
         self::notifyPlayCard($card, $opponent_id);
-        self::incStat(1, 'princess_played', $player_id);
 
         self::outOfTheRound( $player_id, $player_id );
     }
 
     function playSpy($card, int $opponent_id)
     {
-        $player_id = self::getActivePlayerId();
-
         self::notifyPlayCard($card, $opponent_id);
-        self::incStat(1, 'spy_played', $player_id);
 
         // nothing happens
     }
@@ -682,6 +672,10 @@ class loveletter extends Table
         $this->$method($card, $opponents[0] ?? null, $guess_id);
         
         $this->updateCardCount();
+
+        // the name of the stat is of the form "cardtype_played"
+        // e.g. "guard_played", "priest_played", etc.
+        self::incStat( 1, strtolower($this->card_types[$card['type']]['name']) . '_played', $player_id );
        
         $this->gamestate->nextState('playCard');
     }
