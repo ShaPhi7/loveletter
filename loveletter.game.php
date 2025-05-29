@@ -183,8 +183,6 @@ class loveletter extends Table
                     unset( $result['card_types'][ $i ] );
             }
         }
-        
-        $result['jester'] = self::getGameStateValue( 'jester' );
   
         return $result;
     }
@@ -584,7 +582,8 @@ class loveletter extends Table
                     'player_name' => $players[$player_id]['player_name'],
                     'card_name' => $this->card_types[$card['type']]['name']
                 ));
-                break;
+            break;
+
             case 1:
                 $card_1 = $this->cards->pickCard('deck', $player_id);
                
@@ -598,7 +597,8 @@ class loveletter extends Table
                     'card_name' => $this->card_types[$card_1['type']]['name'],
                     'card_name_2' => ''
                 ));
-                break;
+            break;
+
             default:
                 $card_1 = $this->cards->pickCard('deck', $player_id);
                 $card_2 = $this->cards->pickCard('deck', $player_id);
@@ -613,7 +613,7 @@ class loveletter extends Table
                 'card_name' => $this->card_types[$card_1['type']]['name'],
                 'card_name_2' => $this->card_types[$card_2['type']]['name']
                 ));
-                break;
+            break;
         }
     }
 
@@ -742,74 +742,47 @@ class loveletter extends Table
         if ($card['type'] == SELF::CHANCELLOR) {
             $this->gamestate->nextState('chancellor');
         }
-        else { $this->gamestate->nextState('nextPlayer');
+        else {
+            $this->gamestate->nextState('nextPlayer');
         }
     }
     
-    function outOfTheRound( $player_id, $killer_id, $bCardAlreadyDiscarded=false )
+    function outOfTheRound($player_id, $killer_id, $bCardAlreadyDiscarded=false)
     {
-    
-        // If has a Constable in discard pile, gain an affection token
         $players = self::loadPlayersBasicInfos();
-
-        $sql = "SELECT card_id FROM `card` WHERE card_location = 'discard$player_id' AND card_type='15'";
-        $constable = self::getUniqueValueFromDB( $sql );
-        
-        if( $constable !== null )
-        {
-            self::DbQuery( "UPDATE player SET player_score=player_score+1 WHERE player_id='$player_id'" );
-            
-            self::notifyAllPlayers( 'score', clienttranslate('Constable : ${player_name} has been kicked out this round and score 1 point.'), array(
-                'player_name' => $players[ $player_id ]['player_name'],
-                'player_id' => $player_id,
-                'type' => 'constable'
-            ) );
-        
-        }
-        
-        // Now, kill the player    
     
-        self::DbQuery( "UPDATE player SET player_alive='0' WHERE player_id='$player_id'" );
-        self::notifyAllPlayers( 'outOfTheRound', '', array(
+        self::DbQuery("UPDATE player SET player_alive='0' WHERE player_id='$player_id'");
+        self::notifyAllPlayers('outOfTheRound', '', array(
             'player_id' => $player_id
-        ) );
+        ));
         
-        self::incStat( 1, 'killed', $player_id );
-        if( $killer_id !== null )
-            self::incStat( 1, 'kills', $killer_id );
+        self::incStat(1, 'killed', $player_id);
+        if($killer_id !== null)
+            self::incStat(1, 'kills', $killer_id);
         
-
-        if( $bCardAlreadyDiscarded == false )
+        if($bCardAlreadyDiscarded == false)
         {
-            $cards = $this->cards->getCardsInLocation( 'hand', $player_id );
-            
-            if( count( $cards ) == 0 ) 
-                throw new feException( "Cannot find card of player $player_id" );
-            
-            $card = reset( $cards );
+            $cards = $this->cards->getCardsInLocation('hand', $player_id);
 
-            // Alright, discard this card
-            
-            $this->cards->insertCardOnExtremePosition( $card['id'], 'discard'.$player_id, true );
-            self::setGameStateValue( 'last', $card['type'] );
+            if(count($cards) == 0)
+                throw new feException("Cannot find card of player $player_id");
+
+            $card = reset($cards);
+
+            $this->cards->insertCardOnExtremePosition($card['id'], 'discard'.$player_id, true);
+            self::setGameStateValue('last', $card['type']);
 
             $this->updateCardCount();
-            
-            // Notify all players about the card played
-            self::notifyAllPlayers( "cardPlayed", clienttranslate( '${player_name} (out of the round) discards ${card_name}' ), array(
-                'i18n' => array( 'card_name' ),
+
+            self::notifyAllPlayers("cardPlayed", clienttranslate('${player_name} (out of the round) discards ${card_name}'), array(
+                'i18n' => array('card_name'),
                 'player_id' => $player_id,
-                'player_name' => $players[ $player_id ]['player_name'],
-                'card_name' => $this->card_types[ $card['type'] ]['name'],
+                'player_name' => $players[$player_id]['player_name'],
+                'card_name' => $this->card_types[$card['type']]['name'],
                 'card' => $card,
                 'noeffect'=>1
-            ) );
-
-
+            ));
         }
-
-
-
     }
 
     
