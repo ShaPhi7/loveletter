@@ -45,9 +45,6 @@ class loveletter extends Table
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();self::initGameStateLabels( array(
             'last' => 10,
-            'jester' => 12,     // player targeted by jester
-            'cardinal_1' => 13,
-            'cardinal_2' => 14,
          
             //    "my_first_global_variable" => 10,
             //    "my_second_global_variable" => 11,
@@ -317,7 +314,7 @@ class loveletter extends Table
     /** 
      * If all other alive players are protected by Handmaid 
      */
-    function notifyPlayCardWithNoOpponent($card)
+    function notifyPlayCardWithNoPossibleTarget($card)
     {
         $player_id = self::getActivePlayerId();
         $players = self::loadPlayersBasicInfos();
@@ -339,7 +336,7 @@ class loveletter extends Table
 
         if (!$opponent_id)
         {
-            self::notifyPlayCardWithNoOpponent($card);
+            self::notifyPlayCardWithNoPossibleTarget($card);
             return;
         }
 
@@ -413,7 +410,7 @@ class loveletter extends Table
         
         if (!$opponent_id)
         {
-            self::notifyPlayCardWithNoOpponent($card);
+            self::notifyPlayCardWithNoPossibleTarget($card);
             return;
         }
 
@@ -439,7 +436,7 @@ class loveletter extends Table
         $player_id = self::getActivePlayerId();
         if (!$opponent_id)
         {
-            self::notifyPlayCardWithNoOpponent($card);
+            self::notifyPlayCardWithNoPossibleTarget($card);
             return;
         }
 
@@ -564,7 +561,7 @@ class loveletter extends Table
                 ));
             }
 
-            self::notifyPlayer($opponent_id, 'newCard', clienttranslate('Prince: you draw a ${card_name}'), array(
+            self::notifyPlayer($opponent_id, 'newCard', clienttranslate('Prince: you draw ${card_name}'), array(
                 'i18n' => array('card_name'),
                 'card' => $card,
                 'card_name' => $this->card_types[$card['type']]['name']
@@ -575,10 +572,75 @@ class loveletter extends Table
     function playChancellor($card, int $opponent_id)
     {
         $player_id = self::getActivePlayerId();
+        $players = self::loadPlayersBasicInfos();
 
         self::notifyPlayCard($card, $opponent_id);
 
-        // TODO
+        $deck_count = $this->cards->countCardInLocation('deck');
+        switch ($deck_count) {
+            case 0:
+                self::notifyAllPlayers('simpleNote', clienttranslate('Chancellor: this card has no effect as there are no cards left in the deck'), array(
+                    'i18n' => array('card_name'),
+                    'player_name' => $players[$player_id]['player_name'],
+                    'card_name' => $this->card_types[$card['type']]['name']
+                ));
+                break;
+            case 1:
+                $card_1 = $this->cards->pickCard('deck', $player_id);
+               
+                self::notifyAllPlayers('simpleNote', clienttranslate('Chancellor: ${player_name} draws only draws one card, as there is only one card left in the deck'), array(
+                    'player_name' => $players[$player_id]['player_name'],
+                ));
+                
+                self::notifyPlayer($player_id, 'newCard', clienttranslate('Chancellor: you draw ${card_name} (only one card left in the deck)'), array(
+                    'i18n' => array('card_name'),
+                    'card' => $card,
+                    'card_name' => $this->card_types[$card_1['type']]['name'],
+                    'card_name_2' => ''
+                ));
+                break;
+            default:
+                $card_1 = $this->cards->pickCard('deck', $player_id);
+                $card_2 = $this->cards->pickCard('deck', $player_id);
+            
+                self::notifyAllPlayers('simpleNote', clienttranslate('Chancellor: ${player_name} draws two cards'), array(
+                    'player_name' => $players[$player_id]['player_name'],
+                ));
+
+                self::notifyPlayer($player_id, 'newCard', clienttranslate('Chancellor: you draw ${card_name} and ${card_name_2}'), array(
+                'i18n' => array('card_name', 'card_name_2'),
+                'card' => $card,
+                'card_name' => $this->card_types[$card_1['type']]['name'],
+                'card_name_2' => $this->card_types[$card_2['type']]['name']
+                ));
+                break;
+        }
+    }
+
+    function actionChancellor($chosenCard)
+    {
+        $players = self::loadPlayersBasicInfos();
+        $player_id = self::getActivePlayerId();
+        $player_cards = $this->cards->getCardsInLocation('hand', $player_id);
+
+        foreach ($player_cards as $card) {
+            if ($card['id'] != $chosenCard) {
+                $this->cards->insertCardOnExtremePosition($card['id'], 'deck', false);
+            }
+            //TODO - handle ordering
+        }
+
+        self::notifyAllPlayers('simpleNote', clienttranslate('Chancellor: ${player_name} keeps 1 card, and places the other 2 on the bottom of the deck'), array(
+            'player_name' => $players[$player_id]['player_name'],
+        ));
+
+        self::notifyPlayer($player_id, 'newCard', clienttranslate('Chancellor: you keep ${card_name}'), array(
+            'i18n' => array('card_name'),
+            'card' => $card,
+            'card_name' => $this->card_types[$chosenCard['type']]['name'],
+        ));
+
+        $this->gamestate->nextState('nextPlayer');
     }
 
     function playKing($card, int $opponent_id)
@@ -587,7 +649,7 @@ class loveletter extends Table
 
         if (!$opponent_id)
         {
-            self::notifyPlayCardWithNoOpponent($card);
+            self::notifyPlayCardWithNoPossibleTarget($card);
             return;
         }
 
@@ -675,162 +737,13 @@ class loveletter extends Table
 
         // the name of the stat is of the form "cardtype_played"
         // e.g. "guard_played", "priest_played", etc.
-        self::incStat( 1, strtolower($this->card_types[$card['type']]['name']) . '_played', $player_id );
+        self::incStat(1, strtolower($this->card_types[$card['type']]['name']) . '_played', $player_id);
        
-        $this->gamestate->nextState('playCard');
-    }
-
-    function jesterOwnerScore()
-    {
-        $sql = "SELECT card_location FROM `card` WHERE card_location LIKE 'discard%' AND card_type='16'";
-        $jester_location = self::getUniqueValueFromDB( $sql );
-    
-        $jester_player = substr( $jester_location, 7 );
-
-        self::DbQuery( "UPDATE player SET player_score=player_score+1 WHERE player_id='$jester_player'" );
-        
-        $players = self::loadPlayersBasicInfos();
-        self::notifyAllPlayers( 'score', clienttranslate('Jester : ${player_name} correctly guess who would win this round and score 1 point.'), array(
-            'player_name' => $players[ $jester_player ]['player_name'],
-            'player_id' => $jester_player,
-            'type' => 'jester'
-        ) );
-    }
-    
-    function argsCardinalChoice()
-    {
-        return array(
-            'choice' => array( self::getGameStateValue('cardinal_1'), self::getGameStateValue( 'cardinal_2' ) )
-            );
-    }
-
-    function cardinalchoice( $opponent_id )
-    {
-        $player_id = self::getActivePlayerId();
-        
-        self::checkAction( 'cardinalchoice' );
-        
-        $players = self::loadPlayersBasicInfos();
-        if( $opponent_id != self::getGameStateValue( 'cardinal_1' ) && $opponent_id != self::getGameStateValue( 'cardinal_2' ) )
-        {
-            throw new feException( sprintf( self::_('You must choose %s or %s'), $players[ $player_id ]['player_name'], $players[ $opponent_id ]['player_name']  ), true );
+        if ($card['type'] == SELF::CHANCELLOR) {
+            $this->gamestate->nextState('chancellor');
         }
-
-        $opponent_cards = $this->cards->getCardsInLocation( 'hand', $opponent_id );
-        if( count( $opponent_cards ) === 0 )
-            throw new feException( "Error: cannot find opponent card" );
-
-        
-        $opponent_card = reset( $opponent_cards );
-        
-        self::notifyAllPlayers( 'cardinalReveal', clienttranslate( 'Cardinal : ${player_name2} reveals his card to ${player_name}'), array(
-            'player_id' => $player_id,
-            'opponent_id' => $opponent_id,
-            'player_name' => $players[$player_id]['player_name'],
-            'player_name2' => $players[$opponent_id]['player_name']
-        ) );
-        
-        self::notifyPlayer( $player_id, 'reveal_long', clienttranslate( '${player_name} reveals a ${card_name}'), array(            
-            'i18n' => array( 'card_name' ),
-            'player_name' => $players[ $opponent_id ]['player_name'],
-            'player_id' => $opponent_id,
-            'card_type' => $opponent_card['type'],
-            'card_name' => $this->card_types[ $opponent_card['type'] ]['name']
-        ) );
-
-        self::notifyPlayer( $player_id, 'unreveal', '', array( 'player_id' => $opponent_id ) );
-        
-        $this->gamestate->nextState( 'cardinalchoice');
-    }
-    
-    function bishopChoice( $bDiscard )
-    {
-        self::checkAction( 'bishopdiscard' );
-        
-        $opponent_id = self::getActivePlayerId();
-        $players = self::loadPlayersBasicInfos();
-        
-        if( $bDiscard )
-        {
-            // Discard + pick another one
-            $cards = $this->cards->getCardsInLocation( 'hand', $opponent_id );
-            
-            if( count( $cards ) == 0 ) 
-                throw new feException( "Cannot find card of player $opponent_id" );
-            
-            $card = reset( $cards );
-
-            // Alright, discard this card
-            
-            $this->cards->insertCardOnExtremePosition( $card['id'], 'discard'.$opponent_id, true );
-            self::setGameStateValue( 'last', $card['type'] );
-            
-            // Notify all players about the card played
-            self::notifyAllPlayers( "cardPlayed", clienttranslate( 'Bishop : ${player_name} discards ${card_name}' ), array(
-                'i18n' => array( 'card_name' ),
-                'player_id' => $opponent_id,
-                'player_name' => $players[ $opponent_id ]['player_name'],
-                'card_name' => $this->card_types[ $card['type'] ]['name'],
-                'card' => $card,
-                'noeffect'=>1
-            ) );
-
-            if( $card['type'] == 8 )
-            {
-                // Discard the princess => out of the round!
-                self::notifyAllPlayers( 'simpleNote', clienttranslate('Princess : ${player_name} discards the Princess, and is now out of this round.'), array(
-                    'player_name' => $players[ $opponent_id ]['player_name']
-                ) );
-                
-                self::outOfTheRound( $opponent_id, null, true );            
-
-            }
-            else
-            {            
-                // Pick another card
-
-                // ... draw 1 card
-                $card = $this->cards->pickCard( 'deck', $opponent_id );
-
-                if( $card === null )
-                {
-                    // No card => draw the card set aside at the beginning of the round
-                    $card = $this->cards->pickCard( 'aside', $opponent_id );
-                    
-                    if( $card === null )
-                        throw new feException( "Cannot find card set aside at the beginning of the round" );
-                    else
-                    {
-                        self::notifyAllPlayers( "simpleNote", clienttranslate('Bishop : no more card in the deck : ${player_name} picks the card removed at the beginning of the round.'), array(
-                            'player_name' => $players[ $opponent_id ]['player_name']
-                        ) ) ;
-                    }
-                }
-
-                self::notifyPlayer( $opponent_id, 'newCard', clienttranslate('Bishop : you draw a ${card_name}'), array( 
-                    'i18n' => array( 'card_name' ),
-                    'card' => $card,
-                    'card_name' => $this->card_types[ $card['type'] ]['name']
-                ) );
-            }
-
-
+        else { $this->gamestate->nextState('nextPlayer');
         }
-        else
-        {
-            // Notify all players about the card played
-            self::notifyAllPlayers( "bishopGuessKeptCard", clienttranslate( 'Bishop : ${player_name} chooses to keep his card!' ),
-            array('player_name' => $players[ $opponent_id ]['player_name']));
-        }
-        
-        // Give the hand to the player who discarded the bishop
-        $sql = "SELECT card_location FROM `card` WHERE card_location LIKE 'discard%' AND card_type='14'";
-        $bishop_location = self::getUniqueValueFromDB( $sql );
-        $bishop_player = substr( $bishop_location, 7 );
-
-        $this->gamestate->nextState( 'bishopdiscard' );
-        $this->gamestate->changeActivePlayer( $bishop_player );
-        $this->gamestate->nextState( 'nextPlayer' );
     }
     
     function outOfTheRound( $player_id, $killer_id, $bCardAlreadyDiscarded=false )
@@ -1045,7 +958,7 @@ class loveletter extends Table
             'card_name' => $this->card_types[$card['type']]['name'])
         );
 
-        $this->gamestate->nextState('nextPlayer');
+        $this->gamestate->nextState('playerTurn');
     }
 
     function getNextAlivePlayer()

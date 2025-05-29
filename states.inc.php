@@ -75,7 +75,7 @@ $machinestates = array(
     		"descriptionmyturn" => clienttranslate('${you} must play a card and keep the other'),
     		"type" => "activeplayer",
     		"possibleactions" => array("playCard"),
-    		"transitions" => array("playCard" => 21, "bishopwillchoose" => 29, "cardinalchoice" => 40)
+    		"transitions" => array("nextPlayer" => 21, "chancellor" => 26)
     ),
 
     21 => array(
@@ -83,7 +83,7 @@ $machinestates = array(
         "description" => '',
         "type" => "game",
         "action" => "stNextPlayer",
-        "transitions" => array("nextPlayer" => 20, "endRound" => 25)
+        "transitions" => array("playerTurn" => 20, "endRound" => 25)
     ),
 
     25 => array(
@@ -94,37 +94,15 @@ $machinestates = array(
         "transitions" => array("newRound" => 10, "endGame" => 99)
     ),
 
-    29 => array(
-        "name" => "bishopWillChoose",
-        "description" => '',
-        "type" => "game",
-        "transitions" => array("bishoptargeted" => 30)
-    ),
-    30 => array(
-    		"name" => "bishoptargeted",
-    		"description" => clienttranslate('Bishop : ${actplayer} may discard his/her card.'),
-    		"descriptionmyturn" => clienttranslate('Bishop : ${you} may discard your card and draw another one.'),
+    26 => array(
+    		"name" => "chancellor",
+    		"description" => clienttranslate('Chancellor : ${actplayer} must keep 1 card and put the other 2 on the bottom of the deck in any order.'),
+    		"descriptionmyturn" => clienttranslate('Chancellor : ${you} must keep 1 card and put the other 2 on the bottom of the deck in any order.'),
     		"type" => "activeplayer",
-    		"possibleactions" => array( "bishopdiscard"),
-    		"transitions" => array( "bishopdiscard" => 31 )
+    		"possibleactions" => array("actionChancellor"),
+    		"args" => "argsChancellor",
+    		"transitions" => array("nextPlayer" => 21)
     ),
-    31 => array(
-        "name" => "bishopNextPlayer",
-        "description" => '',
-        "type" => "game",
-        "transitions" => array( "nextPlayer" => 21 )
-    ),
-
-    40 => array(
-    		"name" => "cardinalchoice",
-    		"description" => clienttranslate('Cardinal : ${actplayer} may look at one of the two hands.'),
-    		"descriptionmyturn" => clienttranslate('Cardinal : ${you} may look at one of the two hands.'),
-    		"type" => "activeplayer",
-    		"possibleactions" => array( "cardinalchoice"),
-    		"args" => "argsCardinalChoice",
-    		"transitions" => array( "cardinalchoice" => 21 )
-    ),
-
     
 /*
     Examples:
