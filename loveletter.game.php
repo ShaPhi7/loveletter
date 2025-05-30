@@ -277,55 +277,116 @@ class loveletter extends Table
         (note: each method below must match an input method in loveletter.action.php)
     */
 
-    function notifyPlayCard($card, $opponent_id) {
-        $player_id = self::getActivePlayerId();
-        $players = self::loadPlayersBasicInfos();
+    function playCard(int $card_id, array $opponents, int $guess_id)
+    {
+        // Check that this is the player's turn and that it is a "possible action" at this game state (see states.inc.php)
+        self::checkAction('playCard'); 
         
-        if ($opponent_id)
-        {
-            self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name} against ${player_name2}'),
-            array(
-                'i18n' => array('card_name'),
-                'player_name' => $players[$player_id]['player_name'],
-                'player_id' => $player_id,
-                'card_type' => $this->card_types[$card['type']],
-                'card_name' => $this->card_types[$card['type']]['name'],
-                'card' => $card,
-                'player_name2' => $players[$opponent_id]['player_name'],
-                'opponent_id' => $opponent_id,
-            ));
+        $player_id = self::getActivePlayerId();
+        $card = $this->cards->getCard($card_id);
+
+        self::validateCard($card);
+
+        //play card
+        $this->cards->insertCardOnExtremePosition( $card_id, 'discard'.$player_id, true );
+        self::setGameStateValue( 'last', $card['type'] );
+
+        $methodMap = [
+            self::GUARD      => 'playGuard',
+            self::PRIEST     => 'playPriest',
+            self::BARON      => 'playBaron',
+            self::HANDMAID   => 'playHandmaid',
+            self::PRINCE     => 'playPrince',
+            self::CHANCELLOR => 'playChancellor',
+            self::KING       => 'playKing',
+            self::COUNTESS   => 'playCountess',
+            self::PRINCESS   => 'playPrincess',
+            self::SPY        => 'playSpy',
+        ]; 
+    
+        $method = $methodMap[$card['type']];
+        $this->$method($card, $opponents[0] ?? null, $guess_id);
+        
+        $this->updateCardCount();
+
+        // the name of the stat is of the form "cardtype_played"
+        // e.g. "guard_played", "priest_played", etc.
+        self::incStat(1, strtolower($this->card_types[$card['type']]['name']) . '_played', $player_id);
+       
+        if ($card['type'] == SELF::CHANCELLOR) {
+            $this->gamestate->nextState('chancellor');
         }
-        else
-        {
-            self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name}'),
-            array(
-                'i18n' => array('card_name'),
-                'player_name' => $players[$player_id]['player_name'],
-                'player_id' => $player_id,
-                'card_type' => $this->card_types[$card['type']],
-                'card_name' => $this->card_types[$card['type']]['name'],
-                'card' => $card
-            ));
+        else {
+            $this->gamestate->nextState('nextPlayer');
         }
     }
 
-    /** 
-     * If all other alive players are protected by Handmaid 
-     */
-    function notifyPlayCardWithNoPossibleTarget($card)
+    function validateCard($card)
     {
         $player_id = self::getActivePlayerId();
-        $players = self::loadPlayersBasicInfos();
+        if ($card === null)
+        {
+            throw new feException( 'This card does not exist' );
+        }
 
-        self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name} with no effect (no possible target)'), array(
-            'i18n' => array('card_name'),
-            'player_name' => $players[$player_id]['player_name'],
-            'player_id' => $player_id,
-            'card_type' => $this->card_types[$card['type']],
-            'card_name' => $this->card_types[$card['type']]['name'],
-            'card' => $card,
-            'noeffect' => 1
-        ));
+        if ($card['location'] != 'hand' || $card['location_arg'] != $player_id)
+        {
+            throw new feException( 'This card is not in your hand' );
+        }    
+    }
+
+    function validateOpponent(int $opponent_id)
+    {
+        self::validatePlayer($opponent_id);
+
+        $player_id = self::getActivePlayerId();
+        if ($opponent_id == $player_id) {
+            throw new feException("You cannot play this card against yourself");
+        }
+
+        if (self::getUniqueValueFromDB("SELECT player_protected FROM player WHERE player_id='$opponent_id'") == 1) {
+            throw new feException("This player is protected by the handmaid and cannot be targeted");
+        }
+
+        $opponent_cards = $this->cards->getCardsInLocation('hand', $opponent_id);
+        if (count($opponent_cards) === 0) {
+            throw new feException("Error: cannot find opponent card");
+        }
+    }
+
+    function validatePlayer($player_id)
+    {
+        $players = self::loadPlayersBasicInfos();
+        if (!isset($players[$player_id])) {
+            throw new feException("This player does not exist");
+        }
+    }
+
+    function validatePlayerNotHoldingCountess($player_id)
+    {
+        $cards = $this->cards->getCardsInLocation('hand', $player_id);
+        foreach ($cards as $card) {
+            if ($card['type'] == self::COUNTESS) {
+                throw new feException("You cannot play this card while holding the Countess");
+            }
+        }
+    }
+
+    function validatePlayersOtherCardExists($player_id)
+    {
+        $cards = $this->cards->getCardsInLocation('hand', $player_id);
+        if (count($cards) === 0) {
+            throw new feException("Error: cannot find the player's other card");
+        }
+    }
+
+    function validateGuard($opponent_id, $guess_id)
+    {
+        self::validateOpponent($opponent_id);
+
+        if ($guess_id == self::GUARD) {
+            throw new feException("You cannot choose Guard");
+        }
     }
         
     function playGuard($card, int $opponent_id, int $guess_id)
@@ -338,27 +399,13 @@ class loveletter extends Table
             return;
         }
 
+        self::validateGuard($opponent_id, $guess_id);
+
         self::notifyPlayCard($card, $opponent_id);
         
         $players = self::loadPlayersBasicInfos();
-        //TODO VALIDATION EVERYWHERE ELSE
-        if ($opponent_id == $player_id) {
-            throw new feException(self::_("You must choose an opponent"), true);
-        }
 
-        if (self::getUniqueValueFromDB("SELECT player_protected FROM player WHERE player_id='$opponent_id'") == 1) {
-            throw new feException("This player is protected (handmaid)");
-        }
-
-        $opponent_cards = $this->cards->getCardsInLocation('hand', $opponent_id);
-        if (count($opponent_cards) === 0) {
-            throw new feException("Error: cannot find opponent card");
-        }
-        $opponent_card = reset($opponent_cards);
-
-        if ($guess_id == self::GUARD) {
-            throw new feException("You cannot choose Guard");
-        }
+        $opponent_card = reset($this->cards->getCardsInLocation('hand', $opponent_id));
 
         $guess_name = $this->card_types[ $guess_id ]['name'];
 
@@ -402,6 +449,11 @@ class loveletter extends Table
         }
     }
 
+    function validatePriest($opponent_id)
+    {
+        self::validateOpponent($opponent_id);
+    }
+
     function playPriest($card, int $opponent_id)
     {   
         $player_id = self::getActivePlayerId();
@@ -411,6 +463,8 @@ class loveletter extends Table
             self::notifyPlayCardWithNoPossibleTarget($card);
             return;
         }
+
+        self::validatePriest($opponent_id);
 
         self::notifyPlayCard($card, $opponent_id);
         
@@ -429,6 +483,12 @@ class loveletter extends Table
         self::notifyPlayer($player_id, 'unreveal', '', array('player_id' => $opponent_id));
     }
 
+    function validateBaron($player_id, $opponent_id)
+    {
+        self::validatePlayersOtherCardExists($player_id);
+        self::validateOpponent($opponent_id);
+    }
+
     function playBaron($card, int $opponent_id)
     {
         $player_id = self::getActivePlayerId();
@@ -437,6 +497,8 @@ class loveletter extends Table
             self::notifyPlayCardWithNoPossibleTarget($card);
             return;
         }
+
+        self::validateBaron($player_id, $opponent_id);
 
         self::notifyPlayCard($card, $opponent_id);
 
@@ -512,9 +574,21 @@ class loveletter extends Table
         self::notifyAllPlayers('protected', '', array( 'player' => $player_id));
     }
 
+    function validatePrince($player_id, $opponent_id)
+    {
+        self::validatePlayerNotHoldingCountess($player_id);
+        self::validatePlayer($opponent_id);
+        $cards = $this->cards->getCardsInLocation('aside');
+        if (count($cards) === 0) {
+            throw new feException("There are no cards set aside, so the round should be over.");
+        }
+    }
+
     function playPrince($card, int $opponent_id)
     {
         $player_id = self::getActivePlayerId();
+
+        self::validatePrince($player_id, $opponent_id);
 
         self::notifyPlayCard($card, $opponent_id);
 
@@ -617,6 +691,17 @@ class loveletter extends Table
         }
     }
 
+    function validateActionChancellor($chosenCard)
+    {
+        $player_id = self::getActivePlayerId();
+        $player_cards = $this->cards->getCardsInLocation('hand', $player_id);
+        $valid_card_ids = array_map(function($card) { return $card['id']; }, $player_cards);
+
+        if (!in_array($chosenCard, $valid_card_ids)) {
+            throw new feException("You must choose to keep one of the cards in your hand");
+        }
+    }
+
     function actionChancellor($chosenCard)
     {
         $players = self::loadPlayersBasicInfos();
@@ -643,6 +728,13 @@ class loveletter extends Table
         $this->gamestate->nextState('nextPlayer');
     }
 
+    function validateKing($player_id, $opponent_id)
+    {
+        self::validatePlayerNotHoldingCountess($player_id);
+        self::validatePlayersOtherCardExists($player_id);
+        self::validateOpponent($opponent_id);
+    }
+
     function playKing($card, int $opponent_id)
     {
         $player_id = self::getActivePlayerId();
@@ -652,6 +744,8 @@ class loveletter extends Table
             self::notifyPlayCardWithNoPossibleTarget($card);
             return;
         }
+
+        self::validateKing($player_id, $opponent_id);
 
         self::notifyPlayCard($card, $opponent_id);
 
@@ -699,53 +793,6 @@ class loveletter extends Table
 
         // nothing happens
     }
-
-    function playCard(int $card_id, array $opponents, int $guess_id)
-    {
-        // Check that this is the player's turn and that it is a "possible action" at this game state (see states.inc.php)
-        self::checkAction('playCard'); 
-        
-        $player_id = self::getActivePlayerId();
-
-        $card = $this->cards->getCard( $card_id );
-        if( $card === null )
-            throw new feException( 'This card does not exist' );
-        if( $card['location'] != 'hand' || $card['location_arg'] != $player_id )
-            throw new feException( 'This card is not in your hand' );
-
-        //play card
-        $this->cards->insertCardOnExtremePosition( $card_id, 'discard'.$player_id, true );
-        self::setGameStateValue( 'last', $card['type'] );
-
-        $methodMap = [
-            self::GUARD      => 'playGuard',
-            self::PRIEST     => 'playPriest',
-            self::BARON      => 'playBaron',
-            self::HANDMAID   => 'playHandmaid',
-            self::PRINCE     => 'playPrince',
-            self::CHANCELLOR => 'playChancellor',
-            self::KING       => 'playKing',
-            self::COUNTESS   => 'playCountess',
-            self::PRINCESS   => 'playPrincess',
-            self::SPY        => 'playSpy',
-        ]; 
-    
-        $method = $methodMap[$card['type']];
-        $this->$method($card, $opponents[0] ?? null, $guess_id);
-        
-        $this->updateCardCount();
-
-        // the name of the stat is of the form "cardtype_played"
-        // e.g. "guard_played", "priest_played", etc.
-        self::incStat(1, strtolower($this->card_types[$card['type']]['name']) . '_played', $player_id);
-       
-        if ($card['type'] == SELF::CHANCELLOR) {
-            $this->gamestate->nextState('chancellor');
-        }
-        else {
-            $this->gamestate->nextState('nextPlayer');
-        }
-    }
     
     function outOfTheRound($player_id, $killer_id, $bCardAlreadyDiscarded=false)
     {
@@ -785,6 +832,63 @@ class loveletter extends Table
         }
     }
 
+    function notifyPlayCard($card, $opponent_id) {
+        $player_id = self::getActivePlayerId();
+        $players = self::loadPlayersBasicInfos();
+        
+        if ($opponent_id)
+        {
+            self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name} against ${player_name2}'),
+            array(
+                'i18n' => array('card_name'),
+                'player_name' => $players[$player_id]['player_name'],
+                'player_id' => $player_id,
+                'card_type' => $this->card_types[$card['type']],
+                'card_name' => $this->card_types[$card['type']]['name'],
+                'card' => $card,
+                'player_name2' => $players[$opponent_id]['player_name'],
+                'opponent_id' => $opponent_id,
+            ));
+        }
+        else
+        {
+            self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name}'),
+            array(
+                'i18n' => array('card_name'),
+                'player_name' => $players[$player_id]['player_name'],
+                'player_id' => $player_id,
+                'card_type' => $this->card_types[$card['type']],
+                'card_name' => $this->card_types[$card['type']]['name'],
+                'card' => $card
+            ));
+        }
+    } 
+
+    /** 
+     * If all other alive players are protected by Handmaid 
+     */
+    function notifyPlayCardWithNoPossibleTarget($card)
+    {
+        $player_id = self::getActivePlayerId();
+
+        $possible_opponents = self::getObjectListFromDb("SELECT player_id FROM player WHERE player_id!='$player_id' AND player_protected='0' AND player_alive='1'", true);
+        if (!empty($possible_opponents))
+        {
+            throw new feException("There are possible targets, but no opponent was selected");
+        }
+        
+        $players = self::loadPlayersBasicInfos();
+
+        self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name} with no effect (no possible target)'), array(
+            'i18n' => array('card_name'),
+            'player_name' => $players[$player_id]['player_name'],
+            'player_id' => $player_id,
+            'card_type' => $this->card_types[$card['type']],
+            'card_name' => $this->card_types[$card['type']]['name'],
+            'card' => $card,
+            'noeffect' => 1
+        ));
+    }
     
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
@@ -916,7 +1020,7 @@ class loveletter extends Table
         $next_player = self::getNextAlivePlayer();
 
         $this->gamestate->changeActivePlayer($next_player);
-        
+        //TODO - do you need to validate here?
         // ... draw 1 card
         $card = $this->cards->pickCard('deck', $next_player);
         $this->updateCardCount();
