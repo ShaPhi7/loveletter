@@ -124,15 +124,6 @@ function (dojo, declare) {
                 this.discards[player_id].selectable = 0;
             }
             
-            if (gamedatas.jester != 0)
-            {
-                this.setJester(gamedatas.jester);            
-            }
-            if (gamedatas.sycophant != 0)
-            {
-                this.setSycophant(gamedatas.sycophant);
-            }
-            
             if (players_nbr == 3)
             {
                 dojo.addClass('ll_background', 'threeplayermode');
@@ -487,39 +478,6 @@ function (dojo, declare) {
         setUnprotected: function(player_id)
         {
             dojo.style('player_protection_'+player_id, 'display', 'none');   
-        },
-
-        setJester: function(player_id)
-        {
-            dojo.style('player_jester_'+player_id, 'display', 'inline');   
-
-            var anim = dojo.fx.chain([
-                    dojo.fadeOut({ node: $('player_jester_'+player_id) }),
-                    dojo.fadeIn({ node: $('player_jester_'+player_id) }),
-                    dojo.fadeOut({ node: $('player_jester_'+player_id) }),
-                    dojo.fadeIn({ node: $('player_jester_'+player_id) }),
-                 ]);
-            anim.play();
-            
-        },
-        setSycophant: function(player_id)
-        {
-            if (player_id != 0 && $('player_sycophant_'+player_id))
-            {
-                dojo.style('player_sycophant_'+player_id, 'display', 'inline');   
-
-                var anim = dojo.fx.chain([
-                        dojo.fadeOut({ node: $('player_sycophant_'+player_id) }),
-                        dojo.fadeIn({ node: $('player_sycophant_'+player_id) }),
-                        dojo.fadeOut({ node: $('player_sycophant_'+player_id) }),
-                        dojo.fadeIn({ node: $('player_sycophant_'+player_id) }),
-                     ]);
-                anim.play();
-            }
-            else
-            {
-                dojo.query('.player_sycophant').style('display', 'none');
-            }            
         },
         
 
@@ -1187,8 +1145,6 @@ function (dojo, declare) {
             dojo.subscribe('cardexchange', this, 'notif_cardexchange');
 
             dojo.subscribe('protected', this, 'notif_protected');
-            dojo.subscribe('jester', this, 'notif_jester');
-            dojo.subscribe('sycophant', this, 'notif_sycophant');
             dojo.subscribe('bishopGuessKeptCard', this, 'notif_bishopGuessKeptCard')
 
             dojo.subscribe('cardPlayedResult', this, 'notif_cardPlayedResult');
@@ -1427,10 +1383,6 @@ function (dojo, declare) {
             {
                 this.showDiscussion(notif.args.player_id, _("I correctly guess the card with the Bishop and score 1 point!"), 0, 3000);            
             }
-            else if (notif.args.type == 'jester')
-            {
-                this.showDiscussion(notif.args.player_id, _("I correctly guess this round winner and score 1 point thanks to the Jester!"), 0, 3000);            
-            }
         },
         notif_newRound: function(notif)
         {
@@ -1450,9 +1402,6 @@ function (dojo, declare) {
                 this.playerHand.removeAll();
             }
             dojo.query('.cardontable').forEach(this.fadeOutAndDestroy);
-            dojo.query('.player_jester').style('display', 'none');
-            dojo.query('.player_sycophant').style('display', 'none');
-
 
             this.enableAllPlayerPanels();
             dojo.query('.outOfTheRound').removeClass('outOfTheRound');
@@ -1493,14 +1442,6 @@ function (dojo, declare) {
         notif_protected: function(notif)
         {
             this.setProtected(notif.args.player);
-        },
-        notif_jester: function(notif)
-        {
-            this.setJester(notif.args.player);
-        },
-        notif_sycophant: function(notif)
-        {
-            this.setSycophant(notif.args.player);
         },
         notif_bishopGuessKeptCard: function(notif)
         {
