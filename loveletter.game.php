@@ -44,7 +44,7 @@ class loveletter extends Table
         //  the corresponding ID in gameoptions.inc.php.
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();self::initGameStateLabels( array(
-            'last' => 10,
+            'last' => 10, //TODO - what does this do?
          
             //    "my_first_global_variable" => 10,
             //    "my_second_global_variable" => 11,
@@ -86,20 +86,20 @@ class loveletter extends Table
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
         $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
         $values = array();
-        foreach( $players as $player_id => $player )
+        foreach ($players as $player_id => $player)
         {
             $color = array_shift( $default_colors );
             $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
         }
-        $sql .= implode( ',', $values );
-        self::DbQuery( $sql );
-        self::reattributeColorsBasedOnPreferences( $players, $gameinfos['player_colors'] );
+        $sql .= implode(',', $values);
+        self::DbQuery($sql);
+        self::reattributeColorsBasedOnPreferences($players, $gameinfos['player_colors']);
         self::reloadPlayersBasicInfos();
 
         /************ Start the game initialization *****/
 
         // Init global values with their initial values
-        self::setGameStateInitialValue( 'last', 0 );
+        self::setGameStateInitialValue('last', 0);
 
         // Init game statistics
         // (note: statistics used in this file must be defined in your stats.inc.php file)
@@ -122,10 +122,9 @@ class loveletter extends Table
 
 		$players = self::loadPlayersBasicInfos();
 
-		foreach( $this->card_types as $type_id => $type )
+		foreach ($this->card_types as $type_id => $type)
 		{
-            if( count( $players ) > 4 || $type_id <10 ) // Note : cards with type > 10 are for 5+ players only
-    		    $cards[] = array( 'type' => $type_id, 'type_arg' => $type_id, 'nbr' => $type['qt'] );
+    		$cards[] = array('type' => $type_id, 'type_arg' => $type_id, 'nbr' => $type['qt']);
 		}
 
 		$this->cards->createCards($cards, 'deck');
@@ -151,38 +150,28 @@ class loveletter extends Table
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
         $sql = "SELECT player_id id, player_score score, player_alive alive, player_protected protection FROM player ";
-        $result['players'] = self::getCollectionFromDb( $sql );
-        $result['players_nbr'] = count( $result['players'] );
-  
+        $result['players'] = self::getCollectionFromDb($sql);
+        $result['players_nbr'] = count($result['players']);
+
         // Gather all information about current game situation (visible by player $current_player_id).
 		$result['hand'] = $this->cards->getCardsInLocation('hand', $current_player_id);
-		
+		$result['deck'] = $this->cards->getCardsInLocation('deck', null, 'card_location_arg');
 		// Note : discarded cards
 		$players = self::loadPlayersBasicInfos();
 		$result['discard'] = array();
-		foreach( $players as $player_id => $player )
+		foreach ($players as $player_id)
 		{
-		    $result['discard'][ $player_id ] = $this->cards->getCardsInLocation( 'discard'.$player_id, null, 'card_location_arg' );
+		    $result['discard'][$player_id] = $this->cards->getCardsInLocation('discard'.$player_id, null, 'card_location_arg');
 		}
-		$result['last'] = self::getGameStateValue( 'last' );
-		
+		$result['last'] = self::getGameStateValue('last');
+
 		// Card count
 		$result['cardcount'] = $this->cards->countCardsInLocations();
-		$result['cardcount']['hand'] = $this->cards->countCardsByLocationArgs( 'hand' );
-        if( ! isset( $result['cardcount']['deck'] ) )
+		$result['cardcount']['hand'] = $this->cards->countCardsByLocationArgs('hand');
+        if (!isset($result['cardcount']['deck']))
             $result['cardcount']['deck'] = 0;
 
-  
         $result['card_types'] = $this->card_types;
-        if( count( $result['players'] ) <= 4 )
-        {
-            // Remove extension cards
-            foreach( $result['card_types'] as $i => $card )
-            {
-                if( $i >= 10 )
-                    unset( $result['card_types'][ $i ] );
-            }
-        }
   
         return $result;
     }
@@ -190,12 +179,12 @@ class loveletter extends Table
     function updateCardCount()
     {
 		$count = $this->cards->countCardsInLocations();
-		$count['hand'] = $this->cards->countCardsByLocationArgs( 'hand' );
+		$count['hand'] = $this->cards->countCardsByLocationArgs('hand');
 
-        if( ! isset( $count['deck'] ) )
+        if (!isset($count['deck']))
             $count['deck'] = 0;
 
-        self::notifyAllPlayers( 'updateCount', '', array( 'count' => $count ) );
+        self::notifyAllPlayers('updateCount', '', array('count' => $count));
     }
 
     /*
@@ -211,9 +200,9 @@ class loveletter extends Table
     function getGameProgression()
     {
         $end_score = $this->getEndScore();
-        $max_score = self::getUniqueValueFromDB( "SELECT MAX( player_score ) FROM player" );
+        $max_score = self::getUniqueValueFromDB("SELECT MAX( player_score ) FROM player");
 
-        return round( 100 * $max_score / $end_score );
+        return round(100 * $max_score / $end_score);
     }
 
 
@@ -1207,7 +1196,7 @@ class loveletter extends Table
         You can do whatever you want in order to make sure the turn of this player ends appropriately
         (ex: pass).
     */
-
+    //TODO - can improve?
     function zombieTurn( $state, $active_player )
     {
     	$statename = $state['name'];
