@@ -72,15 +72,15 @@ function (dojo, declare) {
                 if(player_id != this.player_id)
                 {
                     // Create opponent hand
-                    this.opponentHands[ player_id ] = new ebg.stock();
-                    this.opponentHands[ player_id ].create(this, $('playertablecard_'+player_id), 58, 80);
+                    this.opponentHands[player_id] = new ebg.stock();
+                    this.opponentHands[player_id].create(this, $('playertablecard_'+player_id), 58, 80);
                     for(var i in this.gamedatas.card_types)
                     {
-                        this.opponentHands[ player_id ].addItemType(i, 0, g_gamethemeurl+'img/backmini.jpg', i-1);                    
+                        this.opponentHands[player_id].addItemType(i, 0, g_gamethemeurl+'img/backmini.jpg', i-1);                    
                     }
-                    this.opponentHands[ player_id ].addItemType(0, 0, g_gamethemeurl+'img/backmini.jpg', 8); // back
-                    this.opponentHands[ player_id ].autowidth = true;
-                    this.opponentHands[ player_id ].selectable = 0;                    
+                    this.opponentHands[player_id].addItemType(0, 0, g_gamethemeurl+'img/backmini.jpg', 8); // back
+                    this.opponentHands[player_id].autowidth = true;
+                    this.opponentHands[player_id].selectable = 0;                    
                 }
                 
                 if(player.alive == 0)
@@ -95,33 +95,33 @@ function (dojo, declare) {
                 }
                 
                 // Played Cards number in discard
-                this.discards[ player_id ] = new ebg.stock();
+                this.discards[player_id] = new ebg.stock();
                 if(this.card_width == 127)
                 {
-                    this.discards[ player_id ].create(this, $('discardcontent_'+player_id), 42, 42);
+                    this.discards[player_id].create(this, $('discardcontent_'+player_id), 42, 42);
                 }
                 else
                 {
-                    this.discards[ player_id ].create(this, $('discardcontent_'+player_id), 30, 30);
+                    this.discards[player_id].create(this, $('discardcontent_'+player_id), 30, 30);
                 }
-                this.discards[ player_id ].onItemCreate = dojo.hitch(this, 'setupNewCardIcon'); 
+                this.discards[player_id].onItemCreate = dojo.hitch(this, 'setupNewCardIcon'); 
                 for(var i in this.gamedatas.card_types)
                 {
                     if(this.card_width == 127)
                     {
-                        this.discards[ player_id ].addItemType(i, 0, g_gamethemeurl+'img/cardnumbers.png', i-1);
+                        this.discards[player_id].addItemType(i, 0, g_gamethemeurl+'img/cardnumbers.png', i-1);
                     }
                     else
                     {
-                        this.discards[ player_id ].addItemType(i, 0, g_gamethemeurl+'img/cardnumbers_small.png', i-1);
+                        this.discards[player_id].addItemType(i, 0, g_gamethemeurl+'img/cardnumbers_small.png', i-1);
                     }
                 }
-                for(var i in gamedatas.discard[ player_id ])
+                for(var i in gamedatas.discard[player_id])
                 {
-                    var card = gamedatas.discard[ player_id ][i];
-                    this.discards[ player_id ].addToStockWithId(card.type, card.id);
+                    var card = gamedatas.discard[player_id][i];
+                    this.discards[player_id].addToStockWithId(card.type, card.id);
                 }
-                this.discards[ player_id ].selectable = 0;
+                this.discards[player_id].selectable = 0;
             }
             
             if(gamedatas.jester != 0)
@@ -324,18 +324,18 @@ function (dojo, declare) {
                 if(player_id != this.player_id)
                 {
                     var nbr = 0;
-                    if(cardcount.hand[ player_id ])
+                    if(cardcount.hand[player_id])
                     {
-                        nbr = cardcount.hand[ player_id ];
+                        nbr = cardcount.hand[player_id];
                     }
                     
-                    while(nbr < this.opponentHands[ player_id ].count())
+                    while(nbr < this.opponentHands[player_id].count())
                     {
-                        this.opponentHands[ player_id ].removeFromStock(0);
+                        this.opponentHands[player_id].removeFromStock(0);
                     }
-                    while(nbr > this.opponentHands[ player_id ].count())
+                    while(nbr > this.opponentHands[player_id].count())
                     {
-                        this.opponentHands[ player_id ].addToStock(0, 'deck');
+                        this.opponentHands[player_id].addToStock(0, 'deck');
                     }
                 }
             }
@@ -358,7 +358,7 @@ function (dojo, declare) {
                 var anim = dojo.fx.chain([
                     this.slideToObject('cardontable_'+id, 'playertablename_'+opponent_id, 1000),
                     this.slideToObject('cardontable_'+id, 'discard', 1000)
-                ]);
+             ]);
             }
             else
             {
@@ -370,7 +370,7 @@ function (dojo, declare) {
             
             if(player_id != 0)
             {
-                this.discards[ player_id ].addToStockWithId(type, id, from);
+                this.discards[player_id].addToStockWithId(type, id, from);
             }
         },
         
@@ -391,21 +391,21 @@ function (dojo, declare) {
                 this.doShowDiscussion(player_id, text);
             }
 
-            if(this.discussionTimeout[ player_id ])
+            if(this.discussionTimeout[player_id])
             {
-                clearTimeout(this.discussionTimeout[ player_id ]);
-                delete this.discussionTimeout[ player_id ];
+                clearTimeout(this.discussionTimeout[player_id]);
+                delete this.discussionTimeout[player_id];
             }
 
             
-            this.discussionTimeout[ player_id ] = setTimeout(dojo.hitch(this, function() {  this.doShowDiscussion(player_id, ''); }), delay+duration);
+            this.discussionTimeout[player_id] = setTimeout(dojo.hitch(this, function() {  this.doShowDiscussion(player_id, ''); }), delay+duration);
         },
         doShowDiscussion: function(player_id, text)
         {
             if(text == '')
             {
-                if(this.discussionTimeout[ player_id ])
-                {   delete this.discussionTimeout[ player_id ]; }
+                if(this.discussionTimeout[player_id])
+                {   delete this.discussionTimeout[player_id]; }
             
                 // Hide
                 var anim = dojo.fadeOut({ node : 'discussion_bubble_'+player_id, duration:100 });
@@ -429,7 +429,7 @@ function (dojo, declare) {
         {
             if(card_type_id != 0)
             {
-                var card = this.gamedatas.card_types[ card_type_id ];
+                var card = this.gamedatas.card_types[card_type_id];
                 var html = this.getCardTooltip(card_type_id, false);
            
                 this.addTooltipHtml(card_div.id, html, 100);
@@ -445,7 +445,7 @@ function (dojo, declare) {
         {
             if(card_type_id != 0)
             {
-                var card = this.gamedatas.card_types[ card_type_id ];
+                var card = this.gamedatas.card_types[card_type_id];
                 var html = this.getCardTooltip(card_type_id, false);
            
                 this.addTooltipHtml(card_div.id, html, 100);
@@ -462,9 +462,9 @@ function (dojo, declare) {
         {
             var html = "<div class='tooltip_wrap'>";
             
-            html += '<h3>'+ _(this.gamedatas.card_types[ type_id ].name) +' ('+ this.gamedatas.card_types[ type_id ].value +')</h3>';
+            html += '<h3>'+ _(this.gamedatas.card_types[type_id].name) +' ('+ this.gamedatas.card_types[type_id].value +')</h3>';
             html += '<hr/>';
-            html += _(this.gamedatas.card_types[ type_id ].description);
+            html += _(this.gamedatas.card_types[type_id].description);
             
             html += '</div>';
             
@@ -480,7 +480,7 @@ function (dojo, declare) {
                     dojo.fadeIn({ node: $('player_protection_'+player_id) }),
                     dojo.fadeOut({ node: $('player_protection_'+player_id) }),
                     dojo.fadeIn({ node: $('player_protection_'+player_id) }),
-                    ]);
+                 ]);
             anim.play();
             
         },
@@ -498,7 +498,7 @@ function (dojo, declare) {
                     dojo.fadeIn({ node: $('player_jester_'+player_id) }),
                     dojo.fadeOut({ node: $('player_jester_'+player_id) }),
                     dojo.fadeIn({ node: $('player_jester_'+player_id) }),
-                    ]);
+                 ]);
             anim.play();
             
         },
@@ -513,7 +513,7 @@ function (dojo, declare) {
                         dojo.fadeIn({ node: $('player_sycophant_'+player_id) }),
                         dojo.fadeOut({ node: $('player_sycophant_'+player_id) }),
                         dojo.fadeIn({ node: $('player_sycophant_'+player_id) }),
-                        ]);
+                     ]);
                 anim.play();
             }
             else
@@ -652,34 +652,34 @@ function (dojo, declare) {
                         if(card.type == 14)
                         {   title = _('Bishop : Guess who is ${player}?');    }
                         
-                        var guardDlg = new dijit.Dialog({ title: dojo.string.substitute(title , { player: this.gamedatas.players[ opponent_id ].name }) });
+                        var guardDlg = new dijit.Dialog({ title: dojo.string.substitute(title , { player: this.gamedatas.players[opponent_id].name }) });
 
                         var html = "<div id='guard_dialog' style='max-width:500px;'>";
 
 
                         var cardlist = [
-                            { num: 8, nam: _(this.gamedatas.card_types[ 8 ].name) },
-                            { num: 7, nam: _(this.gamedatas.card_types[ 7 ].name) },
-                            { num: 6, nam: _(this.gamedatas.card_types[ 6 ].name) },
-                            { num: 5, nam: _(this.gamedatas.card_types[ 5 ].name) },
-                            { num: 4, nam: _(this.gamedatas.card_types[ 4 ].name) },
-                            { num: 3, nam: _(this.gamedatas.card_types[ 3 ].name) },
-                            { num: 2, nam: _(this.gamedatas.card_types[ 2 ].name) },
-                        ];
+                            { num: 8, nam: _(this.gamedatas.card_types[8].name) },
+                            { num: 7, nam: _(this.gamedatas.card_types[7].name) },
+                            { num: 6, nam: _(this.gamedatas.card_types[6].name) },
+                            { num: 5, nam: _(this.gamedatas.card_types[5].name) },
+                            { num: 4, nam: _(this.gamedatas.card_types[4].name) },
+                            { num: 3, nam: _(this.gamedatas.card_types[3].name) },
+                            { num: 2, nam: _(this.gamedatas.card_types[2].name) },
+                     ];
                         
                         if(toint(this.gamedatas.players_nbr) > 4)
                         {
                             cardlist = [
-                                { num: 9, nam: _(this.gamedatas.card_types[ 14 ].name) },
-                                { num: 8, nam: _(this.gamedatas.card_types[ 8 ].name) },
-                                { num: 7, nam: _(this.gamedatas.card_types[ 7 ].name)+' / '+_(this.gamedatas.card_types[ 11 ].name) },
-                                { num: 6, nam: _(this.gamedatas.card_types[ 6 ].name)+' / '+_(this.gamedatas.card_types[ 15 ].name) },
-                                { num: 5, nam: _(this.gamedatas.card_types[ 5 ].name)+' / '+_(this.gamedatas.card_types[ 18 ].name) },
-                                { num: 4, nam: _(this.gamedatas.card_types[ 4 ].name)+' / '+_(this.gamedatas.card_types[ 17 ].name) },
-                                { num: 3, nam: _(this.gamedatas.card_types[ 3 ].name)+' / '+_(this.gamedatas.card_types[ 19 ].name) },
-                                { num: 2, nam: _(this.gamedatas.card_types[ 2 ].name)+' / '+_(this.gamedatas.card_types[ 20 ].name) },
+                                { num: 9, nam: _(this.gamedatas.card_types[14].name) },
+                                { num: 8, nam: _(this.gamedatas.card_types[8].name) },
+                                { num: 7, nam: _(this.gamedatas.card_types[7].name)+' / '+_(this.gamedatas.card_types[11].name) },
+                                { num: 6, nam: _(this.gamedatas.card_types[6].name)+' / '+_(this.gamedatas.card_types[15].name) },
+                                { num: 5, nam: _(this.gamedatas.card_types[5].name)+' / '+_(this.gamedatas.card_types[18].name) },
+                                { num: 4, nam: _(this.gamedatas.card_types[4].name)+' / '+_(this.gamedatas.card_types[17].name) },
+                                { num: 3, nam: _(this.gamedatas.card_types[3].name)+' / '+_(this.gamedatas.card_types[19].name) },
+                                { num: 2, nam: _(this.gamedatas.card_types[2].name)+' / '+_(this.gamedatas.card_types[20].name) },
                                 { num: 0, nam: (card.type == 14 ? _(this.gamedatas.card_types[13].name) + ' / ' : '') +  _(this.gamedatas.card_types[16].name) },
-                            ];
+                         ];
                         }
 
                         for(var i in cardlist)
@@ -1219,7 +1219,7 @@ function (dojo, declare) {
         
         notif_cardinalReveal: function(notif)
         {
-            this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name} please show me your card.'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>' }));
+            this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name} please show me your card.'), { player_name: '<span style="color:#'+this.gamedatas.players[notif.args.opponent_id].color+'">'+ this.gamedatas.players[notif.args.opponent_id].name+'</span>' }));
             this.showDiscussion(notif.args.opponent_id, _('Here it is.'), 2000);
         },
         
@@ -1244,7 +1244,7 @@ function (dojo, declare) {
                 {
                     // Guard : who are you?
                     this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name}, I think you are a ${guess}!'), { 
-                        player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>',
+                        player_name: '<span style="color:#'+this.gamedatas.players[notif.args.opponent_id].color+'">'+ this.gamedatas.players[notif.args.opponent_id].name+'</span>',
                         guess: '<b>'+notif.args.guess_name+'</b>'
                     }));
                 }
@@ -1256,7 +1256,7 @@ function (dojo, declare) {
                     for(var i in notif.args.opponents)
                     {
                         var opponent_id = notif.args.opponents[i];
-                        this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name} please show me your card.'), { player_name: '<span style="color:#'+this.gamedatas.players[ opponent_id ].color+'">'+ this.gamedatas.players[ opponent_id ].name+'</span>' }), delay);
+                        this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name} please show me your card.'), { player_name: '<span style="color:#'+this.gamedatas.players[opponent_id].color+'">'+ this.gamedatas.players[opponent_id].name+'</span>' }), delay);
                         this.showDiscussion(opponent_id, _('Here it is.'), delay+2000);
                         
                         delay += 2000;
@@ -1264,7 +1264,7 @@ function (dojo, declare) {
                 }
                 else if(notif.args.card.type == 3 || notif.args.card.type == 11)
                 {
-                    this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name}, let`s compare our cards...'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>' }));
+                    this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name}, let`s compare our cards...'), { player_name: '<span style="color:#'+this.gamedatas.players[notif.args.opponent_id].color+'">'+ this.gamedatas.players[notif.args.opponent_id].name+'</span>' }));
                     this.showDiscussion(notif.args.opponent_id, _('Alright.'), 2000);
                 }
                 else if(notif.args.card.type == 4)
@@ -1275,7 +1275,7 @@ function (dojo, declare) {
                 {
                     if(notif.args.player_id != notif.args.opponent_id)
                     {
-                        this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name}, you must discard your card.'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>' }));
+                        this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name}, you must discard your card.'), { player_name: '<span style="color:#'+this.gamedatas.players[notif.args.opponent_id].color+'">'+ this.gamedatas.players[notif.args.opponent_id].name+'</span>' }));
                         this.showDiscussion(notif.args.opponent_id, _('Alright.'), 2000);
                     }
                     else
@@ -1285,12 +1285,12 @@ function (dojo, declare) {
                 }
                 else if(notif.args.card.type == 6 )
                 {
-                    this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name}, we must exchange our hand.'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>' }));
+                    this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name}, we must exchange our hand.'), { player_name: '<span style="color:#'+this.gamedatas.players[notif.args.opponent_id].color+'">'+ this.gamedatas.players[notif.args.opponent_id].name+'</span>' }));
                     this.showDiscussion(notif.args.opponent_id, _('Alright.'), 2000);
                 }
                 else if(notif.args.card.type == 20)
                 {
-                    this.showDiscussion(notif.args.opponents[0], dojo.string.substitute(_('${player_name}, we must exchange our hand.'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponents[1] ].color+'">'+ this.gamedatas.players[ notif.args.opponents[1] ].name+'</span>' }));
+                    this.showDiscussion(notif.args.opponents[0], dojo.string.substitute(_('${player_name}, we must exchange our hand.'), { player_name: '<span style="color:#'+this.gamedatas.players[notif.args.opponents[1]].color+'">'+ this.gamedatas.players[notif.args.opponents[1]].name+'</span>' }));
                     this.showDiscussion(notif.args.opponents[1], _('Alright.'), 2000);
                 }
                 else if(notif.args.card.type == 18)
@@ -1350,14 +1350,14 @@ function (dojo, declare) {
                     if(notif.args.card_type == 3)
                     {
                         this.showDiscussion(notif.args.winner_id, dojo.string.substitute(_('My card is higher than the ${card_name} of ${player_name}.'), { 
-                            player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.loser_id ].color+'">'+ this.gamedatas.players[ notif.args.loser_id ].name+'</span>',
+                            player_name: '<span style="color:#'+this.gamedatas.players[notif.args.loser_id].color+'">'+ this.gamedatas.players[notif.args.loser_id].name+'</span>',
                             card_name: '<b>'+notif.args.card_name+'</b>'
                         }));
                     }
                     else
                     {
                         this.showDiscussion(notif.args.winner_id, dojo.string.substitute(_('My card is lower than the ${card_name} of ${player_name}.'), { 
-                            player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.loser_id ].color+'">'+ this.gamedatas.players[ notif.args.loser_id ].name+'</span>',
+                            player_name: '<span style="color:#'+this.gamedatas.players[notif.args.loser_id].color+'">'+ this.gamedatas.players[notif.args.loser_id].name+'</span>',
                             card_name: '<b>'+notif.args.card_name+'</b>'
                         }));
                     }
@@ -1398,14 +1398,14 @@ function (dojo, declare) {
                 if(card.location_arg != this.player_id)
                 {
                     //alert(card.location_arg+' => '+card.type);
-                    this.opponentHands[ card.location_arg ].removeAll();
-                    this.opponentHands[ card.location_arg ].addToStock(card.type);
+                    this.opponentHands[card.location_arg].removeAll();
+                    this.opponentHands[card.location_arg].addToStock(card.type);
                 }
             }
         },
         notif_score: function(notif)
         {
-            this.scoreCtrl[ notif.args.player_id ].incValue(1);
+            this.scoreCtrl[notif.args.player_id].incValue(1);
             
             if(notif.args.type == 'remaining')
             {
@@ -1439,9 +1439,9 @@ function (dojo, declare) {
             {
                 if(player_id != this.player_id)
                 {
-                    this.opponentHands[ player_id ].removeAll();
+                    this.opponentHands[player_id].removeAll();
                 }
-                this.discards[ player_id ].removeAll();
+                this.discards[player_id].removeAll();
                 
                 this.setUnprotected(player_id);
             }
@@ -1459,13 +1459,13 @@ function (dojo, declare) {
         },
         notif_reveal: function(notif)
         {
-            this.opponentHands[ notif.args.player_id ].removeAll();
-            this.opponentHands[ notif.args.player_id ].addToStock(notif.args.card_type);
+            this.opponentHands[notif.args.player_id].removeAll();
+            this.opponentHands[notif.args.player_id].addToStock(notif.args.card_type);
         },
         notif_unreveal: function(notif)
         {
-            this.opponentHands[ notif.args.player_id ].removeAll();
-            this.opponentHands[ notif.args.player_id ].addToStock(0);
+            this.opponentHands[notif.args.player_id].removeAll();
+            this.opponentHands[notif.args.player_id].addToStock(0);
         },
         notif_outOfTheRound: function(notif)
         {
@@ -1478,15 +1478,15 @@ function (dojo, declare) {
             // Slide a card (back) from player 1 to player 2 (except if player 2 = current player)
             if(notif.args.player_2 != this.player_id)
             {
-                this.opponentHands[ notif.args.player_2 ].addToStock(0, 'playertable_'+notif.args.player_1);
-                this.opponentHands[ notif.args.player_2 ].removeFromStock(0);
+                this.opponentHands[notif.args.player_2].addToStock(0, 'playertable_'+notif.args.player_1);
+                this.opponentHands[notif.args.player_2].removeFromStock(0);
             }
         
             // Slide a card (back) from player 2 to player 1 (except if player 1 = current player)
             if(notif.args.player_1 != this.player_id)
             {
-                this.opponentHands[ notif.args.player_1 ].addToStock(0, 'playertable_'+notif.args.player_2);
-                this.opponentHands[ notif.args.player_1 ].removeFromStock(0);
+                this.opponentHands[notif.args.player_1].addToStock(0, 'playertable_'+notif.args.player_2);
+                this.opponentHands[notif.args.player_1].removeFromStock(0);
             }
             
         },
