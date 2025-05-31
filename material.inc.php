@@ -27,7 +27,7 @@ $this->card_types = array(
         "nametr" => self::_('Guard'),
         "description" => clienttranslate('Choose a number other than 1 and choose another player. If that player has the corresponding card, he or she is out of the round.'),
         "shortdescr" => self::_("Guess a player's hand."),
-        'qt' => 5,
+        'qt' => 6,
         'value' => 1
     ),
     22 => array( 
