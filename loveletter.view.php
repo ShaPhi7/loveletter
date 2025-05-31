@@ -60,21 +60,22 @@
         $expl = '';
 
         $expl .= '<h4>'.self::_("List of cards").'</h4>';
-        for( $i=8;$i>=1;$i-- )
+        // Get the card type ids dynamically from material.inc.php or game.php
+        // Assuming $this->game->card_types is defined in material.inc.php or game.php
+        // and contains all card types as an associative array with keys as ids
+
+        // Get all card ids, filter for those between 21 and 30 (inclusive), and sort descending
+        $card_ids = array_keys($this->game->card_types);
+
+        foreach ($card_ids as $i)
         {
-//            $expl .= '<b>';
             $expl .= '<div class="cardexpl_number">';
-                $expl .= $i.' - ';
+            $expl .= $this->game->card_types[$i]['value'].' - ';
             $expl .= '</div>';
             $expl .= '<div class="cardexpl_descr">';
-                $expl .= $this->game->card_types[$i]['nametr'];
-      //          $expl .= '</b>';
-
-            if( $i == 1 &&  $players_nbr > 4 )
-                $this->game->card_types[$i]['qt']+= 3;  // Add 3 guards
-
-                $expl .= ' ('.$this->game->card_types[$i]['qt'].') : ';
-                $expl .= $this->game->card_types[$i]['shortdescr'];
+            $expl .= $this->game->card_types[$i]['nametr'];
+            $expl .= ' ('.$this->game->card_types[$i]['qt'].') : ';
+            $expl .= $this->game->card_types[$i]['shortdescr'];
             $expl .= '</div>';
         }
 
@@ -85,19 +86,19 @@
 
         $expl = '';
 
-        foreach( array(14,11,15,18,17,19,20,16,13) as $i )
-        {
-//            $expl .= '<b>';
-            $expl .= '<div class="cardexpl_number">';
-                $expl .=  $this->game->card_types[$i]['value'].' - ';
-            $expl .= '</div>';
-            $expl .= '<div class="cardexpl_descr">';
-                $expl .= $this->game->card_types[$i]['nametr'];
-      //          $expl .= '</b>';
-                $expl .= ' ('.$this->game->card_types[$i]['qt'].') : ';
-                $expl .= $this->game->card_types[$i]['shortdescr'];
-            $expl .= '</div>';
-        }
+//         foreach( array(14,11,15,18,17,19,20,16,13) as $i )
+//         {
+// //            $expl .= '<b>';
+//             $expl .= '<div class="cardexpl_number">';
+//                 $expl .=  $this->game->card_types[$i]['value'].' - ';
+//             $expl .= '</div>';
+//             $expl .= '<div class="cardexpl_descr">';
+//                 $expl .= $this->game->card_types[$i]['nametr'];
+//       //          $expl .= '</b>';
+//                 $expl .= ' ('.$this->game->card_types[$i]['qt'].') : ';
+//                 $expl .= $this->game->card_types[$i]['shortdescr'];
+//             $expl .= '</div>';
+//         }
 
 
         $this->tpl['EXPLANATION_CARD_CONTENT2'] = self::raw( $expl );
