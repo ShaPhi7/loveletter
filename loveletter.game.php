@@ -159,7 +159,7 @@ class loveletter extends Table
 		// Note : discarded cards
 		$players = self::loadPlayersBasicInfos();
 		$result['discard'] = array();
-		foreach ($players as $player_id)
+		foreach ($players as $player_id => $player)
 		{
 		    $result['discard'][$player_id] = $this->cards->getCardsInLocation('discard'.$player_id, null, 'card_location_arg');
 		}
