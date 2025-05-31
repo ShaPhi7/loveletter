@@ -1,5 +1,5 @@
 {OVERALL_GAME_HEADER}
-
+{CARD_CONSTANTS}
 
 <div id="ll_background" class="{PLAYERS_NBR} {WITH_EXPANSION}">
 

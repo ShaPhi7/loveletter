@@ -576,8 +576,8 @@ function (dojo, declare) {
             {
                 var card = selection[0];
                 var opponent_id = null;
-                
-                if (card.type == 1 || card.type == 12 || card.type == 14)
+
+                if (card.type == CARD_CONSTANTS.GUARD)
                 {
                     // Must have chosen opponent + target card
 
@@ -607,8 +607,6 @@ function (dojo, declare) {
                         {   dojo.destroy('guard_dialog');  }
                         
                         var title = _('Guard : Guess who is ${player}?');
-                        if (card.type == 14)
-                        {   title = _('Bishop : Guess who is ${player}?');    }
                         
                         var guardDlg = new dijit.Dialog({ title: dojo.string.substitute(title , { player: this.gamedatas.players[opponent_id].name }) });
 
@@ -616,39 +614,20 @@ function (dojo, declare) {
 
 
                         var cardlist = [
-                            { num: 8, nam: _(this.gamedatas.card_types[8].name) },
-                            { num: 7, nam: _(this.gamedatas.card_types[7].name) },
-                            { num: 6, nam: _(this.gamedatas.card_types[6].name) },
-                            { num: 5, nam: _(this.gamedatas.card_types[5].name) },
-                            { num: 4, nam: _(this.gamedatas.card_types[4].name) },
-                            { num: 3, nam: _(this.gamedatas.card_types[3].name) },
-                            { num: 2, nam: _(this.gamedatas.card_types[2].name) },
+                            { num: 9, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.PRINCESS].name) },
+                            { num: 8, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.COUNTESS].name) },
+                            { num: 7, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.KING].name) },
+                            { num: 6, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.CHANCELLOR].name) },
+                            { num: 5, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.PRINCE].name) },
+                            { num: 4, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.HANDMAID].name) },
+                            { num: 3, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.BARON].name) },
+                            { num: 2, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.PRIEST].name) },
                      ];
-                        
-                        if (toint(this.gamedatas.players_nbr) > 4)
-                        {
-                            cardlist = [
-                                { num: 9, nam: _(this.gamedatas.card_types[14].name) },
-                                { num: 8, nam: _(this.gamedatas.card_types[8].name) },
-                                { num: 7, nam: _(this.gamedatas.card_types[7].name)+' / '+_(this.gamedatas.card_types[11].name) },
-                                { num: 6, nam: _(this.gamedatas.card_types[6].name)+' / '+_(this.gamedatas.card_types[15].name) },
-                                { num: 5, nam: _(this.gamedatas.card_types[5].name)+' / '+_(this.gamedatas.card_types[18].name) },
-                                { num: 4, nam: _(this.gamedatas.card_types[4].name)+' / '+_(this.gamedatas.card_types[17].name) },
-                                { num: 3, nam: _(this.gamedatas.card_types[3].name)+' / '+_(this.gamedatas.card_types[19].name) },
-                                { num: 2, nam: _(this.gamedatas.card_types[2].name)+' / '+_(this.gamedatas.card_types[20].name) },
-                                { num: 0, nam: (card.type == 14 ? _(this.gamedatas.card_types[13].name) + ' / ' : '') +  _(this.gamedatas.card_types[16].name) },
-                         ];
-                        }
 
                         for(var i in cardlist)
                         {
                             var num = cardlist[i].num;
                             var names = cardlist[i].nam;
-                            
-                            if (num == 9)
-                            {   num = 14;   }
-                            if (num == 0)
-                            {   num = 13;   }
                         
                             html += '<div id="guardchoicewrap_'+num+'">'; 
                             html += '<a href="#" id="guardchoice_'+num+'" class="guardchoicelink">';
@@ -658,15 +637,7 @@ function (dojo, declare) {
                             html += '</a>';
                             html += '</div>';
                         }
-                        
-                        if (card.type == 14)
-                        {
-                            html += '<p style="font-size:60%">('+_('You cannot target a Guard with a Bishop')+')</p>';
-                        }
-                        else 
-                        {
                             html += '<p style="font-size:60%">('+_('You cannot target a Guard with a guard')+')</p>';
-                        }
 
                         html += "<br/><div style='text-align: center;'>";
                         html += "<a class='bgabutton bgabutton_gray' id='cancel_btn' href='#'><span>"+_("Cancel")+"</a>";
@@ -722,112 +693,8 @@ function (dojo, declare) {
                     }
 
                 }
-                else if ( card.type == 19)
-                {
-                    // Must choose 1 or 2 opponents
-                    // Note : MUST choose 2 opponents if 2 opponents are selectable
 
-                    opponents = this.getSelectedOpponent();
-                    
-                    if (opponents.length == 0 && this.isThereAtLeastOneSelectableOpponent())
-                    {
-                        this.showMessage(_("Please select a target opponent"), 'info');
-                        return ;
-                    }
-
-                    if (this.isThereAtLeastTwoSelectableOpponent())
-                    {
-                        if (opponents.length < 2)
-                        {
-                            this.showMessage(_("Please select two opponents"), 'info');
-                            return ;
-                        }
-                    }
-
-                    if (opponents.length > 2)
-                    {
-                        this.showMessage(_("Please select no more than two target opponents"), 'info');
-                        return ;
-                    }
-
-                    var opponent_id = opponents.join(',');
-
-                    if (! this.isThereAtLeastOneSelectableOpponent())
-                    {
-                        if (!bConfirmed)   
-                        {
-                            this.confirmationDialog(_("All opponents are protected : are you sure you want to use this card with no effect?"), dojo.hitch(this, function() { 
-                            
-                                this.checkIfCardCanBePlayed(true);
-
-                            }),dojo.hitch(this, function() {
-                            
-                                this.playerHand.unselectAll();
-                            
-                            })
-                            
-                            );
-                            return ;
-                        }
-                    
-                    }                    
-
-                
-                }
-                else if (card.type == 20)
-                {
-                    // Must choose 1 or 2 opponents
-                    // Note : MUST choose 2 opponents if 2 opponents are selectable
-
-                    opponents = this.getSelectedOpponent();
-                    
-                    if (opponents.length == 0 && this.isThereAtLeastOneSelectableOpponent())
-                    {
-                        this.showMessage(_("Please select a target opponent"), 'info');
-                        return ;
-                    }
-
-                    // Must choose 2 players
-
-                    if (this.isThereAtLeastTwoSelectablePlayers())
-                    {
-                        if (opponents.length < 2)
-                        {
-                            this.showMessage(_("Please select two players (may be yourself)"), 'info');
-                            return ;
-                        }
-                    }
-
-                    if (opponents.length > 2)
-                    {
-                        this.showMessage(_("Please select no more than two target opponents"), 'info');
-                        return ;
-                    }
-                    
-                    var opponent_id = opponents.join(',');
-
-                    if (! this.isThereAtLeastOneSelectableOpponent())
-                    {
-                        if (!bConfirmed)   
-                        {
-                            this.confirmationDialog(_("All opponents are protected : are you sure you want to use this card with no effect?"), dojo.hitch(this, function() { 
-                            
-                                this.checkIfCardCanBePlayed(true);
-
-                            }),dojo.hitch(this, function() {
-                            
-                                this.playerHand.unselectAll();
-                            
-                            })
-                            
-                            );
-                            return ;
-                        }
-                    
-                    }                    
-                
-                }
-                else if (card.type == 2 || card.type == 3 || card.type == 6 || card.type == 11 || card.type ==16 )
+                else if (card.type == CARD_CONSTANTS.PRIEST || card.type == CARD_CONSTANTS.BARON || card.type == CARD_CONSTANTS.KING)
                 {
                     // Must have chosen opponent
                     opponents = this.getSelectedOpponent();
@@ -872,7 +739,7 @@ function (dojo, declare) {
                     
                     }                    
                 }
-                else if (card.type == 5 || card.type == 17)
+                else if (card.type == CARD_CONSTANTS.PRINCE)
                 {
                     // Must have chosen opponent / yourself
                     opponents = this.getSelectedOpponent();
@@ -902,11 +769,11 @@ function (dojo, declare) {
                     }
 
                 }
-                else if (card.type == 4 || card.type == 7)
+                else if (card.type == CARD_CONSTANTS.HANDMAID || card.type == CARD_CONSTANTS.COUNTESS)
                 {
                     // Immediate play
                 }
-                else if (card.type == 8)
+                else if (card.type == CARD_CONSTANTS.PRINCESS)
                 {
                     // Warn that this may kill yourself
                     if (! bConfirmed)
@@ -1196,7 +1063,7 @@ function (dojo, declare) {
             if (typeof notif.args.noeffect == 'undefined')
             {
                 // Depending on the card played, have the correct discussion
-                if (notif.args.card.type == 1 || notif.args.card.type == 12 || notif.args.card.type == 14 )
+                if (notif.args.card.type == CARD_CONSTANTS.GUARD)
                 {
                     // Guard : who are you?
                     this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name}, I think you are a ${guess}!'), { 
@@ -1204,7 +1071,7 @@ function (dojo, declare) {
                         guess: '<b>'+notif.args.guess_name+'</b>'
                     }));
                 }
-                else if (notif.args.card.type == 2 || notif.args.card.type == 19)
+                else if (notif.args.card.type == CARD_CONSTANTS.PRIEST)
                 {
                     // Priest : show your card
 
@@ -1218,16 +1085,16 @@ function (dojo, declare) {
                         delay += 2000;
                     }
                 }
-                else if (notif.args.card.type == 3 || notif.args.card.type == 11)
+                else if (notif.args.card.type == CARD_CONSTANTS.BARON)
                 {
                     this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name}, let`s compare our cards...'), { player_name: '<span style="color:#'+this.gamedatas.players[notif.args.opponent_id].color+'">'+ this.gamedatas.players[notif.args.opponent_id].name+'</span>' }));
                     this.showDiscussion(notif.args.opponent_id, _('Alright.'), 2000);
                 }
-                else if (notif.args.card.type == 4)
+                else if (notif.args.card.type == CARD_CONSTANTS.HANDMAID)
                 {
                     this.showDiscussion(notif.args.player_id, _("I'm protected for one turn."));
                 }
-                else if (notif.args.card.type == 5)
+                else if (notif.args.card.type == CARD_CONSTANTS.PRINCE)
                 {
                     if (notif.args.player_id != notif.args.opponent_id)
                     {
@@ -1239,35 +1106,17 @@ function (dojo, declare) {
                         this.showDiscussion(notif.args.player_id, _('I play the Prince effect against myself and discard my card.'));
                     }
                 }
-                else if (notif.args.card.type == 6 )
+                else if (notif.args.card.type == CARD_CONSTANTS.KING)
                 {
                     this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('${player_name}, we must exchange our hand.'), { player_name: '<span style="color:#'+this.gamedatas.players[notif.args.opponent_id].color+'">'+ this.gamedatas.players[notif.args.opponent_id].name+'</span>' }));
                     this.showDiscussion(notif.args.opponent_id, _('Alright.'), 2000);
                 }
-                else if (notif.args.card.type == 20)
-                {
-                    this.showDiscussion(notif.args.opponents[0], dojo.string.substitute(_('${player_name}, we must exchange our hand.'), { player_name: '<span style="color:#'+this.gamedatas.players[notif.args.opponents[1]].color+'">'+ this.gamedatas.players[notif.args.opponents[1]].name+'</span>' }));
-                    this.showDiscussion(notif.args.opponents[1], _('Alright.'), 2000);
-                }
-                else if (notif.args.card.type == 18)
-                {
-                    this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('At the end of the round, my card value will be +1.'), { }));
-                }
-                else if (notif.args.card.type == 17)
-                {
-                    this.showDiscussion(notif.args.opponent_id, _("The next player card should target me..."));            
-                }
-                else if (notif.args.card.type == 15)
-                {
-                    this.showDiscussion(notif.args.player_id, dojo.string.substitute(_('If I am knocked out this round, I score one point.'), { }));
-                }
-
             }            
         },
         
         notif_cardPlayedResult: function(notif)
         {
-            if (notif.args.card_type == 1 || notif.args.card_type == 12)
+            if (notif.args.card_type == CARD_CONSTANTS.GUARD)
             {
                 if (toint(notif.args.success) == 1)
                 {

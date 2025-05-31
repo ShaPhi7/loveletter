@@ -60,11 +60,6 @@
         $expl = '';
 
         $expl .= '<h4>'.self::_("List of cards").'</h4>';
-        // Get the card type ids dynamically from material.inc.php or game.php
-        // Assuming $this->game->card_types is defined in material.inc.php or game.php
-        // and contains all card types as an associative array with keys as ids
-
-        // Get all card ids, filter for those between 21 and 30 (inclusive), and sort descending
         $card_ids = array_keys($this->game->card_types);
 
         foreach ($card_ids as $i)
@@ -140,7 +135,22 @@
 
         */
 
-
+$this->tpl['CARD_CONSTANTS'] = self::raw('
+    <script type="text/javascript">
+        window.CARD_CONSTANTS = {
+            GUARD: ' . loveletter::GUARD . ',
+            PRIEST: ' . loveletter::PRIEST . ',
+            BARON: ' . loveletter::BARON . ',
+            HANDMAID: ' . loveletter::HANDMAID . ',
+            PRINCE: ' . loveletter::PRINCE . ',
+            CHANCELLOR: ' . loveletter::CHANCELLOR . ',
+            KING: ' . loveletter::KING . ',
+            COUNTESS: ' . loveletter::COUNTESS . ',
+            PRINCESS: ' . loveletter::PRINCESS . ',
+            SPY: ' . loveletter::SPY . '
+        };
+    </script>
+');
 
         /*********** Do not change anything below this line  ************/
   	}
