@@ -45,7 +45,7 @@ class loveletter extends Table
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();self::initGameStateLabels( array(
             'last' => 10, //TODO - what does this do?
-         
+            
             //    "my_first_global_variable" => 10,
             //    "my_second_global_variable" => 11,
             //      ...
@@ -965,7 +965,7 @@ class loveletter extends Table
     
         // Draw one card for each player
         $players = self::loadPlayersBasicInfos();
-        foreach( $players as $player_id)
+        foreach( $players as $player_id => $player)
         {
             $card = $this->cards->pickCard( 'deck', $player_id );    
             self::notifyPlayer( $player_id, 'newCard', clienttranslate('A new round begins: you draw a ${card_name}'), array(
