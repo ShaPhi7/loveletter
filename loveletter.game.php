@@ -394,7 +394,8 @@ class loveletter extends Table
         
         $players = self::loadPlayersBasicInfos();
 
-        $opponent_card = reset($this->cards->getCardsInLocation('hand', $opponent_id));
+        $opponentCards = $this->cards->getCardsInLocation('hand', $opponent_id);
+        $opponent_card = reset($opponentCards);
 
         $guess_name = $this->card_types[ $guess_id ]['name'];
 
@@ -1006,8 +1007,8 @@ class loveletter extends Table
             $this->gamestate->nextState('endRound');
         }
 
-        //$next_player = self::currentActivePlayer(); //make testing easier with this line
-        $next_player = self::getNextAlivePlayer();
+        $next_player = self::getActivePlayerId(); //make testing easier with this line
+        //$next_player = self::getNextAlivePlayer();
 
         $this->gamestate->changeActivePlayer($next_player);
         //TODO - do you need to validate here?

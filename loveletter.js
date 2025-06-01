@@ -614,23 +614,25 @@ function (dojo, declare) {
 
 
                         var cardlist = [
-                            { num: 9, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.PRINCESS].name) },
-                            { num: 8, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.COUNTESS].name) },
-                            { num: 7, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.KING].name) },
-                            { num: 6, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.CHANCELLOR].name) },
-                            { num: 5, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.PRINCE].name) },
-                            { num: 4, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.HANDMAID].name) },
-                            { num: 3, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.BARON].name) },
-                            { num: 2, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.PRIEST].name) },
-                     ];
+                            {value: CARD_CONSTANTS.PRINCESS, num: 9, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.PRINCESS].name)},
+                            {value: CARD_CONSTANTS.COUNTESS, num: 8, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.COUNTESS].name)},
+                            {value: CARD_CONSTANTS.KING, num: 7, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.KING].name)},
+                            {value: CARD_CONSTANTS.CHANCELLOR, num: 6, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.CHANCELLOR].name)},
+                            {value: CARD_CONSTANTS.PRINCE, num: 5, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.PRINCE].name)},
+                            {value: CARD_CONSTANTS.HANDMAID, num: 4, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.HANDMAID].name)},
+                            {value: CARD_CONSTANTS.BARON, num: 3, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.BARON].name)},
+                            {value: CARD_CONSTANTS.PRIEST, num: 2, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.PRIEST].name)},
+                            {value: CARD_CONSTANTS.SPY, num: 0, nam: _(this.gamedatas.card_types[CARD_CONSTANTS.SPY].name)}
+                        ];
 
                         for(var i in cardlist)
                         {
                             var num = cardlist[i].num;
                             var names = cardlist[i].nam;
+                            var value = cardlist[i].value;
                         
                             html += '<div id="guardchoicewrap_'+num+'">'; 
-                            html += '<a href="#" id="guardchoice_'+num+'" class="guardchoicelink">';
+                            html += '<a href="#" id="guardchoice_'+num+'" class="guardchoicelink" data-value="'+value+'">';
                             var backx = 42*(num-1);
                             html += '<div class="guardchoiceicon" style="background-position : -'+backx+'px -0px;"></div>';
                             html += '<div class="guardchoicename">'+names+'</div>';
@@ -655,7 +657,7 @@ function (dojo, declare) {
                         dojo.query('.guardchoicelink').connect('onclick', this, function(evt) {
                         
                             evt.preventDefault();
-                            var guess_id = evt.currentTarget.id.substr(12);
+                            var guess_id = evt.currentTarget.getAttribute('data-value');
 
                             this.ajaxcall("/loveletter/loveletter/playCard.html", { 
                                                                                     lock: true, 
