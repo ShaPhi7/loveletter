@@ -100,7 +100,6 @@ $machinestates = array(
     		"descriptionmyturn" => clienttranslate('Chancellor : ${you} must keep 1 card and put the other 2 on the bottom of the deck in any order.'),
     		"type" => "activeplayer",
     		"possibleactions" => array("actionChancellor"),
-    		"args" => "argsChancellor",
     		"transitions" => array("nextPlayer" => 21)
     ),
     
