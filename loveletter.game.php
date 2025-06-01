@@ -324,7 +324,7 @@ class loveletter extends Table
         }    
     }
 
-    function validateOpponent(int $opponent_id)
+    function validateOpponent($opponent_id)
     {
         self::validatePlayer($opponent_id);
 
@@ -378,7 +378,7 @@ class loveletter extends Table
         }
     }
         
-    function playGuard($card, int $opponent_id, int $guess_id)
+    function playGuard($card, $opponent_id, int $guess_id)
     {
         $player_id = self::getActivePlayerId();
 
@@ -443,7 +443,7 @@ class loveletter extends Table
         self::validateOpponent($opponent_id);
     }
 
-    function playPriest($card, int $opponent_id)
+    function playPriest($card, $opponent_id)
     {   
         $player_id = self::getActivePlayerId();
         
@@ -478,7 +478,7 @@ class loveletter extends Table
         self::validateOpponent($opponent_id);
     }
 
-    function playBaron($card, int $opponent_id)
+    function playBaron($card, $opponent_id)
     {
         $player_id = self::getActivePlayerId();
         if (!$opponent_id)
@@ -553,7 +553,7 @@ class loveletter extends Table
         }
     }
 
-    function playHandmaid($card, int $opponent_id)
+    function playHandmaid($card, $opponent_id)
     {
         $player_id = self::getActivePlayerId();
 
@@ -573,7 +573,7 @@ class loveletter extends Table
         }
     }
 
-    function playPrince($card, int $opponent_id)
+    function playPrince($card, $opponent_id)
     {
         $player_id = self::getActivePlayerId();
 
@@ -630,7 +630,7 @@ class loveletter extends Table
         }
     }
 
-    function playChancellor($card, int $opponent_id)
+    function playChancellor($card, $opponent_id)
     {
         $player_id = self::getActivePlayerId();
         $players = self::loadPlayersBasicInfos();
@@ -724,7 +724,7 @@ class loveletter extends Table
         self::validateOpponent($opponent_id);
     }
 
-    function playKing($card, int $opponent_id)
+    function playKing($card, $opponent_id)
     {
         $player_id = self::getActivePlayerId();
 
@@ -760,14 +760,14 @@ class loveletter extends Table
         self::notifyPlayer( $player_id, 'newCard', '', array( 'card' => $opponent_card, 'from' => $opponent_id, 'remove' => $player_card ) );
     }
 
-    function playCountess($card, int $opponent_id)
+    function playCountess($card, $opponent_id)
     {
         self::notifyPlayCard($card, $opponent_id);
 
         // nothing happens
     }
 
-    function playPrincess($card, int $opponent_id)
+    function playPrincess($card, $opponent_id)
     {
         $player_id = self::getActivePlayerId();
 
@@ -776,7 +776,7 @@ class loveletter extends Table
         self::outOfTheRound( $player_id, $player_id );
     }
 
-    function playSpy($card, int $opponent_id)
+    function playSpy($card, $opponent_id)
     {
         self::notifyPlayCard($card, $opponent_id);
 
@@ -1006,6 +1006,7 @@ class loveletter extends Table
             $this->gamestate->nextState('endRound');
         }
 
+        //$next_player = self::currentActivePlayer(); //make testing easier with this line
         $next_player = self::getNextAlivePlayer();
 
         $this->gamestate->changeActivePlayer($next_player);
@@ -1029,27 +1030,19 @@ class loveletter extends Table
 
     function getNextAlivePlayer()
     {
+        $current_player_id = self::getActivePlayerId();
         $next_player_table = self::getNextPlayerTable();
-        $current_player = self::getActivePlayerId();
-        $player_to_alive = self::getCollectionFromDB("SELECT player_id, player_alive FROM player");
-        
-        // Find the next alive active player
-        $found = false;
-        $start_player = $current_player;
+        $alive_players = [];
+        $pid = $current_player_id;
         do {
-            if ($player_to_alive[$current_player] == 1) {
-                $found = true;
-                break;
+            $pid = $next_player_table[$pid];
+            $alive = (int) self::getUniqueValueFromDB("SELECT player_alive FROM player WHERE player_id='$pid'");
+            if ($alive == 1) {
+                $alive_players[] = $pid;
             }
-            $current_player = $next_player_table[$current_player];
-        } while ($current_player != $start_player);
+        } while ($pid != $current_player_id);
 
-        if (!$found)
-        {
-            //TODO - PANIC
-        }
-
-        return $current_player;
+        return count($alive_players) > 0 ? $alive_players[0] : null;
     }
 
     function gameShouldEnd()
