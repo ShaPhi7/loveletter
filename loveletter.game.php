@@ -498,10 +498,12 @@ class loveletter extends Table
         $opponent_cards = $this->cards->getCardsInLocation( 'hand', $opponent_id );
         $opponent_card = reset($opponent_cards);
 
+        $players = self::loadPlayersBasicInfos();
+
         // Reveal both cards for these 2 players
         self::notifyPlayer($player_id, 'reveal', clienttranslate('${player_name} reveals a ${card_name}'), array(
             'i18n' => array('card_name'),
-            'player_name' => $opponent_id['player_name'],
+            'player_name' => $players[$opponent_id]['player_name'],
             'player_id' => $opponent_id,
             'card_type' => $opponent_card['type'],
             'card_name' => $this->card_types[$opponent_card['type']]['name']
@@ -510,7 +512,7 @@ class loveletter extends Table
 
         self::notifyPlayer($opponent_id, 'reveal', clienttranslate('${player_name} reveals a ${card_name}'), array(
             'i18n' => array('card_name'),
-            'player_name' => $player_id['player_name'],
+            'player_name' => $players[$player_id]['player_name'],
             'player_id' => $player_id,
             'card_type' => $player_card['type'],
             'card_name' => $this->card_types[$player_card['type']]['name']
