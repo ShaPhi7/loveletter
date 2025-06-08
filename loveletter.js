@@ -96,25 +96,11 @@ function (dojo, declare) {
                 
                 // Played Cards number in discard
                 this.discards[player_id] = new ebg.stock();
-                if (this.card_width == 127)
-                {
-                    this.discards[player_id].create(this, $('discardcontent_'+player_id), 42, 42);
-                }
-                else
-                {
-                    this.discards[player_id].create(this, $('discardcontent_'+player_id), 30, 30);
-                }
+                this.discards[player_id].create(this, $('discardcontent_'+player_id), 42, 42);
                 this.discards[player_id].onItemCreate = dojo.hitch(this, 'setupNewCardIcon'); 
                 for(var i in this.gamedatas.card_types)
                 {
-                    if (this.card_width == 127)
-                    {
-                        this.discards[player_id].addItemType(i, 0, g_gamethemeurl+'img/cardnumbers.png', i-1);
-                    }
-                    else
-                    {
-                        this.discards[player_id].addItemType(i, 0, g_gamethemeurl+'img/cardnumbers_small.png', i-1);
-                    }
+                    this.discards[player_id].addItemType(i, 0, g_gamethemeurl+'img/cardnumbers.png', i-1);
                 }
                 for(var i in gamedatas.discard[player_id])
                 {
@@ -144,14 +130,7 @@ function (dojo, declare) {
                 // Create card types
                 for(var type_id in gamedatas.card_types)
                 {
-                    if (this.card_width == 127)
-                    {
-                        this.playerHand.addItemType(type_id, 0, g_gamethemeurl+'img/cards.jpg', type_id-1);
-                    }
-                    else
-                    {
-                        this.playerHand.addItemType(type_id, 0, g_gamethemeurl+'img/cards_small.jpg', type_id-1);
-                    }
+                    this.playerHand.addItemType(type_id, 0, g_gamethemeurl+'img/cards.jpg', type_id-1);
                 }
             
                 // Cards in player's hand

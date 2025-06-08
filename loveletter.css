@@ -49,6 +49,8 @@
 :root {
     --card-width: 127px;
     --card-height: 175px;
+    --card-width: 410px;
+    --card-height: 560px;
 }
 
 #ll_background {
@@ -281,7 +283,7 @@
     width: var(--card-width);
     height: var(--card-height);
     background-image: url('img/cards.jpg');
-    background-position: -1016px -0px;
+    background-position: calc(2*var(--card-width)) var(--card-height);
     border-radius: 8px;    
 }
 #deck_1 {    top: 0px; left: 0px;    }
