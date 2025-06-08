@@ -46,6 +46,11 @@
 
 /********* You can start writing your CSS below this line: **********/
 
+:root {
+    --card-width: 127px;
+    --card-height: 175px;
+}
+
 #ll_background {
     position: relative;
     width: 921px;
@@ -155,8 +160,8 @@
     display: inline-block;
     position: relative;
     margin-top: 5px;
-    width: 127px;
-    height: 175px;
+    width: var(--card-width);
+    height: var(--card-height);
 }
 .playertable_E .playertablecard,
 .playertable_N .playertablecard,
@@ -273,8 +278,8 @@
     position: absolute;
     top: -1px;
     left: -1px;
-    width: 127px;
-    height: 175px;
+    width: var(--card-width);
+    height: var(--card-height);
     background-image: url('img/cards.jpg');
     background-position: -1016px -0px;
     border-radius: 8px;    
@@ -288,8 +293,8 @@
 /**** discard (last card played) ****/
 
 .cardontable {
-    width: 127px;
-    height: 175px;
+    width: var(--card-width);
+    height: var(--card-height);
     background-image: url('img/cards.jpg');
     position: absolute;
     border-radius: 8px;
