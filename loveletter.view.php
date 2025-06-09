@@ -38,48 +38,8 @@
         $players_nbr = count( $players );
         $this->tpl['PLAYERS_NBR'] = 'players_nbr_'.$players_nbr;
 
-        if( $players_nbr > 4 )
-            $this->tpl['WITH_EXPANSION'] = 'expansion';
-        else
-            $this->tpl['WITH_EXPANSION'] = 'no_expansion';
-
         /*********** Place your code below:  ************/
 
-		// Arrange players so that I am on south
-        $player_to_dir = $this->game->getPlayersToDirection();
-
-        $this->page->begin_block( "loveletter_loveletter", "player" );
-        foreach( $player_to_dir as $player_id => $dir )
-        {
-            $this->page->insert_block( "player", array( "PLAYER_ID" => $player_id,
-                                                        "PLAYER_NAME" => $players[$player_id]['player_name'],
-                                                        "PLAYER_COLOR" => $players[$player_id]['player_color'],
-                                                        "DIR" => $dir ) );
-        }
-
-        $expl = '';
-
-        $expl .= '<h4>'.self::_("List of cards").'</h4>';
-        $card_ids = array_keys($this->game->card_types);
-
-        foreach ($card_ids as $i)
-        {
-            $expl .= '<div class="cardexpl_number">';
-            $expl .= $this->game->card_types[$i]['value'].' - ';
-            $expl .= '</div>';
-            $expl .= '<div class="cardexpl_descr">';
-            $expl .= $this->game->card_types[$i]['nametr'];
-            $expl .= ' ('.$this->game->card_types[$i]['qt'].') : ';
-            $expl .= $this->game->card_types[$i]['shortdescr'];
-            $expl .= '</div>';
-        }
-
-        $this->tpl['LABEL_LAST_PLAYED'] = self::_("Last played");
-        $this->tpl['LABEL_DECK'] = self::_("Deck");
-
-        $this->tpl['EXPLANATION_CARD_CONTENT'] = self::raw( $expl );
-
-        $expl = '';
 
 //         foreach( array(14,11,15,18,17,19,20,16,13) as $i )
 //         {
@@ -94,9 +54,6 @@
 //                 $expl .= $this->game->card_types[$i]['shortdescr'];
 //             $expl .= '</div>';
 //         }
-
-
-        $this->tpl['EXPLANATION_CARD_CONTENT2'] = self::raw( $expl );
 
 
         /*
