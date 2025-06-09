@@ -7,7 +7,7 @@
 <!-- Main Play Area -->
 <div id="lvt-play-area">
     <div id="lvt-table-center">
-      <div id="lvt-discard-pile">Discard</div>
+      <div id="lvt-deck" class="lvt-card-back"></div>
     </div>
     <div id="lvt-playertables"></div>
 </div>

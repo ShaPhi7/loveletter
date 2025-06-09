@@ -46,75 +46,88 @@
 
 /********* You can start writing your CSS below this line: **********/
 
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
+@import url(../../../css/csslayer.css);
 
 :root {
-    --card-width: 127px;
-    --card-height: 175px;
-    --card-width: 410px;
-    --card-height: 560px;
-    --card-size: 0.25;
+  --card-width: 410px;
+  --card-height: 560px;
+  --card-scale: 0.4;
+  --sprite-cols: 6;
+  --sprite-rows: 2;
+
+  /* Scaled total sprite size */
+  --sprite-width: calc(var(--card-width) * var(--sprite-cols) * var(--card-scale));
+  --sprite-height: calc(var(--card-height) * var(--sprite-rows) * var(--card-scale));
+}
+
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 #lvt-background {
-  background-image: url(img/background.jpg);
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  position: fixed;
-  z-index: -1;
+    background-image: url(img/background.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    position: fixed;
+    z-index: -1;
 }
 
 #lvt-play-area {
-  position: relative;
-  width: 100%;
-  height: 100vh; /* viewport height */
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#lvt-table {
+    position: relative;
+    width: 100%;
+    height: 100%;
 }
 
 #lvt-table-center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
 }
 
-#lvt-discard-pile {
-  width: 100px;
-  height: 140px;
-  background-color: rgba(0, 0, 0, 0.1);
-  border: 2px dashed #333;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
+#lvt-deck {
+  width: calc(var(--card-width) * var(--card-scale));
+  height: calc(var(--card-height) * var(--card-scale));
+  background-image: url('img/cards.jpg');
+  background-size: var(--sprite-width) var(--sprite-height); /* scaled-down sprite */
+  background-repeat: no-repeat;
 }
+
 
 #lvt-playertables {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 .lvt-playertable {
-  position: absolute;
-  width: 180px;
-  height: 120px;
-  z-index: 2;
-  background: #fff8;
-  border: 1px solid #333;
-  border-radius: 8px;
-  text-align: center;
-  padding: 6px;
-  font-weight: bold;
+    position: absolute;
+    width: 240px;
+    height: 120px;
+    background: #fff8;
+    border: 1px solid #333;
+    border-radius: 8px;
+    text-align: center;
+    padding: 6px;
+    font-weight: bold;
+    z-index: 2;
+    transform: translate(-50%, -50%);
 }
-
-

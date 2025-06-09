@@ -16,82 +16,59 @@
  */
 
 define([
-    "dojo","dojo/_base/declare",
+    "dojo", "dojo/_base/declare",
     "ebg/core/gamegui",
     "ebg/counter",
-	"ebg/stock"
+    "ebg/stock"
 ],
 function (dojo, declare) {
     return declare("bgagame.loveletter", ebg.core.gamegui, {
-        constructor: function(){
+        constructor: function () {
             console.log('loveletter constructor');
-              
-            // Here, you can init the global variables of your user interface
-            // Example:
+
             this.playerHand = null;
-			
-			this.deck = null;
-			this.opponentHands = {};
-			this.discards = {};
-			this.discussionTimeout = {};
+            this.deck = null;
+            this.opponentHands = {};
+            this.discards = {};
+            this.discussionTimeout = {};
         },
-        
-        /*
-            setup:
-            
-            This method must set up the game user interface according to current game situation specified
-            in parameters.
-            
-            The method is called each time the game interface is displayed to a player, ie:
-            _ when the game starts
-            _ when a player refreshes the game page (F5)
-            
-            "gamedatas" argument contains all datas retrieved by your "getAllDatas" PHP method.
-        */
-        
-    setup(gamedatas) {
-      console.log("Love Letter setup", gamedatas);
 
-      this.lvtPlayers = {};
+        setup(gamedatas) {
+            console.log("Love Letter setup", gamedatas);
 
-      const playerIds = Object.keys(gamedatas.players);
-      const totalPlayers = playerIds.length;
-      const localPlayerId = this.player_id;
+            this.lvtPlayers = {};
+            const playerIds = Object.keys(gamedatas.players);
+            const totalPlayers = playerIds.length;
+            const localPlayerId = this.player_id;
 
-      // Rotate player IDs to place local player at bottom
-      const rotatedPlayerIds = [...playerIds];
-      while (rotatedPlayerIds[0] !== String(localPlayerId)) {
-        rotatedPlayerIds.push(rotatedPlayerIds.shift());
-      }
+            // Rotate so local player is first
+            const rotatedPlayerIds = [...playerIds];
+            while (rotatedPlayerIds[0] !== String(localPlayerId)) {
+                rotatedPlayerIds.push(rotatedPlayerIds.shift());
+            }
 
-      setTimeout(() => {
-        const container = document.getElementById("lvt-play-area");
-        const centerX = container.offsetWidth / 2;
-        const centerY = container.offsetHeight / 2;
-        const radius = 300;
+            const radius = 300;
 
-        rotatedPlayerIds.forEach((player_id, index) => {
-          const player = gamedatas.players[player_id];
-          const angle = (2 * Math.PI * index) / totalPlayers - Math.PI / 2;
+            rotatedPlayerIds.forEach((player_id, index) => {
+                const player = gamedatas.players[player_id];
+                const angle = (2 * Math.PI * index) / totalPlayers;
 
-          const x = centerX + radius * Math.cos(angle) - 90;
-          const y = centerY + radius * Math.sin(angle) - 60;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
 
-          const html = `
-            <div id="lvt-playertable-${player_id}" class="lvt-playertable" style="left:${x}px; top:${y}px;">
-              <div class="lvt-player-name" style="color:#${player.color}">${player.name}</div>
-            </div>`;
+                const html = `
+                    <div id="lvt-playertable-${player_id}" class="lvt-playertable"
+                         style="left: calc(50% + ${x}px); top: calc(50% + ${y}px); transform: translate(-50%, -50%)">
+                        <div class="lvt-player-name" style="color:#${player.color}">${player.name}</div>
+                    </div>`;
 
-          dojo.place(html, "lvt-playertables");
+                dojo.place(html, "lvt-playertables");
 
-          this.lvtPlayers[player_id] = {
-            id: player_id,
-            node: document.getElementById(`lvt-playertable-${player_id}`)
-          };
-        });
-      }, 0);
-    },
-
-
-   });             
+                this.lvtPlayers[player_id] = {
+                    id: player_id,
+                    node: document.getElementById(`lvt-playertable-${player_id}`)
+                };
+            });
+        }
+    });
 });
