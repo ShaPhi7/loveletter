@@ -54,7 +54,7 @@
     --card-size: 0.25;
 }
 
-#love-background {
+#lvt-background {
   background-image: url(img/background.jpg);
   background-size: cover;
   background-repeat: no-repeat;
@@ -67,7 +67,7 @@
   z-index: -1;
 }
 
-#playertables {
+#lvt-game-holder {
   position: absolute;
   top: 0;
   left: 0;
