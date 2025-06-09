@@ -105,8 +105,12 @@ html, body {
   width: calc(var(--card-width) * var(--card-scale));
   height: calc(var(--card-height) * var(--card-scale));
   background-image: url('img/cards.jpg');
-  background-size: var(--sprite-width) var(--sprite-height); /* scaled-down sprite */
+  background-size: var(--sprite-width) var(--sprite-height);
+  background-position: 
+  calc(-4 * var(--card-width) * var(--card-scale)) 
+  calc(-1 * var(--card-height) * var(--card-scale));
   background-repeat: no-repeat;
+  border-radius: 12px;
 }
 
 
