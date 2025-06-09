@@ -49,11 +49,49 @@ function (dojo, declare) {
             "gamedatas" argument contains all datas retrieved by your "getAllDatas" PHP method.
         */
         
-        setup: function(gamedatas)
-        {
-            console.log("Starting game setup");
+setup: function (gamedatas) {
+  this.lvtPlayers = {};
 
-            console.log("Ending game setup");
-        },
+  const playerIds = Object.keys(gamedatas.players);
+  const totalPlayers = playerIds.length;
+  const localPlayerId = this.player_id;
+
+  // Reorder player IDs so that local player is always first (bottom)
+  const rotatedPlayerIds = [...playerIds];
+  while (rotatedPlayerIds[0] !== String(localPlayerId)) {
+    rotatedPlayerIds.push(rotatedPlayerIds.shift());
+  }
+
+  setTimeout(() => {
+    // Skull-style: use viewport dimensions directly
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    const radius = 300;
+
+    rotatedPlayerIds.forEach((player_id, index) => {
+      const player = gamedatas.players[player_id];
+
+      const angle = (2 * Math.PI * index) / totalPlayers - Math.PI / 2;
+      const x = centerX + radius * Math.cos(angle) - 90;
+      const y = centerY + radius * Math.sin(angle) - 60;
+
+      const html = `
+        <div id="lvt-playertable-${player_id}" class="lvt-playertable" style="left:${x}px; top:${y}px;">
+          <div class="lvt-player-name" style="color:#${player.color}">
+            ${player.name}
+          </div>
+        </div>`;
+
+      dojo.place(html, "lvt-playertables");
+
+      this.lvtPlayers[player_id] = {
+        id: player_id,
+        node: document.getElementById(`lvt-playertable-${player_id}`)
+      };
+    });
+  }, 0);
+}
+
+
    });             
 });
