@@ -75,25 +75,19 @@ function (dojo, declare) {
             stackDeckCards();
             //TODO - put in proper place, here for testing only.
             // Add shuffle animation
-            shuffleDeckAnimation({
-                containerId: 'deck_1',
-                cardCount: 7,
-                cardClass: 'lvt-card-back',
-            }).then(() => {
+            shuffleDeckAnimation().then(() => {
                 console.log('Deck shuffled!');
             });
         }
     });
 
 function shuffleDeckAnimation({
-  containerId = 'deck_1',
-  cardCount = 21,
+  containerId = 'lvt-table-center',
   cardClass = 'lvt-card-back',
   spreadRadius = 80,
   hopRadius = 60,
-  duration = 250,        // each stage lasts 250ms (was 150)
-  delayStep = 60,        // cards stagger every 60ms (was 30)
-  pauseAfter = 300,      // pause before cleanup
+  duration = 200,
+  delayStep = 45,
 } = {}) {
   return new Promise((resolve) => {
     const container = document.getElementById(containerId);
@@ -105,17 +99,8 @@ function shuffleDeckAnimation({
 
     const elements = [];
 
-    for (let i = 0; i < cardCount; i++) {
-      const card = document.createElement('div');
-      card.classList.add(cardClass);
-      card.style.position = 'absolute';
-      card.style.top = '0';
-      card.style.left = '0';
-      card.style.transition = 'transform 0ms';
-      card.style.zIndex = `${i}`;
-      container.appendChild(card);
-      elements.push(card);
-    }
+    elements.push(...Array.from(container.getElementsByClassName(cardClass)));
+    elements.reverse();
 
     elements.forEach((el, i) => {
       const angle = Math.random() * 2 * Math.PI;
@@ -139,12 +124,6 @@ function shuffleDeckAnimation({
             el.style.transition = `transform ${duration}ms ease-in`;
             el.style.transform = `translate(0px, 0px)`;
 
-            if (i === elements.length - 1) {
-              setTimeout(() => {
-                elements.forEach(e => e.remove());
-                resolve(true);
-              }, duration + pauseAfter);
-            }
           }, duration);
         }, duration);
       }, i * delayStep);
