@@ -36,6 +36,8 @@ function (dojo, declare) {
         setup(gamedatas) {
             console.log("Love Letter setup", gamedatas);
 
+            dojo.place('lvt-table-center', 'lvt-playertables');
+
             this.lvtPlayers = {};
             const playerIds = Object.keys(gamedatas.players);
             const totalPlayers = playerIds.length;
@@ -69,10 +71,12 @@ function (dojo, declare) {
                     node: document.getElementById(`lvt-playertable-${player_id}`)
                 };
             });
+
+            stackDeckCards();
             //TODO - put in proper place, here for testing only.
             // Add shuffle animation
             shuffleDeckAnimation({
-                containerId: 'lvt-deck',
+                containerId: 'deck_1',
                 cardCount: 7,
                 cardClass: 'lvt-card-back',
             }).then(() => {
@@ -82,8 +86,8 @@ function (dojo, declare) {
     });
 
 function shuffleDeckAnimation({
-  containerId = 'lvt-deck',
-  cardCount = 8,
+  containerId = 'deck_1',
+  cardCount = 21,
   cardClass = 'lvt-card-back',
   spreadRadius = 80,
   hopRadius = 60,
@@ -148,6 +152,14 @@ function shuffleDeckAnimation({
   });
 }
 
-
+function stackDeckCards(containerId = 'lvt-table-center', offsetX = 1, offsetY = 1) {
+  const cards = document.querySelectorAll(`#${containerId} .lvt-card-back`);
+  cards.forEach((card, i) => {
+    card.style.right = `${i * offsetY}px`;
+    card.style.bottom = `${i * offsetX}px`;
+    card.style.zIndex = i;
+  });
+  console.log('Stacked deck cards in', containerId, 'Count:', cards.length);
+}
 
 });
