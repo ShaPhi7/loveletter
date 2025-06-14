@@ -33,9 +33,9 @@ function (dojo, declare) {
             this.discussionTimeout = {};
         },
 
-        setup(gamedatas) {
+        setup: function(gamedatas) {
             console.log("Love Letter setup", gamedatas);
-
+            
             dojo.place('lvt-table-center', 'lvt-playertables');
 
             this.lvtPlayers = {};
@@ -78,7 +78,31 @@ function (dojo, declare) {
             shuffleDeckAnimation().then(() => {
                 console.log('Deck shuffled!');
             });
-        }
+        },
+
+        setupNotifications: function()
+        {
+            console.log( 'notifications subscriptions setup' );
+
+            dojo.subscribe( 'newCard', this, "notif_newCard" );
+        },
+
+        notif_newCard: function( notif ) 
+        {
+            if( notif.args.from )
+            {
+                this.playerHand.addToStockWithId( notif.args.card.type, notif.args.card.id, 'playertable_'+notif.args.from );            
+            }
+            else
+            {        
+                this.playerHand.addToStockWithId( notif.args.card.type, notif.args.card.id, 'deck' );            
+            }
+            
+            if( notif.args.remove )
+            {
+                this.playerHand.removeFromStockById( notif.args.remove.id );
+            }
+        },
     });
 
 function shuffleDeckAnimation({
