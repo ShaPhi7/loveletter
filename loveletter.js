@@ -173,17 +173,29 @@ function shuffleDeckAnimation({
 }
 
 function stackDeckCards(containerId = 'lvt-table-center', offsetX = 1, offsetY = 1) {
+  const TOTAL_CARDS = 21;
 
+  // Remove all existing deck cards
+  const container = document.getElementById(containerId);
+  container.querySelectorAll('.lvt-card-back').forEach(card => card.remove());
+
+  // Count cards in hands and discards
   const handCards = document.querySelectorAll('.lvt-hand .lvt-card, .lvt-discard .lvt-card');
   const toRemove = handCards.length;
 
-  const cards = Array.from(document.querySelectorAll(`#${containerId} .lvt-card-back`));
+  // Calculate how many cards should be in the deck
+  const deckCount = TOTAL_CARDS - toRemove;
 
-  for (let i = 0; i < toRemove && cards.length > 0; i++) {
-    const card = cards.pop();
-    console.log('Removing card:', card);
-    card.remove();
+  // Create the correct number of deck cards
+  for (let i = 0; i < deckCount; i++) {
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'lvt-card-back';
+    cardDiv.id = `deck_${i+1}`;
+    container.appendChild(cardDiv);
   }
+
+  // Stack the deck cards visually
+  const cards = Array.from(container.querySelectorAll('.lvt-card-back'));
   cards.forEach((card, i) => {
     card.style.right = `${i * offsetY}px`;
     card.style.bottom = `${i * offsetX}px`;
