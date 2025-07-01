@@ -125,16 +125,39 @@ html, body {
 
 .lvt-playertable {
     position: absolute;
-    width: 240px;
-    height: 120px;
+    width: calc(var(--card-width) * var(--card-scale) + 12px);
+    height: calc(var(--card-height) * var(--card-scale) + 12px);
     background: #fff8;
     border: 1px solid #333;
     border-radius: 8px;
     text-align: center;
     padding: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     font-weight: bold;
     z-index: 2;
     transform: translate(-50%, -50%);
+}
+
+.lvt-player-name {
+    margin-bottom: 10px;
+}
+
+.lvt-hand {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    --card-scale: 0.35;
+}
+
+.lvt-hand .lvt-card-back {
+    position: static;
+    width: calc(var(--card-width) * var(--card-scale));
+    height: calc(var(--card-height) * var(--card-scale));
+    margin: 0 auto;
 }
 
 .lvt-card-back {
