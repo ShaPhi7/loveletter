@@ -72,6 +72,21 @@ function (dojo, declare) {
                 };
             });
 
+            rotatedPlayerIds.forEach((player_id) => {
+              const player = gamedatas.players[player_id];
+              if (!player.eliminated) {
+                const handDiv = document.createElement('div');
+                handDiv.className = 'lvt-hand';
+                handDiv.id = `lvt-hand-${player_id}`;
+                this.lvtPlayers[player_id].node.appendChild(handDiv);
+
+                // Add a card to the hand
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'lvt-card lvt-card-back';
+                handDiv.appendChild(cardDiv);
+              }
+            });
+
             stackDeckCards();
             //TODO - put in proper place, here for testing only.
             // Add shuffle animation
@@ -89,6 +104,8 @@ function (dojo, declare) {
 
         notif_newCard: function( notif ) 
         {
+            console.log( 'notif_newCard', notif );
+
             if( notif.args.from )
             {
                 this.playerHand.addToStockWithId( notif.args.card.type, notif.args.card.id, 'playertable_'+notif.args.from );            
@@ -156,7 +173,17 @@ function shuffleDeckAnimation({
 }
 
 function stackDeckCards(containerId = 'lvt-table-center', offsetX = 1, offsetY = 1) {
-  const cards = document.querySelectorAll(`#${containerId} .lvt-card-back`);
+
+  const handCards = document.querySelectorAll('.lvt-hand .lvt-card, .lvt-discard .lvt-card');
+  const toRemove = handCards.length;
+
+  const cards = Array.from(document.querySelectorAll(`#${containerId} .lvt-card-back`));
+
+  for (let i = 0; i < toRemove && cards.length > 0; i++) {
+    const card = cards.pop();
+    console.log('Removing card:', card);
+    card.remove();
+  }
   cards.forEach((card, i) => {
     card.style.right = `${i * offsetY}px`;
     card.style.bottom = `${i * offsetX}px`;
