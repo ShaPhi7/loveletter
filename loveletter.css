@@ -82,13 +82,14 @@ html, body {
 
 #lvt-play-area {
     position: relative;
+    margin: 50px;
     width: 100%;
     height: 100vh;
-    overflow: hidden;
 }
 
 #lvt-table {
     position: relative;
+    margin: 50px;
     width: 100%;
     height: 100%;
 }
@@ -117,6 +118,7 @@ html, body {
 
 #lvt-playertables {
     position: absolute;
+    margin: 250px;
     top: 0;
     left: 0;
     right: 0;
@@ -125,7 +127,7 @@ html, body {
 
 .lvt-playertable {
     position: absolute;
-    width: calc(var(--card-width) * var(--card-scale) + 12px);
+    width: calc(1.5 * var(--card-width) * var(--card-scale) + 12px);
     height: calc(var(--card-height) * var(--card-scale) + 12px);
     background: #fff8;
     border: 1px solid #333;
