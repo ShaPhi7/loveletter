@@ -41,11 +41,10 @@ function (dojo, declare) {
             this.lvtPlayers = {};
             const playerIds = Object.keys(gamedatas.players);
             const totalPlayers = playerIds.length;
-            const localPlayerId = this.player_id;
 
             // Rotate so local player is first
             const rotatedPlayerIds = [...playerIds];
-            while (rotatedPlayerIds[0] !== String(localPlayerId)) {
+            while (rotatedPlayerIds[0] !== String(this.player_id)) {
                 rotatedPlayerIds.push(rotatedPlayerIds.shift());
             }
 
