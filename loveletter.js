@@ -26,7 +26,7 @@ function (dojo, declare) {
         constructor: function () {
             console.log('loveletter constructor');
 
-            this.playerHand = null;
+            this.playerHand = new ebg.stock();
             this.deck = null;
             this.opponentHands = {};
             this.discards = {};
@@ -71,8 +71,33 @@ function (dojo, declare) {
                 };
             });
 
+            const rootStyles = getComputedStyle(document.documentElement);
+            const cardWidth    = parseFloat(rootStyles.getPropertyValue('--card-width'));
+            const cardHeight   = parseFloat(rootStyles.getPropertyValue('--card-height'));
+            const cardScale    = parseFloat(rootStyles.getPropertyValue('--card-scale'));
+            const spriteCols    = parseFloat(rootStyles.getPropertyValue('--sprite-cols'));
+            const spriteRows    = parseFloat(rootStyles.getPropertyValue('--sprite-rows'));
+            console.log('Card dimensions:', cardWidth, cardHeight, cardScale);
+
+            this.playerHand.create(this, $('lvt-playertable-' + this.player_id), cardWidth * cardScale * spriteCols, cardHeight * cardScale * spriteRows);
+            this.playerHand.selectable = 1;
+            this.playerHand.autowidth = true;
+            this.playerHand.resizeItems(cardWidth * cardScale, cardHeight * cardScale, cardWidth * spriteCols * cardScale, cardHeight * spriteRows * cardScale);
+
+            console.log(gamedatas.hand)
+            // Ensure gamedatas.hand is iterable
+            for( var type_id in gamedatas.card_types ) {
+              this.playerHand.addItemType( type_id, 0, g_gamethemeurl+'img/cards.jpg', type_id-1 );
+            }
+
+            for( var i in this.gamedatas.hand )
+            {
+                var card = this.gamedatas.hand[i];
+                this.playerHand.addToStockWithId( card.type, card.id );
+            }
+
             rotatedPlayerIds.forEach((player_id) => {
-              const player = gamedatas.players[player_id];
+              const player = gamedatas.players[player_id]; //TODO - make this opponents only
               if (!player.eliminated) {
                 const handDiv = document.createElement('div');
                 handDiv.className = 'lvt-hand';
@@ -107,7 +132,7 @@ function (dojo, declare) {
 
             if( notif.args.from )
             {
-                this.playerHand.addToStockWithId( notif.args.card.type, notif.args.card.id, 'playertable_'+notif.args.from );            
+                this.playerHand.addToStockWithId( notif.args.card.type, notif.args.card.id, 'lvt-playertable-' + notif.args.from );            
             }
             else
             {        

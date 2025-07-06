@@ -153,7 +153,7 @@ html, body {
     align-items: center;
     justify-content: center;
     --card-scale: 0.35;
-    --sprite-width:  calc(var(--card-width) * var(--sprite-cols) * var(--card-scale));
+    --sprite-width: calc(var(--card-width) * var(--sprite-cols) * var(--card-scale));
     --sprite-height: calc(var(--card-height) * var(--sprite-rows) * var(--card-scale));
 }
 
