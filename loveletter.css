@@ -167,6 +167,11 @@ html, body {
     margin: 0 auto;
 }
 
+.stockitem {
+    border-radius: 8px;
+    box-shadow: 5px 5px 5px #656565;    
+}
+
 .lvt-card-back {
   position: absolute;
   width: calc(var(--card-width) * var(--card-scale));

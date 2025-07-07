@@ -83,7 +83,7 @@ function (dojo, declare) {
             this.playerHand.selectable = 1;
             this.playerHand.autowidth = true;
             this.playerHand.resizeItems(cardWidth * cardScale, cardHeight * cardScale, cardWidth * spriteCols * cardScale, cardHeight * spriteRows * cardScale);
-
+            this.playerHand.apparenceBorderWidth = '3px';
             console.log(gamedatas.hand)
             // Ensure gamedatas.hand is iterable
             for( var type_id in gamedatas.card_types ) {
