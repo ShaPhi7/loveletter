@@ -51,7 +51,8 @@
 :root {
   --card-width: 410px;
   --card-height: 560px;
-  --card-scale: 0.4;
+  --card-scale: 0.4; /*TODO make deck-card-scale*/
+  --hand-card-scale: 0.35;
   --sprite-cols: 6;
   --sprite-rows: 2;
 
@@ -152,15 +153,17 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    --card-scale: 0.35;
-    --sprite-width: calc(var(--card-width) * var(--sprite-cols) * var(--card-scale));
-    --sprite-height: calc(var(--card-height) * var(--sprite-rows) * var(--card-scale));
+    --sprite-width: calc(var(--card-width) * var(--sprite-cols) * var(--hand-card-scale));
+    --sprite-height: calc(var(--card-height) * var(--sprite-rows) * var(--hand-card-scale));
 }
 
 .lvt-hand .lvt-card-back {
     position: static;
-    width: calc(var(--card-width) * var(--card-scale));
-    height: calc(var(--card-height) * var(--card-scale));
+    width: calc(var(--card-width) * var(--hand-card-scale));
+    height: calc(var(--card-height) * var(--hand-card-scale));
+    background-position: 
+        calc(-4 * var(--card-width) * var(--hand-card-scale)) 
+        calc(-1 * var(--card-height) * var(--hand-card-scale));
     margin: 0 auto;
 }
 

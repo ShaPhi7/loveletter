@@ -74,10 +74,10 @@ function (dojo, declare) {
             const rootStyles = getComputedStyle(document.documentElement);
             const cardWidth    = parseFloat(rootStyles.getPropertyValue('--card-width'));
             const cardHeight   = parseFloat(rootStyles.getPropertyValue('--card-height'));
-            const cardScale    = parseFloat(rootStyles.getPropertyValue('--card-scale'));
-            const spriteCols    = parseFloat(rootStyles.getPropertyValue('--sprite-cols'));
-            const spriteRows    = parseFloat(rootStyles.getPropertyValue('--sprite-rows'));
-            console.log('Card dimensions:', cardWidth, cardHeight, cardScale);
+            // Get cardScale from the .hand element if present, otherwise fallback to root
+            const spriteCols   = parseFloat(rootStyles.getPropertyValue('--sprite-cols'));
+            const spriteRows   = parseFloat(rootStyles.getPropertyValue('--sprite-rows'));
+            const cardScale    = parseFloat(rootStyles.getPropertyValue('--hand-card-scale'));
 
             this.playerHand.create(this, $('lvt-playertable-' + this.player_id), cardWidth * cardScale * spriteCols, cardHeight * cardScale * spriteRows);
             this.playerHand.selectable = 1;
