@@ -148,6 +148,10 @@ html, body {
     margin-bottom: 10px;
 }
 
+.lvt-player-card {
+    position: relative;
+}
+
 .lvt-hand {
     width: 100%;
     display: flex;
@@ -169,7 +173,7 @@ html, body {
 
 .stockitem {
     border-radius: 8px;
-    box-shadow: 5px 5px 5px #656565;    
+    box-shadow: 5px 5px 5px #656565;
 }
 
 .lvt-card-back {

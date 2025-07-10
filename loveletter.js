@@ -60,7 +60,8 @@ function (dojo, declare) {
                 const html = `
                     <div id="lvt-playertable-${player_id}" class="lvt-playertable"
                          style="left: calc(50% + ${x}px); top: calc(50% + ${y}px); transform: translate(-50%, -50%)">
-                        <div class="lvt-player-name" style="color:#${player.color}">${player.name}</div>
+                        <div id="lvt-player-name-${player_id}" class="lvt-player-name" style="color:#${player.color}">${player.name}</div>
+                        <div id="lvt-player-card-${player_id}" class="lvt-player-card"></div>
                     </div>`;
 
                 dojo.place(html, "lvt-playertables");
@@ -79,7 +80,7 @@ function (dojo, declare) {
             const spriteRows   = parseFloat(rootStyles.getPropertyValue('--sprite-rows'));
             const cardScale    = parseFloat(rootStyles.getPropertyValue('--hand-card-scale'));
 
-            this.playerHand.create(this, $('lvt-playertable-' + this.player_id), cardWidth * cardScale * spriteCols, cardHeight * cardScale * spriteRows);
+            this.playerHand.create(this, $('lvt-player-card-' + this.player_id), cardWidth * cardScale * spriteCols, cardHeight * cardScale * spriteRows);
             this.playerHand.selectable = 1;
             this.playerHand.autowidth = true;
             this.playerHand.resizeItems(cardWidth * cardScale, cardHeight * cardScale, cardWidth * spriteCols * cardScale, cardHeight * spriteRows * cardScale);
