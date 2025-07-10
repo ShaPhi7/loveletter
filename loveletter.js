@@ -99,7 +99,7 @@ function (dojo, declare) {
 
             rotatedPlayerIds.forEach((player_id) => {
               const player = gamedatas.players[player_id]; //TODO - make this opponents only
-              if (!player.eliminated) {
+              if (!player.eliminated && player_id != this.player_id) {
                 const handDiv = document.createElement('div');
                 handDiv.className = 'lvt-hand';
                 handDiv.id = `lvt-hand-${player_id}`;
