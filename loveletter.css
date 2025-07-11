@@ -52,6 +52,7 @@
   --card-width: 410px;
   --card-height: 560px;
   --card-scale: 0.4; /*TODO make deck-card-scale*/
+  --deck-card-scale: 0.25;
   --hand-card-scale: 0.35;
   --sprite-cols: 6;
   --sprite-rows: 2;
@@ -100,18 +101,18 @@ html, body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: calc(var(--card-width) * var(--card-scale));
-  height: calc(var(--card-height) * var(--card-scale));
+  width: calc(var(--card-width) * var(--deck-card-scale));
+  height: calc(var(--card-height) * var(--deck-card-scale));
 }
 
 #lvt-deck {
-  width: calc(var(--card-width) * var(--card-scale));
-  height: calc(var(--card-height) * var(--card-scale));
+  width: calc(var(--card-width) * var(--deck-card-scale));
+  height: calc(var(--card-height) * var(--deck-card-scale));
   background-image: url('img/cards.jpg');
   background-size: var(--sprite-width) var(--sprite-height);
   background-position: 
-  calc(-4 * var(--card-width) * var(--card-scale)) 
-  calc(-1 * var(--card-height) * var(--card-scale));
+  calc(-4 * var(--card-width) * var(--deck-card-scale)) 
+  calc(-1 * var(--card-height) * var(--deck-card-scale));
   background-repeat: no-repeat;
   border-radius: 12px;
 }
@@ -178,8 +179,8 @@ html, body {
 
 .lvt-card-back {
   position: absolute;
-  width: calc(var(--card-width) * var(--card-scale));
-  height: calc(var(--card-height) * var(--card-scale));
+  width: calc(var(--card-width) * var(--deck-card-scale));
+  height: calc(var(--card-height) * var(--deck-card-scale));
   background-image: url('img/cards.jpg');
   background-size: var(--sprite-width) var(--sprite-height);
   background-position: 
