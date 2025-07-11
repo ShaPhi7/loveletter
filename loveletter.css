@@ -129,7 +129,7 @@ html, body {
 
 .lvt-playertable {
     position: absolute;
-    width: calc(1.5 * var(--card-width) * var(--card-scale) + 12px);
+    width: calc(1.8 * var(--card-width) * var(--card-scale) + 12px);
     height: calc(var(--card-height) * var(--card-scale) + 12px);
     background: #fff8;
     border: 1px solid #333;

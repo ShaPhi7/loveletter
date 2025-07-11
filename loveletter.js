@@ -37,7 +37,7 @@ function (dojo, declare) {
             console.log("Love Letter setup", gamedatas);
             
             dojo.place('lvt-table-center', 'lvt-playertables');
-
+            console.log(gamedatas);
             this.lvtPlayers = {};
             const playerIds = Object.keys(gamedatas.players);
             const totalPlayers = playerIds.length;
@@ -98,17 +98,18 @@ function (dojo, declare) {
             }
 
             rotatedPlayerIds.forEach((player_id) => {
-              const player = gamedatas.players[player_id]; //TODO - make this opponents only
+              const player = gamedatas.players[player_id];
               if (!player.eliminated && player_id != this.player_id) {
                 const handDiv = document.createElement('div');
                 handDiv.className = 'lvt-hand';
                 handDiv.id = `lvt-hand-${player_id}`;
                 this.lvtPlayers[player_id].node.appendChild(handDiv);
 
-                // Add a card to the hand
-                const cardDiv = document.createElement('div');
-                cardDiv.className = 'lvt-card lvt-card-back';
-                handDiv.appendChild(cardDiv);
+                for (let i = 0; i < gamedatas.cardcount.hand[player_id]; i++) {
+                  const cardDiv = document.createElement('div');
+                  cardDiv.className = 'lvt-card lvt-card-back';
+                  handDiv.appendChild(cardDiv);
+                }
               }
             });
 
