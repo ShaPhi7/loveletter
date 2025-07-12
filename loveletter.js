@@ -85,32 +85,42 @@ function (dojo, declare) {
             this.playerHand.autowidth = true;
             this.playerHand.resizeItems(cardWidth * cardScale, cardHeight * cardScale, cardWidth * spriteCols * cardScale, cardHeight * spriteRows * cardScale);
             this.playerHand.apparenceBorderWidth = '3px';
-            console.log(gamedatas.hand)
+            this.playerHand.image_items_per_row = spriteCols;
+
             // Ensure gamedatas.hand is iterable
             for( var type_id in gamedatas.card_types ) {
-              this.playerHand.addItemType( type_id, 0, g_gamethemeurl+'img/cards.jpg', type_id-1 );
+              this.playerHand.addItemType(type_id, 0, g_gamethemeurl+'img/cards.jpg', type_id-21);
             }
 
             for( var i in this.gamedatas.hand )
             {
                 var card = this.gamedatas.hand[i];
-                this.playerHand.addToStockWithId( card.type, card.id );
+                console.log(gamedatas.hand[i]);
+                console.log(card.type, card.id);
+                this.playerHand.addToStockWithId(card.type, card.id);
             }
 
             rotatedPlayerIds.forEach((player_id) => {
               const player = gamedatas.players[player_id];
-              if (!player.eliminated && player_id != this.player_id) {
+                if (!player.eliminated && player_id != this.player_id) {
+                const opponentHand = new ebg.stock();
                 const handDiv = document.createElement('div');
                 handDiv.className = 'lvt-hand';
                 handDiv.id = `lvt-hand-${player_id}`;
                 this.lvtPlayers[player_id].node.appendChild(handDiv);
 
+                opponentHand.create(this, handDiv, cardWidth * cardScale * spriteCols, cardHeight * cardScale * spriteRows);
+                opponentHand.autowidth = true;
+                opponentHand.resizeItems(cardWidth * cardScale, cardHeight * cardScale, cardWidth * spriteCols * cardScale, cardHeight * spriteRows * cardScale);
+                opponentHand.image_items_per_row = spriteCols;
+                opponentHand.addItemType('hand-card-back', 0, g_gamethemeurl + 'img/cards.jpg', 10); // -1 for back sprite
+                
                 for (let i = 0; i < gamedatas.cardcount.hand[player_id]; i++) {
-                  const cardDiv = document.createElement('div');
-                  cardDiv.className = 'lvt-card lvt-card-back';
-                  handDiv.appendChild(cardDiv);
+                  opponentHand.addToStockWithId('hand-card-back', `back_${player_id}_${i}`);
                 }
-              }
+
+                this.opponentHands[player_id] = opponentHand;
+                }
             });
 
             stackDeckCards();
