@@ -86,6 +86,7 @@ function (dojo, declare) {
             this.playerHand.resizeItems(cardWidth * cardScale, cardHeight * cardScale, cardWidth * spriteCols * cardScale, cardHeight * spriteRows * cardScale);
             this.playerHand.apparenceBorderWidth = '3px';
             this.playerHand.image_items_per_row = spriteCols;
+            dojo.connect( this.playerHand, 'onChangeSelection', this, 'onPlayerHandSelectionChanged' );
 
             // Ensure gamedatas.hand is iterable
             for( var type_id in gamedatas.card_types ) {
@@ -129,6 +130,33 @@ function (dojo, declare) {
             shuffleDeckAnimation().then(() => {
                 console.log('Deck shuffled!');
             });
+        },
+
+        onPlayerHandSelectionChanged: function( control_name, item_id )
+        {
+            // This method is called when myStockControl selected items changed
+            var items = this.playerHand.getSelectedItems();
+            if (items.length == 1 && this.validatePlay(items[0]))
+            { 
+              var guessId = 0; //TODO
+              var opponentId = 0; //TODO
+              this.playCard(items[0].id, guessId, opponentId);
+            }
+        },
+
+        playCard: function(card, guess_id, opponent_id)
+        {
+          this.ajaxcall( "/loveletter/loveletter/playCard.html", { 
+                                                      lock: true, 
+                                                      card: card,
+                                                      guess: guess_id,
+                                                      opponent: opponent_id
+                                                    },    this, function( result ) {  }, function( is_error) { } );  
+        },
+
+        validatePlay: function()
+        {
+          return true;
         },
 
         setupNotifications: function()
