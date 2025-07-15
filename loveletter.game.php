@@ -572,6 +572,11 @@ class loveletter extends Table
         self::validatePlayer($opponent_id);
         $cards = $this->cards->getCardsInLocation('aside');
         if (count($cards) === 0) {
+            //normally the player takes a card from the deck,
+            //if there are no cards in the deck then the player
+            //takes the card that was set aside at the beginning of the round
+            //if there are no cards set aside,
+            //then there are no cards in the deck, so the game should already have finished
             throw new feException("There are no cards set aside, so the round should be over.");
         }
     }

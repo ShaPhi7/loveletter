@@ -31,6 +31,17 @@ function (dojo, declare) {
             this.opponentHands = {};
             this.discards = {};
             this.discussionTimeout = {};
+
+            //TODO - get this from view.php
+            const rootStyles = getComputedStyle(document.documentElement);
+            const GUARD   = parseInt(rootStyles.getPropertyValue('--card-type-guard'));
+            const PRIEST  = parseInt(rootStyles.getPropertyValue('--card-type-priest'));
+            const BARON   = parseInt(rootStyles.getPropertyValue('--card-type-baron'));
+            const HANDMAID= parseInt(rootStyles.getPropertyValue('--card-type-handmaid'));
+            const PRINCE  = parseInt(rootStyles.getPropertyValue('--card-type-prince'));
+            const KING    = parseInt(rootStyles.getPropertyValue('--card-type-king'));
+            const COUNTESS= parseInt(rootStyles.getPropertyValue('--card-type-countess'));
+            const PRINCESS= parseInt(rootStyles.getPropertyValue('--card-type-princess'));
         },
 
         setup: function(gamedatas) {
@@ -109,12 +120,17 @@ function (dojo, declare) {
                 handDiv.className = 'lvt-hand';
                 handDiv.id = `lvt-hand-${player_id}`;
                 this.lvtPlayers[player_id].node.appendChild(handDiv);
+                // Make the player table clickable and trigger onSelectPlayer
+                console.log(this.lvtPlayers[player_id].node);
+                dojo.connect(this.lvtPlayers[player_id].node, 'onclick', this, 'onSelectPlayer');
+                this.lvtPlayers[player_id].node.style.cursor = 'pointer';
 
                 opponentHand.create(this, handDiv, cardWidth * cardScale * spriteCols, cardHeight * cardScale * spriteRows);
                 opponentHand.autowidth = true;
                 opponentHand.resizeItems(cardWidth * cardScale, cardHeight * cardScale, cardWidth * spriteCols * cardScale, cardHeight * spriteRows * cardScale);
                 opponentHand.image_items_per_row = spriteCols;
                 opponentHand.addItemType('hand-card-back', 0, g_gamethemeurl + 'img/cards.jpg', 10); // -1 for back sprite
+                opponentHand.selectable = 0;
                 
                 for (let i = 0; i < gamedatas.cardcount.hand[player_id]; i++) {
                   opponentHand.addToStockWithId('hand-card-back', `back_${player_id}_${i}`);
@@ -132,16 +148,44 @@ function (dojo, declare) {
             });
         },
 
+        onSelectPlayer: function(event) {
+            const playerId = event.currentTarget.id.replace('lvt-playertable-', '');
+
+            Object.keys(this.lvtPlayers).forEach(pid => {
+              dojo.removeClass('lvt-playertable-' + pid, 'selectedOpponent');
+            });
+            dojo.addClass('lvt-playertable-' + playerId, 'selectedOpponent');
+
+            const selectedCard = this.playerHand.getSelectedItems()[0];
+            if (!selectedCard) {
+              this.showMessage(_("Please select a card to play."), "info");
+              return;
+            }
+
+            const cardType = selectedCard.type;
+            const requiresOpponent = [GUARD, PRIEST, BARON, PRINCE, KING].includes(cardType);
+
+            if (requiresOpponent) {
+              if (playerId == this.player_id) {
+                this.showMessage(_("Please select an opponent to target."), "info");
+                return;
+              }
+            }
+        },
+
         onPlayerHandSelectionChanged: function( control_name, item_id )
         {
-            // This method is called when myStockControl selected items changed
             var items = this.playerHand.getSelectedItems();
             if (items.length == 1 && this.validatePlay(items[0]))
             { 
-              var guessId = 0; //TODO
-              var opponentId = 0; //TODO
+              var guessId = 0
+              var opponentNode = document.querySelector('.selectedOpponent');
+              var opponentId = opponentNode ? opponentNode.id.replace('lvt-playertable-', '') : 0;
               this.playCard(items[0].id, guessId, opponentId);
             }
+
+            //TODO - validate playing the card and then play it.
+
         },
 
         playCard: function(card, guess_id, opponent_id)
@@ -164,6 +208,9 @@ function (dojo, declare) {
             console.log( 'notifications subscriptions setup' );
 
             dojo.subscribe( 'newCard', this, "notif_newCard" );
+            dojo.subscribe( 'cardPlayedLong', this, "notif_cardPlayed" );
+            dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
+            this.notifqueue.setSynchronous( 'cardPlayedLong', 3000 );
         },
 
         notif_newCard: function( notif ) 
@@ -183,6 +230,73 @@ function (dojo, declare) {
             {
                 this.playerHand.removeFromStockById( notif.args.remove.id );
             }
+        },
+
+        notif_cardPlayed: function( notif )
+        {
+            if( this.player_id == notif.args.player_id )
+            {
+                // Current player played a card
+                this.placeCardOnDiscard( notif.args.card.id, notif.args.player_id, notif.args.card.type, 'playertablecard_'+notif.args.player_id+'_item_'+notif.args.card.id, notif.args.opponent_id );
+                this.playerHand.removeFromStockById( notif.args.card.id );
+            }
+            else
+            {
+                // Another player played a card
+                this.placeCardOnDiscard( notif.args.card.id, notif.args.player_id, notif.args.card.type, 'playertablecard_'+notif.args.player_id , notif.args.opponent_id );
+            }
+            
+            if( typeof notif.args.noeffect == 'undefined' )
+            {
+                if( notif.args.card.type == GUARD )
+                {
+                  // Guard : who are you?
+                  this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name}, I think you are a ${guess}!'), { 
+                    player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>',
+                    guess: '<b>'+notif.args.guess_name+'</b>'
+                  } ) );
+                }
+                else if( notif.args.card.type == PRIEST)
+                {
+                  // Priest : show your card
+
+                  var delay = 0;
+                  for( var i in notif.args.opponents )
+                  {
+                    var opponent_id = notif.args.opponents[i];
+                    this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name} please show me your card.'), { player_name: '<span style="color:#'+this.gamedatas.players[ opponent_id ].color+'">'+ this.gamedatas.players[ opponent_id ].name+'</span>' } ), delay );
+                    this.showDiscussion( opponent_id, _('Here it is.'), delay+2000 );
+                    
+                    delay += 2000;
+                  }
+                }
+                else if( notif.args.card.type == BARON || notif.args.card.type == 11 )
+                {
+                  this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name}, let`s compare our cards...'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>' } ) );
+                  this.showDiscussion( notif.args.opponent_id, _('Alright.'), 2000 );
+                }
+                else if( notif.args.card.type == HANDMAID )
+                {
+                  this.showDiscussion( notif.args.player_id, _("I'm protected for one turn.") );
+                }
+                else if( notif.args.card.type == PRINCE )
+                {
+                  if( notif.args.player_id != notif.args.opponent_id )
+                  {
+                    this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name}, you must discard your card.'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>' } ) );
+                    this.showDiscussion( notif.args.opponent_id, _('Alright.'), 2000 );
+                  }
+                  else
+                  {
+                    this.showDiscussion( notif.args.player_id, _('I play the Prince effect against myself and discard my card.') );
+                  }
+                }
+                else if( notif.args.card.type == KING  )
+                {
+                  this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name}, we must exchange our hand.'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>' } ) );
+                  this.showDiscussion( notif.args.opponent_id, _('Alright.'), 2000 );
+                }
+            }            
         },
     });
 
