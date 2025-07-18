@@ -106,7 +106,6 @@ html, body {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  background: #eee4;  /* Just to see the area */
   min-height: 150px;
   min-width: 400px;
   position: absolute;
@@ -271,7 +270,6 @@ html, body {
   background-position-y: 0;
   background-size: auto 36px; /* or 100% 100% for forced fit, but this is best for proportional */
 }
-.lvt-card-badge.lit {
+.lvt-card-badge.played {
   opacity: 1;
-  box-shadow: 0 0 8px 2px #fd3;
 }

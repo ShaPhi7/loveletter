@@ -54,7 +54,7 @@ function (dojo, declare) {
                 rotatedPlayerIds.push(rotatedPlayerIds.shift());
             }
 
-            const radius = 400;
+            const radius = 350;
 
             rotatedPlayerIds.forEach((player_id, index) => {
                 const player = gamedatas.players[player_id];
@@ -402,6 +402,7 @@ const SPRITE_HEIGHT_ORIGINAL = 127; // (if the sprite image is exactly square)
         const value = badges[index];
         const badge = document.createElement('div');
         badge.className = 'lvt-card-badge';
+        badge.setAttribute('data-type', value);
         badge.style.backgroundImage = `url(${g_gamethemeurl}img/cardnumbers.png)`;
         // Scale the full image to fit vertically
         badge.style.backgroundSize = `auto ${BADGE_HEIGHT}px`;
@@ -414,8 +415,32 @@ const SPRITE_HEIGHT_ORIGINAL = 127; // (if the sprite image is exactly square)
     }
 
     container.appendChild(grid);
+
+    markBadgesAsPlayed(gamedatas);
 }
 
+function markBadgesAsPlayed(gamedatas) {
+  Object.values(gamedatas.discard).forEach(discardArray => {
+    if (Array.isArray(discardArray)) {
+      discardArray.forEach(card => {
+        const value = gamedatas.card_types[card.type].value;
+        markBadgeAsPlayed(value);
+      });
+    }
+  });
+}
+
+function markBadgeAsPlayed(value) {
+  const badges = document.querySelectorAll(`.lvt-card-badge[data-type="${value}"]`);
+  if (badges && badges.length > 0) {
+    for (let i = 0; i < badges.length; i++) {
+      if (!badges[i].classList.contains('played')) {
+        badges[i].classList.add('played');
+        break;
+      }
+    }
+  }
+}
 
 function stackDeckCards(containerId = 'lvt-deck-area', offsetX = 1, offsetY = 1) {
   const TOTAL_CARDS = 21;
