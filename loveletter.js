@@ -32,21 +32,12 @@ function (dojo, declare) {
             this.discards = {};
             this.discussionTimeout = {};
 
-            //TODO - get this from view.php
-            const rootStyles = getComputedStyle(document.documentElement);
-            const GUARD   = parseInt(rootStyles.getPropertyValue('--card-type-guard'));
-            const PRIEST  = parseInt(rootStyles.getPropertyValue('--card-type-priest'));
-            const BARON   = parseInt(rootStyles.getPropertyValue('--card-type-baron'));
-            const HANDMAID= parseInt(rootStyles.getPropertyValue('--card-type-handmaid'));
-            const PRINCE  = parseInt(rootStyles.getPropertyValue('--card-type-prince'));
-            const KING    = parseInt(rootStyles.getPropertyValue('--card-type-king'));
-            const COUNTESS= parseInt(rootStyles.getPropertyValue('--card-type-countess'));
-            const PRINCESS= parseInt(rootStyles.getPropertyValue('--card-type-princess'));
+          Object.assign(this, window.CARD_CONSTANTS);
         },
 
         setup: function(gamedatas) {
             console.log("Love Letter setup", gamedatas);
-            
+
             dojo.place('lvt-table-center', 'lvt-playertables');
             console.log(gamedatas);
             this.lvtPlayers = {};
@@ -163,7 +154,7 @@ function (dojo, declare) {
             }
 
             const cardType = selectedCard.type;
-            const requiresOpponent = [GUARD, PRIEST, BARON, PRINCE, KING].includes(cardType);
+            const requiresOpponent = [this.GUARD, this.PRIEST, this.BARON, this.PRINCE, this.KING].includes(cardType);
 
             if (requiresOpponent) {
               if (playerId == this.player_id) {
@@ -248,7 +239,7 @@ function (dojo, declare) {
             
             if( typeof notif.args.noeffect == 'undefined' )
             {
-                if( notif.args.card.type == GUARD )
+                if( notif.args.card.type == this.GUARD )
                 {
                   // Guard : who are you?
                   this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name}, I think you are a ${guess}!'), { 
@@ -256,7 +247,7 @@ function (dojo, declare) {
                     guess: '<b>'+notif.args.guess_name+'</b>'
                   } ) );
                 }
-                else if( notif.args.card.type == PRIEST)
+                else if( notif.args.card.type == this.PRIEST)
                 {
                   // Priest : show your card
 
@@ -270,16 +261,16 @@ function (dojo, declare) {
                     delay += 2000;
                   }
                 }
-                else if( notif.args.card.type == BARON || notif.args.card.type == 11 )
+                else if( notif.args.card.type == this.BARON || notif.args.card.type == 11 )
                 {
                   this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name}, let`s compare our cards...'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>' } ) );
                   this.showDiscussion( notif.args.opponent_id, _('Alright.'), 2000 );
                 }
-                else if( notif.args.card.type == HANDMAID )
+                else if( notif.args.card.type == this.HANDMAID )
                 {
                   this.showDiscussion( notif.args.player_id, _("I'm protected for one turn.") );
                 }
-                else if( notif.args.card.type == PRINCE )
+                else if( notif.args.card.type == this.PRINCE )
                 {
                   if( notif.args.player_id != notif.args.opponent_id )
                   {
@@ -291,7 +282,7 @@ function (dojo, declare) {
                     this.showDiscussion( notif.args.player_id, _('I play the Prince effect against myself and discard my card.') );
                   }
                 }
-                else if( notif.args.card.type == KING  )
+                else if( notif.args.card.type == this.KING  )
                 {
                   this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name}, we must exchange our hand.'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>' } ) );
                   this.showDiscussion( notif.args.opponent_id, _('Alright.'), 2000 );
