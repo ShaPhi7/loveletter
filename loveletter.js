@@ -42,7 +42,7 @@ function (dojo, declare) {
         setup: function(gamedatas) {
             console.log("Love Letter setup", gamedatas);
 
-            dojo.place('lvt-table-center', 'lvt-playertables');
+            dojo.place('lvt-center-area', 'lvt-playertables');
             console.log(gamedatas);
             this.lvtPlayers = {};
             const playerIds = Object.keys(gamedatas.players);
@@ -54,7 +54,7 @@ function (dojo, declare) {
                 rotatedPlayerIds.push(rotatedPlayerIds.shift());
             }
 
-            const radius = 300;
+            const radius = 400;
 
             rotatedPlayerIds.forEach((player_id, index) => {
                 const player = gamedatas.players[player_id];
@@ -136,6 +136,8 @@ function (dojo, declare) {
             });
 
             stackDeckCards();
+
+            buildPlayedCardBadges(gamedatas);
             //TODO - put in proper place, here for testing only.
             // Add shuffle animation
             shuffleDeckAnimation().then(() => {
@@ -319,7 +321,7 @@ function (dojo, declare) {
     });
 
 function shuffleDeckAnimation({
-  containerId = 'lvt-table-center',
+  containerId = 'lvt-deck-area',
   cardClass = 'lvt-card-back',
   spreadRadius = 80,
   hopRadius = 60,
@@ -368,7 +370,54 @@ function shuffleDeckAnimation({
   });
 }
 
-function stackDeckCards(containerId = 'lvt-table-center', offsetX = 1, offsetY = 1) {
+function buildPlayedCardBadges(gamedatas) {
+const BADGE_WIDTH_ORIGINAL = 127;  // original badge width in the sprite
+const BADGE_WIDTH = 36;            // new displayed badge width
+const BADGE_HEIGHT = 36;
+const SPRITE_HEIGHT_ORIGINAL = 127; // (if the sprite image is exactly square)
+
+    const COLUMNS = 4;
+    const ROWS = 6; // up to 24 slots
+
+    const container = document.getElementById('lvt-badges-area');
+    container.innerHTML = '';
+
+    // Create the grid container
+    const grid = document.createElement('div');
+    grid.className = 'lvt-badge-grid';
+
+    // Gather all badges in a flat array (sorted for consistent order)
+    const badges = [];
+    Object.values(gamedatas.card_types).forEach(cardInfo => {
+        const value = cardInfo.value;
+        const count = cardInfo.qt;
+        for (let i = 0; i < count; i++) {
+            badges.push(value);
+        }
+    });
+    badges.sort((a, b) => a - b);
+
+    // Add up to COLUMNS * ROWS badges, filling down each column
+    for (let index = 0; index < badges.length && index < COLUMNS * ROWS; index++) {
+        const value = badges[index];
+        const badge = document.createElement('div');
+        badge.className = 'lvt-card-badge';
+        badge.style.backgroundImage = `url(${g_gamethemeurl}img/cardnumbers.png)`;
+        // Scale the full image to fit vertically
+        badge.style.backgroundSize = `auto ${BADGE_HEIGHT}px`;
+        // Scale the offset: (value * original width) * (displayed height / original height)
+        const xOffset = -(value * BADGE_WIDTH_ORIGINAL * (BADGE_HEIGHT / SPRITE_HEIGHT_ORIGINAL));
+        badge.style.backgroundPosition = `${xOffset}px 0`;
+        badge.style.width = BADGE_WIDTH + "px";
+        badge.style.height = BADGE_HEIGHT + "px";
+        grid.appendChild(badge);
+    }
+
+    container.appendChild(grid);
+}
+
+
+function stackDeckCards(containerId = 'lvt-deck-area', offsetX = 1, offsetY = 1) {
   const TOTAL_CARDS = 21;
 
   // Remove all existing deck cards

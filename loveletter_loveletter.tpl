@@ -6,7 +6,10 @@
 
 <!-- Main Play Area -->
 <div id="lvt-play-area">
-    <div id="lvt-table-center"></div>
+    <div id="lvt-center-area">
+        <div id="lvt-deck-area"></div>
+        <div id="lvt-badges-area"></div>
+    </div>
     <div id="lvt-playertables"></div>
 </div>
 

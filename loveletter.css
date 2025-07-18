@@ -56,6 +56,11 @@
   --hand-card-scale: 0.35;
   --sprite-cols: 6;
   --sprite-rows: 2;
+  --badge-grid-cols: 4;
+  --badge-grid-rows: 6;
+  --badge-width: 36px; 
+  --badge-height: 36px;
+  --badge-gap: 0px;
 
   /* Scaled total sprite size */
   --sprite-width: calc(var(--card-width) * var(--sprite-cols) * var(--card-scale));
@@ -96,13 +101,49 @@ html, body {
     height: 100%;
 }
 
-#lvt-table-center {
+#lvt-center-area {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  background: #eee4;  /* Just to see the area */
+  min-height: 150px;
+  min-width: 400px;
   position: absolute;
-  top: 50%;
   left: 50%;
+  top: 50%;
   transform: translate(-50%, -50%);
-  width: calc(var(--card-width) * var(--deck-card-scale));
-  height: calc(var(--card-height) * var(--deck-card-scale));
+}
+
+#lvt-badges-area {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 10px;
+  background: #fff8;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #0002;
+  min-width: calc(var(--badge-grid-cols) * var(--badge-width) + (var(--badge-grid-cols) - 1) * var(--badge-gap)); /* Extra space for padding/borders */
+}
+
+.lvt-badge-grid {
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-columns: repeat(var(--badge-grid-cols), var(--badge-width));
+  grid-auto-rows: var(--badge-height);
+  gap: var(--badge-gap);
+  min-width: calc(var(--badge-grid-cols) * var(--badge-width) + (var(--badge-grid-cols) - 1) * var(--badge-gap));
+}
+
+#lvt-deck-area {
+  position: relative;
+  width: 100px;
+  height: 120px;
+  margin-right: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #lvt-deck {
@@ -194,3 +235,43 @@ html, body {
   border-radius: 12px;
 }
 
+#played-cards-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff8;
+  border-radius: 12px;
+  padding: 10px 10px 10px 10px;
+  box-shadow: 0 2px 8px #0002;
+  position: absolute; /* to position in center easily */
+  left: 60%; /* tune for your table */
+  top: 48%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+.lvt-badge-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 140px;
+}
+
+.lvt-card-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  display: inline-block;
+  opacity: 0.3;
+  margin: 2px;
+  transition: opacity 0.2s, box-shadow 0.2s;
+  background-repeat: no-repeat;
+  background-position-y: 0;
+  background-size: auto 36px; /* or 100% 100% for forced fit, but this is best for proportional */
+}
+.lvt-card-badge.lit {
+  opacity: 1;
+  box-shadow: 0 0 8px 2px #fd3;
+}
