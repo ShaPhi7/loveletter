@@ -32,7 +32,11 @@ function (dojo, declare) {
             this.discards = {};
             this.discussionTimeout = {};
 
-          Object.assign(this, window.CARD_CONSTANTS);
+            this.selectedOpponentId = null;
+            this.selectedCardId = null; 
+            this.selectedCardType = null;
+
+            Object.assign(this, window.CARD_CONSTANTS);
         },
 
         setup: function(gamedatas) {
@@ -147,36 +151,64 @@ function (dojo, declare) {
             });
             dojo.addClass('lvt-playertable-' + playerId, 'selectedOpponent');
 
-            const selectedCard = this.playerHand.getSelectedItems()[0];
-            if (!selectedCard) {
-              this.showMessage(_("Please select a card to play."), "info");
-              return;
-            }
+            this.selectedOpponentId = playerId;
 
-            const cardType = selectedCard.type;
-            const requiresOpponent = [this.GUARD, this.PRIEST, this.BARON, this.PRINCE, this.KING].includes(cardType);
+            this.tryPlaySelectedCard();
+        },
 
-            if (requiresOpponent) {
-              if (playerId == this.player_id) {
-                this.showMessage(_("Please select an opponent to target."), "info");
-                return;
-              }
+        onPlayerHandSelectionChanged: function(control_name, item_id) {
+            const items = this.playerHand.getSelectedItems();
+            this.selectedCardId = items.length == 1 ? Number(items[0].id) : null;
+            this.selectedCardType = items.length == 1 ? Number(items[0].type) : null;
+
+            if (this.selectedCardId) {
+              this.tryPlaySelectedCard();
             }
         },
 
-        onPlayerHandSelectionChanged: function( control_name, item_id )
+        tryPlaySelectedCard: function()
         {
-            var items = this.playerHand.getSelectedItems();
-            if (items.length == 1 && this.validatePlay(items[0]))
-            { 
-              var guessId = 0
-              var opponentNode = document.querySelector('.selectedOpponent');
-              var opponentId = opponentNode ? opponentNode.id.replace('lvt-playertable-', '') : 0;
-              this.playCard(items[0].id, guessId, opponentId);
+          if (!this.selectedCardId) {
+            this.showMessage(_("Please select a card to play."), "info");
+            return;
+          }
+
+          const cardType = this.selectedCardType;
+          const requiresOpponent = [this.GUARD, this.PRIEST, this.BARON, this.PRINCE, this.KING].includes(cardType);
+          if (!requiresOpponent)
+          {
+            this.selectedOpponentId = null; // Clear opponent selection for non-targeting cards
+          }
+          else
+          {
+            if (!this.selectedOpponentId)
+            {
+              this.showMessage(_("Please select a player to target."), "info");
+              return;
             }
 
-            //TODO - validate playing the card and then play it.
+            if (this.selectedOpponentId == this.player_id
+              && cardType !== this.PRINCE)
+            {
+              this.showMessage(_("You cannot target yourself with this card."), "error");
+              return;
+            }
 
+            // Check out of the round
+            if(dojo.hasClass('lvt-playertable-'+this.selectedOpponentId, 'outOfTheRound'))
+            {
+              this.showMessage( _("This player is out of the round"), 'error' );
+              return;
+            }   
+        
+            // Check protection
+            if(dojo.style('lvt-playertable-'+this.selectedOpponentId, 'protected'))
+            {
+              this.showMessage( _("This player is protected and cannot be targeted by any card effect."), 'error' );
+              return;
+            }
+          }
+            this.playCard(this.selectedCardId, -1, this.selectedOpponentId);
         },
 
         playCard: function(card, guess_id, opponent_id)
@@ -187,11 +219,6 @@ function (dojo, declare) {
                                                       guess: guess_id,
                                                       opponent: opponent_id
                                                     },    this, function( result ) {  }, function( is_error) { } );  
-        },
-
-        validatePlay: function()
-        {
-          return true;
         },
 
         setupNotifications: function()
