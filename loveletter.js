@@ -19,7 +19,8 @@ define([
     "dojo", "dojo/_base/declare",
     "ebg/core/gamegui",
     "ebg/counter",
-    "ebg/stock"
+    "ebg/stock",
+    g_gamethemeurl + "modules/bga-cards.js"
 ],
 function (dojo, declare) {
     return declare("bgagame.loveletter", ebg.core.gamegui, {
@@ -35,6 +36,8 @@ function (dojo, declare) {
             this.selectedOpponentId = null;
             this.selectedCardId = null; 
             this.selectedCardType = null;
+
+            this.animationManager = new AnimationManager(this, { duration: 700 });
 
             Object.assign(this, window.CARD_CONSTANTS);
         },
@@ -138,6 +141,8 @@ function (dojo, declare) {
             stackDeckCards();
 
             buildPlayedCardBadges(gamedatas);
+            
+            this.setupNotifications();
             //TODO - put in proper place, here for testing only.
             // Add shuffle animation
             shuffleDeckAnimation().then(() => {
@@ -227,7 +232,7 @@ function (dojo, declare) {
         {
             console.log( 'notifications subscriptions setup' );
 
-            dojo.subscribe( 'newCard', this, "notif_newCard" );
+            //dojo.subscribe( 'newCard', this, "notif_newCard" );
             dojo.subscribe( 'cardPlayedLong', this, "notif_cardPlayed" );
             dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
             this.notifqueue.setSynchronous( 'cardPlayedLong', 3000 );
@@ -254,19 +259,25 @@ function (dojo, declare) {
 
         notif_cardPlayed: function( notif )
         {
-            if( this.player_id == notif.args.player_id )
-            {
-                // Current player played a card
-                this.placeCardOnDiscard( notif.args.card.id, notif.args.player_id, notif.args.card.type, 'playertablecard_'+notif.args.player_id+'_item_'+notif.args.card.id, notif.args.opponent_id );
-                this.playerHand.removeFromStockById( notif.args.card.id );
+            console.log( 'notif_cardPlayed', notif );
+
+            if(this.player_id == notif.args.player_id) {
+            this.playerHand.removeFromStockById(notif.args.card.id);
             }
-            else
-            {
-                // Another player played a card
-                this.placeCardOnDiscard( notif.args.card.id, notif.args.player_id, notif.args.card.type, 'playertablecard_'+notif.args.player_id , notif.args.opponent_id );
-            }
+
+            const badgeValue = this.gamedatas.card_types[notif.args.card.type].value;
+
+            animateRealCardPlay({
+                cardId: notif.args.card.id,
+                cardType: notif.args.card.type,
+                badgeValue,
+                thisId: String(this.player_id),
+                activeId: notif.args.player_id,
+                opponentId: notif.args.opponent_id,
+                animationManager: this.animationManager
+            });
             
-            if( typeof notif.args.noeffect == 'undefined' )
+/*            if( typeof notif.args.noeffect == 'undefined' )
             {
                 if( notif.args.card.type == this.GUARD )
                 {
@@ -316,7 +327,7 @@ function (dojo, declare) {
                   this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name}, we must exchange our hand.'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>' } ) );
                   this.showDiscussion( notif.args.opponent_id, _('Alright.'), 2000 );
                 }
-            }            
+            } */           
         },
     });
 
@@ -402,6 +413,7 @@ const SPRITE_HEIGHT_ORIGINAL = 127; // (if the sprite image is exactly square)
         const value = badges[index];
         const badge = document.createElement('div');
         badge.className = 'lvt-card-badge';
+        badge.id = `lvt-card-badge-${index+1}`;
         badge.setAttribute('data-type', value);
         badge.style.backgroundImage = `url(${g_gamethemeurl}img/cardnumbers.png)`;
         // Scale the full image to fit vertically
@@ -431,12 +443,13 @@ function markBadgesAsPlayed(gamedatas) {
 }
 
 function markBadgeAsPlayed(value) {
-  const badges = document.querySelectorAll(`.lvt-card-badge[data-type="${value}"]`);
+  const badges = Array.from(document.querySelectorAll(`.lvt-card-badge[data-type="${value}"]`));
+  badges.reverse();
   if (badges && badges.length > 0) {
     for (let i = 0; i < badges.length; i++) {
       if (!badges[i].classList.contains('played')) {
         badges[i].classList.add('played');
-        break;
+        return badges[i];
       }
     }
   }
@@ -473,5 +486,117 @@ function stackDeckCards(containerId = 'lvt-deck-area', offsetX = 1, offsetY = 1)
   });
   console.log('Stacked deck cards in', containerId, 'Count:', cards.length);
 }
+
+async function animateRealCardPlay({
+    cardId,
+    cardType,    // Not directly used but available for future effects
+    badgeValue,
+    thisId,      // String
+    activeId,    // String or Number
+    opponentId   // String or Number
+}) {
+    let handCard = null;
+    if (String(thisId) == String(activeId)) {
+        handCard = document.getElementById(`lvt-player-card-${thisId}_item_${cardId}`);
+    } else {
+        const opponentHandDiv = document.getElementById(`lvt-hand-${activeId}`);
+        if (opponentHandDiv) {
+            handCard = opponentHandDiv.querySelector(`[id^="lvt-hand-${activeId}_item_back_${activeId}_1"]`);
+        }
+    }
+    if (!handCard) {
+        console.warn('Could not find hand card element for animation');
+        return;
+    }
+
+    const badge = markBadgeAsPlayed(badgeValue);
+    if (!badge) {
+        console.warn('Could not find badge to animate to');
+        return;
+    }
+
+    // 1. Get card's starting position and move to body
+    const fromRect = handCard.getBoundingClientRect();
+    document.body.appendChild(handCard);
+    Object.assign(handCard.style, {
+        position: 'fixed',
+        left: `${fromRect.left}px`,
+        top: `${fromRect.top}px`,
+        width: `${fromRect.width}px`,
+        height: `${fromRect.height}px`,
+        margin: '0',
+        zIndex: 9999,
+        pointerEvents: 'none',
+        transition: ''
+    });
+
+    // Helper to do slide/fade sequence after flip (or immediately if no flip)
+    function doSlideAndFade() {
+        // Step 1: Move to opponent if needed
+        if (opponentId && String(opponentId) !== String(thisId)) {
+            const opponentTable = document.getElementById(`lvt-playertable-${opponentId}`);
+            if (opponentTable) {
+                const oppRect = opponentTable.getBoundingClientRect();
+                setTimeout(() => {
+                    handCard.style.transition = 'left 0.5s cubic-bezier(.5,1.4,.6,1), top 0.5s cubic-bezier(.5,1.4,.6,1)';
+                    handCard.style.left = `${oppRect.left}px`;
+                    handCard.style.top = `${oppRect.top}px`;
+
+                    // Step 2: After move to opponent, move to badge
+                    setTimeout(() => {
+                        const badgeRect = badge.getBoundingClientRect();
+                        handCard.style.transition = 'left 0.6s cubic-bezier(.7,1.6,.7,1), top 0.6s cubic-bezier(.7,1.6,.7,1)';
+                        handCard.style.left = `${badgeRect.left}px`;
+                        handCard.style.top = `${badgeRect.top}px`;
+
+                        // Step 3: After move to badge, fade and remove
+                        setTimeout(() => {
+                            handCard.style.transition = 'opacity 0.4s';
+                            handCard.style.opacity = '0';
+                            setTimeout(() => handCard.remove(), 400);
+                        }, 650); // after move to badge finishes
+                    }, 550); // after move to opponent finishes
+                }, 20);
+
+                return;
+            }
+        }
+
+        // If no opponent, slide directly to badge then fade
+        setTimeout(() => {
+            const badgeRect = badge.getBoundingClientRect();
+            handCard.style.transition = 'left 0.6s cubic-bezier(.7,1.6,.7,1), top 0.6s cubic-bezier(.7,1.6,.7,1)';
+            handCard.style.left = `${badgeRect.left}px`;
+            handCard.style.top = `${badgeRect.top}px`;
+
+            setTimeout(() => {
+                handCard.style.transition = 'opacity 0.4s';
+                handCard.style.opacity = '0';
+                setTimeout(() => handCard.remove(), 400);
+            }, 650); // after slide to badge finishes
+        }, 20);
+    }
+
+    // If opponent's card (so needs flip)
+    if (String(thisId) !== String(activeId)) {
+        // CSS FLIP ANIMATION (simple version)
+        handCard.style.transition = 'transform 0.4s';
+        handCard.style.transform = 'rotateY(180deg)';
+        setTimeout(() => {
+            handCard.classList.remove('lvt-card-back');
+            handCard.classList.add('lvt-card-front');
+            handCard.style.transition = '';
+            handCard.style.transform = '';
+            doSlideAndFade();
+        }, 400);
+    } else {
+        // Active player—already face up
+        doSlideAndFade();
+    }
+}
+
+
+
+
 
 });
