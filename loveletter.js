@@ -40,7 +40,7 @@ function (dojo, declare) {
             const rootStyles = getComputedStyle(document.documentElement);
             this.cardWidth    = parseFloat(rootStyles.getPropertyValue('--card-width'));
             this.cardHeight   = parseFloat(rootStyles.getPropertyValue('--card-height'));
-            this.cardScale    = parseFloat(rootStyles.getPropertyValue('--card-scale'));
+            this.deckScale    = parseFloat(rootStyles.getPropertyValue('--deck-scale'));
 
             Object.assign(this, window.CARD_CONSTANTS);
         },
@@ -80,13 +80,13 @@ function (dojo, declare) {
               
               setupFrontDiv: (card, div) => {
                     div.classList.add('lvt-card');
-                        div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, this.cardHeight, this.cardWidth, this.cardScale, window.CARD_CONSTANTS);
+                        div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, this.cardHeight, this.cardWidth, this.deckScale, window.CARD_CONSTANTS);
                     div.id = `card-${card.id}-front`;
                 },
 
               setupBackDiv: (card, div) => {
                   div.classList.add('lvt-card');
-                      div.style.backgroundPosition = getCardSpriteBackgroundPosition("back", this.cardHeight, this.cardWidth, this.cardScale, window.CARD_CONSTANTS);
+                      div.style.backgroundPosition = getCardSpriteBackgroundPosition("back", this.cardHeight, this.cardWidth, this.deckScale, window.CARD_CONSTANTS);
                   div.id = `card-${card.id}-back`;
                 },
             });
