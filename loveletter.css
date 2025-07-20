@@ -53,7 +53,7 @@
   --card-height: 560px;
   --card-scale: 0.7;
   --deck-scale: 0.4;
-  --hand-card-scale: 0.35;
+  --hand-scale: 0.35;
   --sprite-cols: 6;
   --sprite-rows: 2;
   --badge-grid-cols: 4;
@@ -129,6 +129,12 @@ html, body {
   position: relative;
 }
 
+.lvt-player-table .lvt-card-container {
+  width: calc(var(--card-width) * var(--hand-scale));
+  height: calc(var(--card-height) * var(--hand-scale));
+  position: relative;
+}
+
 .deck .lvt-card-container {
   width: calc(var(--card-width) * var(--deck-scale));
   height: calc(var(--card-height) * var(--deck-scale));
@@ -140,6 +146,14 @@ html, body {
   height: calc(var(--card-height) * var(--card-scale));
   background-image: url('img/cards.jpg');
   border-radius: 12%;
+}
+
+.lvt-player-table .lvt-card {
+  width: calc(var(--card-width) * var(--hand-scale));
+  height: calc(var(--card-height) * var(--hand-scale));
+  background-size:
+    calc(var(--card-width) * var(--sprite-cols) * var(--hand-scale))
+    calc(var(--card-height) * var(--sprite-rows) * var(--hand-scale))
 }
 
 .deck .lvt-card {

@@ -41,6 +41,7 @@ function (dojo, declare) {
             this.cardWidth    = parseFloat(rootStyles.getPropertyValue('--card-width'));
             this.cardHeight   = parseFloat(rootStyles.getPropertyValue('--card-height'));
             this.deckScale    = parseFloat(rootStyles.getPropertyValue('--deck-scale'));
+            this.handScale    = parseFloat(rootStyles.getPropertyValue('--hand-scale'));
 
             Object.assign(this, window.CARD_CONSTANTS);
         },
@@ -67,7 +68,7 @@ function (dojo, declare) {
             const playerIds = Object.keys(gamedatas.players);
             const totalPlayers = playerIds.length;
 
-            this.cardsManager = new CardManager(this, {
+            this.deckManager = new CardManager(this, {
               getId: (card) => `lvt-card-${card.id}`,
               
               cardHeight: this.cardHeight,
@@ -91,6 +92,30 @@ function (dojo, declare) {
                 },
             });
 
+              this.handManager = new CardManager(this, {
+              getId: (card) => `lvt-card-${card.id}`,
+              
+              cardHeight: this.cardHeight,
+              cardWidth: this.cardWidth,
+              
+              setupDiv: (card, div) => {
+              div.classList.add('lvt-card-container');
+              div.style.position = 'relative';
+              },
+              
+              setupFrontDiv: (card, div) => {
+                    div.classList.add('lvt-card');
+                        div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, this.cardHeight, this.cardWidth, this.handScale, window.CARD_CONSTANTS);
+                    div.id = `card-${card.id}-front`;
+                },
+
+              setupBackDiv: (card, div) => {
+                  div.classList.add('lvt-card');
+                      div.style.backgroundPosition = getCardSpriteBackgroundPosition("back", this.cardHeight, this.cardWidth, this.handScale, window.CARD_CONSTANTS);
+                  div.id = `card-${card.id}-back`;
+                },
+            });
+
             Object.values(gamedatas.players).forEach((player) => {
                 document.getElementById("lvt-player-tables").insertAdjacentHTML("beforeend", `
                     <div class="lvt-player-table" id="lvt-player-table-${player.id}">
@@ -100,13 +125,17 @@ function (dojo, declare) {
                 `);
             });
 
-            for (var player_id in gamedatas.players) {
-              console.log("Setting up player table for player", player_id);
-                new LineStock(this.cardsManager, document.getElementById('lvt-player-table-card-' + player_id), {});
-              }
+              debugger;
+              console.log("Setting up player table for player", this.player_id);
+                line = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
+                const handValues = Object.values(gamedatas.hand);
+                const card = handValues[0];
+                console.log("Adding card to player table", card);
+                line.addCard(card);
+                line.setCardVisible(card, true);
 
-            this.deck = new Deck(this.cardsManager, document.getElementById('lvt-deck-area'), {
-              cardNumber: gamedatas.deck.length,  
+            this.deck = new Deck(this.deckManager, document.getElementById('lvt-deck-area'), {
+              cardNumber: gamedatas.deck.length,
               counter: {
                     position: 'center',
                     extraClasses: 'text-shadow',
