@@ -601,6 +601,7 @@ var CardStock = /** @class */ (function () {
         var settingsWithIndex = __assign({ index: index }, (settings !== null && settings !== void 0 ? settings : {}));
         var updateInformations = (_a = settingsWithIndex.updateInformations) !== null && _a !== void 0 ? _a : true;
         var needsCreation = true;
+        debugger;
         if (originStock === null || originStock === void 0 ? void 0 : originStock.contains(card)) {
             var element = this.getCardElement(card);
             if (element) {

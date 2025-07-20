@@ -67,7 +67,7 @@ function (dojo, declare) {
             this.lvtPlayers = {};
             const playerIds = Object.keys(gamedatas.players);
             const totalPlayers = playerIds.length;
-
+debugger;
             this.deckManager = new CardManager(this, {
               getId: (card) => `lvt-card-${card.id}`,
               
@@ -191,25 +191,30 @@ function (dojo, declare) {
           };
           // this.playerHand.addCard(card, { fromStock: this.deck });
           // this.discard.addCard(othercard, { fromStock: this.playerHand });
-        //   const fakeCard = this.opponentHands[Object.keys(this.opponentHands)[0]].getCards()[0];
-        //   this.discard.addCard(fakeCard, { fromStock: this.opponentHands[Object.keys(this.opponentHands)[0]],
-        //     updateCardInformations: {
-        //     id: card.id,
-        //     type: card.type,
-        //     type_arg: card.type_arg,
-        //     visible: true
-        //    }
-        //  });
 
-        stock = this.opponentHands[Object.keys(this.opponentHands)[0]];
-        opponentCard = stock.getCards()[0];
+        //this is how to flip the card
+        opponentStock = this.opponentHands[Object.keys(this.opponentHands)[0]];
+        opponentCard = opponentStock.getCards()[0];
+        // Object.assign(opponentCard, {
+        //   type: 25,
+        //   type_arg: 25
+        // });
+        // console.log("Adding card to opponent hand", opponentCard);
+
+        //this.opponentHands[Object.keys(this.opponentHands)[0]].setCardVisible(opponentCard, true);
         Object.assign(opponentCard, {
-          type: 25,
-          type_arg: 25
+            type: this.PRINCE,
+            type_arg: this.PRINCE
         });
-        console.log("Adding card to opponent hand", opponentCard);
-
-        this.opponentHands[Object.keys(this.opponentHands)[0]].setCardVisible(opponentCard, true);
+        this.discard.addCard(opponentCard, {
+            fromStock: opponentStock,
+            updateInformations: {
+                id: opponentCard.id,
+                type: this.PRINCE,
+                type_arg: this.PRINCE
+            },
+            visible: true
+        });
       },
 
         handleHandClick: async function(card) {
