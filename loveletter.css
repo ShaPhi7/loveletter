@@ -87,11 +87,35 @@ html, body {
     z-index: -1;
 }
 
-.card-container {
+.lvt-card-container {
   width: calc(var(--card-width) * var(--card-scale));
   height: calc(var(--card-height) * var(--card-scale));
   position: relative;
   zoom: 0.5;
+}
+
+.lvt-card {
+  width: calc(var(--card-width) * var(--card-scale));
+  height: calc(var(--card-height) * var(--card-scale));
+  position: relative;
+  zoom: 0.5;
+  background: url('img/cards.jpg');
+}
+
+#lvt-player-tables {
+    margin: 250px;
+}
+
+.lvt-player-table {
+  min-height: 220px;
+}
+
+.lvt-player-table-name {
+    min-height: 220px;
+}
+
+.lvt-player-table-card {
+    min-height: 220px;
 }
 
 /************************************************************

@@ -37,8 +37,9 @@ function (dojo, declare) {
             this.selectedCardId = null; 
             this.selectedCardType = null;
 
-            this.cardHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--lvt-card-height'));
-            this.cardWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--lvt-card-width'));
+            const rootStyles = getComputedStyle(document.documentElement);
+            this.cardWidth    = parseFloat(rootStyles.getPropertyValue('--card-width'));
+            this.cardHeight   = parseFloat(rootStyles.getPropertyValue('--card-height'));
 
             Object.assign(this, window.CARD_CONSTANTS);
         },
@@ -56,7 +57,7 @@ function (dojo, declare) {
                         <div id="lvt-deck-area"></div>
                         <div id="lvt-badges-area"></div>
                     </div>
-                    <div id="lvt-playertables"></div>
+                    <div id="lvt-player-tables"></div>
                 </div>
             `);
 
@@ -67,14 +68,51 @@ function (dojo, declare) {
 
             this.cardsManager = new CardManager(this, {
               getId: (card) => `lvt-card-${card.id}`,
+              
               cardHeight: this.cardHeight,
               cardWidth: this.cardWidth,
+              
               setupDiv: (card, div) => {
-              div.classList.add('card-container');
+              div.classList.add('lvt-card-container');
               div.style.position = 'relative';
               },
+              
+              setupFrontDiv: (card, div) => {
+                    div.classList.add('lvt-card');
+                    console.log("Setting up front div for card", card);
+                        div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, this.cardHeight, this.cardWidth, window.CARD_CONSTANTS);
+                    div.id = `card-${card.id}-front`;
+                },
+
+
             });
-          },
+
+            Object.values(gamedatas.players).forEach((player) => {
+                document.getElementById("lvt-player-tables").insertAdjacentHTML("beforeend", `
+                    <div class="lvt-player-table" id="lvt-player-table-${player.id}">
+                        <div class="lvt-player-table-name" id="lvt-player-table-name-${player.id} style="color:#${player.color};">${player.name}</div>
+                        <div class="lvt-player-table-card" id="lvt-player-table-card-${player.id}"></div>
+                    </div>
+                `);
+            });
+
+            for (var player_id in gamedatas.players) {
+              console.log("Setting up player table for player", player_id);
+                new LineStock(this.cardsManager, document.getElementById('lvt-player-table-card-' + player_id), {});
+              }
+
+            this.deck = new LineStock(this.cardsManager, document.getElementById('lvt-deck-area'), {});
+
+            gamedatas.deck.forEach((card) => {
+              console.log("Adding card to deck", card);
+                this.deck.addCard({
+                    id: card.id,
+                    type: card.type,
+                    type_arg: card.type_arg
+                });
+            });
+
+        },
 
         onSelectPlayer: function(event) {
             const playerId = event.currentTarget.id.replace('lvt-playertable-', '');
@@ -155,5 +193,30 @@ function (dojo, declare) {
         },
 
     });
+
+  function getCardSpriteBackgroundPosition(card, cardHeight, cardWidth, cardConstants) {
+
+    console.log("Getting background position for card", card);
+
+    const CARD_SPRITE_MAP = {
+        [cardConstants.GUARD]: { col: 0, row: 0 }, // Guard
+        [cardConstants.PRIEST]: { col: 1, row: 0 }, // Priest
+        [cardConstants.BARON]: { col: 2, row: 0 }, // Baron
+        [cardConstants.HANDMAID]: { col: 3, row: 0 }, // Handmaid
+        [cardConstants.PRINCE]: { col: 4, row: 0 }, // Prince
+        [cardConstants.CHANCELLOR]: { col: 5, row: 0 }, // Chancellor
+        [cardConstants.KING]: { col: 0, row: 1 }, // King
+        [cardConstants.COUNTESS]: { col: 1, row: 1 }, // Countess
+        [cardConstants.PRINCESS]: { col: 2, row: 1 }, // Princess
+        [cardConstants.SPY]: { col: 3, row: 1 }, // Spy
+        "back": { col: 4, row: 1 }, // Card Back
+          "rules": { col: 5, row: 1 } // Rules Card
+      };
+        let mapping = CARD_SPRITE_MAP[card.type];
+        if (!mapping) mapping = CARD_SPRITE_MAP["back"];
+        const x = mapping.col * cardWidth;
+        const y = mapping.row * cardHeight;
+        return `-${x}px -${y}px`;
+    }
 
 });
