@@ -202,17 +202,14 @@ function (dojo, declare) {
         //  });
 
         stock = this.opponentHands[Object.keys(this.opponentHands)[0]];
-        console.log("Adding card to opponent hand", stock);
+        opponentCard = stock.getCards()[0];
+        Object.assign(opponentCard, {
+          type: 25,
+          type_arg: 25
+        });
+        console.log("Adding card to opponent hand", opponentCard);
 
-        this.opponentHands[Object.keys(this.opponentHands)[0]].setCardVisible(this.opponentHands[Object.keys(this.opponentHands)[0]].getCards()[0], true, 
-          {updateCardInformation:
-            {
-              id: this.opponentHands[Object.keys(this.opponentHands)[0]].getCards()[0].id,
-              type: 25,
-              type_arg: 25
-            }
-          }
-        );
+        this.opponentHands[Object.keys(this.opponentHands)[0]].setCardVisible(opponentCard, true);
       },
 
         handleHandClick: async function(card) {
