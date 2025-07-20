@@ -107,16 +107,19 @@ html, body {
   background: #fff8;
   border-radius: 12px;
   box-shadow: 0 2px 8px #0002;
-  min-width: calc(var(--badge-grid-cols) * var(--badge-width) + (var(--badge-grid-cols) - 1) * var(--badge-gap)); /* Extra space for padding/borders */
+  min-width: calc(var(--card-width) * var(--hand-scale));
+  min-height: calc(var(--card-height) * var(--hand-scale));
 }
 
 .lvt-badge-grid {
   display: grid;
+  position: absolute;
   grid-auto-flow: row;
   grid-template-columns: repeat(var(--badge-grid-cols), var(--badge-width));
   grid-auto-rows: var(--badge-height);
   gap: var(--badge-gap);
-  min-width: calc(var(--badge-grid-cols) * var(--badge-width) + (var(--badge-grid-cols) - 1) * var(--badge-gap));
+  min-width: calc(var(--card-width) * var(--hand-scale));
+  min-height: calc(var(--card-height) * var(--hand-scale));
 }
 
 .deck {
@@ -146,6 +149,19 @@ html, body {
   height: calc(var(--card-height) * var(--card-scale));
   background-image: url('img/cards.jpg');
   border-radius: 12%;
+}
+
+.lvt-card.fade-out {
+  opacity: 0;
+  transition: opacity 2s;
+  pointer-events: none;
+}
+
+.lvt-player-table.highlight {
+  box-shadow: 0 0 16px 4px #ffd700, 0 0 0 4px #fff8 inset;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #fffbe6 0%, #fffde6 100%);
+  transition: box-shadow 0.3s, background 0.3s;
 }
 
 .lvt-player-table .lvt-card {
