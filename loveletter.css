@@ -53,7 +53,7 @@
   --card-height: 560px;
   --card-scale: 0.7;
   --deck-scale: 0.4;
-  --hand-scale: 0.35;
+  --hand-scale: 0.4;
   --sprite-cols: 6;
   --sprite-rows: 2;
   --badge-grid-cols: 4;
@@ -165,7 +165,8 @@ html, body {
 }
 
 #lvt-player-tables {
-    margin: 250px;
+  display: flex;  
+  justify-content: space-evenly;
 }
 
 .lvt-player-table {
@@ -173,7 +174,7 @@ html, body {
 }
 
 .lvt-player-table-name {
-    min-height: 220px;
+
 }
 
 .lvt-player-table-card {

@@ -125,14 +125,32 @@ function (dojo, declare) {
                 `);
             });
 
-              debugger;
               console.log("Setting up player table for player", this.player_id);
-                line = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
-                const handValues = Object.values(gamedatas.hand);
-                const card = handValues[0];
+              const line = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
+              const handValues = Object.values(gamedatas.hand);
+              handValues.forEach(card => {
                 console.log("Adding card to player table", card);
                 line.addCard(card);
                 line.setCardVisible(card, true);
+              });
+
+              const opponentHand = gamedatas.cardcount.hand[this.player_id];
+              console.log("Setting up player table for opponent with hand", opponentHand);
+
+              // Repeat for each other player, but cards not visible
+              Object.values(gamedatas.players).forEach(player => {
+                if (player.id != this.player_id) {
+                  const opponentLine = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + player.id), {});
+                  const opponentHandSize = gamedatas.cardcount.hand[player.id];
+                    for (let i = 0; i < opponentHandSize; i++) {
+                      const fakeCard = {
+                        id: `${player.id}-fake-${i}`,
+                      };
+                      opponentLine.addCard(fakeCard);
+                      opponentLine.setCardVisible(fakeCard, false);
+                    }
+                }
+              });
 
             this.deck = new Deck(this.deckManager, document.getElementById('lvt-deck-area'), {
               cardNumber: gamedatas.deck.length,
