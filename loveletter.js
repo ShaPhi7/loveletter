@@ -27,7 +27,7 @@ function (dojo, declare) {
         constructor: function () {
             console.log('loveletter constructor');
 
-            this.playerHand = new ebg.stock();
+            this.playerHand = null;
             this.deck = null;
             this.opponentHands = {};
             this.discards = {};
@@ -126,18 +126,17 @@ function (dojo, declare) {
             });
 
               console.log("Setting up player table for player", this.player_id);
-              const line = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
+              this.playerHand = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
               const handValues = Object.values(gamedatas.hand);
               handValues.forEach(card => {
                 console.log("Adding card to player table", card);
-                line.addCard(card);
-                line.setCardVisible(card, true);
+                this.playerHand.addCard(card);
+                this.playerHand.setCardVisible(card, true);
               });
 
               const opponentHand = gamedatas.cardcount.hand[this.player_id];
               console.log("Setting up player table for opponent with hand", opponentHand);
 
-              // Repeat for each other player, but cards not visible
               Object.values(gamedatas.players).forEach(player => {
                 if (player.id != this.player_id) {
                   const opponentLine = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + player.id), {});
@@ -159,10 +158,29 @@ function (dojo, declare) {
                     extraClasses: 'text-shadow',
                     hideWhenEmpty: false,
                 },
+              onCardClick: (card) => { //TODO - why does this not work?
+                  console.log("Deck clicked", card);
+                  this.handleDeckClick();
+                },
+            });
+
+            this.deck.element.addEventListener('click', (event) => {
+                // Do something when the whole stock is clicked
+                this.handleDeckClick();
             });
 
             buildPlayedCardBadges(gamedatas);
 
+        },
+
+        handleDeckClick: function() {
+          console.log("Deck clicked!");
+          const card = {
+            id: 12345,
+            type: 25,
+            type_arg: 25
+          };
+          this.playerHand.addCard(card, { fromStock: this.deck });
         },
 
         onSelectPlayer: function(event) {
