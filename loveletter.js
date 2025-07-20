@@ -40,6 +40,7 @@ function (dojo, declare) {
             const rootStyles = getComputedStyle(document.documentElement);
             this.cardWidth    = parseFloat(rootStyles.getPropertyValue('--card-width'));
             this.cardHeight   = parseFloat(rootStyles.getPropertyValue('--card-height'));
+            this.cardScale    = parseFloat(rootStyles.getPropertyValue('--card-scale'));
 
             Object.assign(this, window.CARD_CONSTANTS);
         },
@@ -79,12 +80,15 @@ function (dojo, declare) {
               
               setupFrontDiv: (card, div) => {
                     div.classList.add('lvt-card');
-                    console.log("Setting up front div for card", card);
-                        div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, this.cardHeight, this.cardWidth, window.CARD_CONSTANTS);
+                        div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, this.cardHeight, this.cardWidth, this.cardScale, window.CARD_CONSTANTS);
                     div.id = `card-${card.id}-front`;
                 },
 
-
+              setupBackDiv: (card, div) => {
+                  div.classList.add('lvt-card');
+                      div.style.backgroundPosition = getCardSpriteBackgroundPosition("back", this.cardHeight, this.cardWidth, this.cardScale, window.CARD_CONSTANTS);
+                  div.id = `card-${card.id}-back`;
+                },
             });
 
             Object.values(gamedatas.players).forEach((player) => {
@@ -101,16 +105,16 @@ function (dojo, declare) {
                 new LineStock(this.cardsManager, document.getElementById('lvt-player-table-card-' + player_id), {});
               }
 
-            this.deck = new LineStock(this.cardsManager, document.getElementById('lvt-deck-area'), {});
-
-            gamedatas.deck.forEach((card) => {
-              console.log("Adding card to deck", card);
-                this.deck.addCard({
-                    id: card.id,
-                    type: card.type,
-                    type_arg: card.type_arg
-                });
+            this.deck = new Deck(this.cardsManager, document.getElementById('lvt-deck-area'), {
+              cardNumber: gamedatas.deck.length,  
+              counter: {
+                    position: 'center',
+                    extraClasses: 'text-shadow',
+                    hideWhenEmpty: false,
+                },
             });
+
+            buildPlayedCardBadges(gamedatas);
 
         },
 
@@ -194,9 +198,7 @@ function (dojo, declare) {
 
     });
 
-  function getCardSpriteBackgroundPosition(card, cardHeight, cardWidth, cardConstants) {
-
-    console.log("Getting background position for card", card);
+  function getCardSpriteBackgroundPosition(card, cardHeight, cardWidth, cardScale, cardConstants) {
 
     const CARD_SPRITE_MAP = {
         [cardConstants.GUARD]: { col: 0, row: 0 }, // Guard
@@ -214,9 +216,83 @@ function (dojo, declare) {
       };
         let mapping = CARD_SPRITE_MAP[card.type];
         if (!mapping) mapping = CARD_SPRITE_MAP["back"];
-        const x = mapping.col * cardWidth;
-        const y = mapping.row * cardHeight;
+        const x = mapping.col * cardWidth * cardScale;
+        const y = mapping.row * cardHeight * cardScale;
         return `-${x}px -${y}px`;
     }
+
+    function buildPlayedCardBadges(gamedatas) {
+      const BADGE_WIDTH_ORIGINAL = 127;  // original badge width in the sprite
+      const BADGE_WIDTH = 36;            // new displayed badge width
+      const BADGE_HEIGHT = 36;
+      const SPRITE_HEIGHT_ORIGINAL = 127; // (if the sprite image is exactly square)
+
+      const COLUMNS = 4;
+      const ROWS = 6; // up to 24 slots
+
+      const container = document.getElementById('lvt-badges-area');
+      container.innerHTML = '';
+
+      // Create the grid container
+      const grid = document.createElement('div');
+      grid.className = 'lvt-badge-grid';
+
+      // Gather all badges in a flat array (sorted for consistent order)
+      const badges = [];
+      Object.values(gamedatas.card_types).forEach(cardInfo => {
+          const value = cardInfo.value;
+          const count = cardInfo.qt;
+          for (let i = 0; i < count; i++) {
+              badges.push(value);
+          }
+      });
+      badges.sort((a, b) => a - b);
+
+      // Add up to COLUMNS * ROWS badges, filling down each column
+      for (let index = 0; index < badges.length && index < COLUMNS * ROWS; index++) {
+          const value = badges[index];
+          const badge = document.createElement('div');
+          badge.className = 'lvt-card-badge';
+          badge.id = `lvt-card-badge-${index+1}`;
+          badge.setAttribute('data-type', value);
+          badge.style.backgroundImage = `url(${g_gamethemeurl}img/cardnumbers.png)`;
+          // Scale the full image to fit vertically
+          badge.style.backgroundSize = `auto ${BADGE_HEIGHT}px`;
+          // Scale the offset: (value * original width) * (displayed height / original height)
+          const xOffset = -(value * BADGE_WIDTH_ORIGINAL * (BADGE_HEIGHT / SPRITE_HEIGHT_ORIGINAL));
+          badge.style.backgroundPosition = `${xOffset}px 0`;
+          badge.style.width = BADGE_WIDTH + "px";
+          badge.style.height = BADGE_HEIGHT + "px";
+          grid.appendChild(badge);
+      }
+
+      container.appendChild(grid);
+
+      markBadgesAsPlayed(gamedatas);
+  }
+
+  function markBadgesAsPlayed(gamedatas) {
+    Object.values(gamedatas.discard).forEach(discardArray => {
+      if (Array.isArray(discardArray)) {
+        discardArray.forEach(card => {
+          const value = gamedatas.card_types[card.type].value;
+          markBadgeAsPlayed(value);
+        });
+      }
+    });
+  }
+
+  function markBadgeAsPlayed(value) {
+    const badges = Array.from(document.querySelectorAll(`.lvt-card-badge[data-type="${value}"]`));
+    badges.reverse();
+    if (badges && badges.length > 0) {
+      for (let i = 0; i < badges.length; i++) {
+        if (!badges[i].classList.contains('played')) {
+          badges[i].classList.add('played');
+          return badges[i];
+        }
+      }
+    }
+  }
 
 });

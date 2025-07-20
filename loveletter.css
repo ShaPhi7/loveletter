@@ -51,7 +51,7 @@
 :root {
   --card-width: 410px;
   --card-height: 560px;
-  --card-scale: 1;
+  --card-scale: 0.3;
   --deck-card-scale: 0.25;
   --hand-card-scale: 0.35;
   --sprite-cols: 6;
@@ -87,19 +87,52 @@ html, body {
     z-index: -1;
 }
 
+#lvt-center-area {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+#lvt-deck-area {
+  margin: 16px;
+}
+
+#lvt-badges-area {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 10px;
+  background: #fff8;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #0002;
+  min-width: calc(var(--badge-grid-cols) * var(--badge-width) + (var(--badge-grid-cols) - 1) * var(--badge-gap)); /* Extra space for padding/borders */
+}
+
+.lvt-badge-grid {
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-columns: repeat(var(--badge-grid-cols), var(--badge-width));
+  grid-auto-rows: var(--badge-height);
+  gap: var(--badge-gap);
+  min-width: calc(var(--badge-grid-cols) * var(--badge-width) + (var(--badge-grid-cols) - 1) * var(--badge-gap));
+}
+
 .lvt-card-container {
   width: calc(var(--card-width) * var(--card-scale));
   height: calc(var(--card-height) * var(--card-scale));
   position: relative;
-  zoom: 0.5;
 }
 
 .lvt-card {
+  background-image: url('img/cards.jpg');
+}
+
+.deck .lvt-card {
   width: calc(var(--card-width) * var(--card-scale));
   height: calc(var(--card-height) * var(--card-scale));
-  position: relative;
-  zoom: 0.5;
-  background: url('img/cards.jpg');
+  background-size: var(--sprite-width) var(--sprite-height);
 }
 
 #lvt-player-tables {

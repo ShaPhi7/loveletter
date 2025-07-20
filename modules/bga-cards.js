@@ -1153,9 +1153,9 @@ var Deck = /** @class */ (function (_super) {
         var shadowDirectionSplit = shadowDirection.split('-');
         var xShadowShift = shadowDirectionSplit.includes('right') ? 1 : (shadowDirectionSplit.includes('left') ? -1 : 0);
         var yShadowShift = shadowDirectionSplit.includes('bottom') ? 1 : (shadowDirectionSplit.includes('top') ? -1 : 0);
-        _this.element.style.setProperty('box-shadow', xShadowShift * 4 + 'px ' + yShadowShift * 4 + 'px 0px #a99887');
-      //  _this.element.style.setProperty('--xShadowShift', '' + xShadowShift);
-      //  _this.element.style.setProperty('--yShadowShift', '' + yShadowShift);
+        //_this.element.style.setProperty('box-shadow', xShadowShift * 4 + 'px ' + yShadowShift * 4 + 'px 0px #a99887');
+        _this.element.style.setProperty('--xShadowShift', '' + xShadowShift);
+        _this.element.style.setProperty('--yShadowShift', '' + yShadowShift);
         if (settings.topCard) {
             _this.addCard(settings.topCard);
         }
