@@ -182,26 +182,48 @@ function (dojo, declare) {
         },
 
         handleDeckClick: function() {
-          console.log("Deck clicked!");
+          // console.log("Deck clicked!");
+          // const othercard = this.playerHand.getCards()[0];
           const card = {
             id: 12345,
             type: 25,
             type_arg: 25
           };
-          this.playerHand.addCard(card, { fromStock: this.deck });
-        },
+          // this.playerHand.addCard(card, { fromStock: this.deck });
+          // this.discard.addCard(othercard, { fromStock: this.playerHand });
+        //   const fakeCard = this.opponentHands[Object.keys(this.opponentHands)[0]].getCards()[0];
+        //   this.discard.addCard(fakeCard, { fromStock: this.opponentHands[Object.keys(this.opponentHands)[0]],
+        //     updateCardInformations: {
+        //     id: card.id,
+        //     type: card.type,
+        //     type_arg: card.type_arg,
+        //     visible: true
+        //    }
+        //  });
+
+        stock = this.opponentHands[Object.keys(this.opponentHands)[0]];
+        console.log("Adding card to opponent hand", stock);
+
+        this.opponentHands[Object.keys(this.opponentHands)[0]].setCardVisible(this.opponentHands[Object.keys(this.opponentHands)[0]].getCards()[0], true, 
+          {updateCardInformation:
+            {
+              id: this.opponentHands[Object.keys(this.opponentHands)[0]].getCards()[0].id,
+              type: 25,
+              type_arg: 25
+            }
+          }
+        );
+      },
 
         handleHandClick: async function(card) {
           console.log("Hand clicked!", card);
           const cardElement = this.handManager.getCardElement(card); // your card object
 
-            // Get the opponent hand element id (e.g., "lvt-player-table-card-12345")
-            const opponentHandElementId = this.opponentHands[Object.keys(this.opponentHands)[0]].element.id;
-            // Strip "lvt-player-table-card-" to get the opponent id
-            const opponentId = opponentHandElementId.replace('lvt-player-table-card-', '');
+          const opponentHandElementId = this.opponentHands[Object.keys(this.opponentHands)[0]].element.id;
+          const opponentId = opponentHandElementId.replace('lvt-player-table-card-', '');
           this.opponentHands[Object.keys(this.opponentHands)[0]].element.classList.add('highlight');
-            // Highlight the relevant opponent's player table if opponentId is set
-            document.getElementById(`lvt-player-table-${opponentId}`).classList.add('highlight');
+          document.getElementById(`lvt-player-table-${opponentId}`).classList.add('highlight');
+
           await this.discard.addCard(card, { fromStock: this.playerHand });
 
           cardElement.classList.add('fade-out');
