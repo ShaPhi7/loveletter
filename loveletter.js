@@ -67,7 +67,6 @@ function (dojo, declare) {
             this.lvtPlayers = {};
             const playerIds = Object.keys(gamedatas.players);
             const totalPlayers = playerIds.length;
-debugger;
             this.deckManager = new CardManager(this, {
               getId: (card) => `lvt-card-${card.id}`,
               
@@ -116,21 +115,52 @@ debugger;
                 },
             });
 
+            _this = this;
             Object.values(gamedatas.players).forEach((player) => {
                 document.getElementById("lvt-player-tables").insertAdjacentHTML("beforeend", `
                     <div class="lvt-player-table" id="lvt-player-table-${player.id}">
-                        <div class="lvt-player-table-name" id="lvt-player-table-name-${player.id} style="color:#${player.color};">${player.name}</div>
+                        <div class="lvt-player-table-name" id="lvt-player-table-name-${player.id}" style="color:#${player.color};">${player.name}</div>
                         <div class="lvt-player-table-card" id="lvt-player-table-card-${player.id}"></div>
                     </div>
                 `);
+                
+                const playerTable = document.getElementById(`lvt-player-table-${player.id}`);
+                playerTable.addEventListener('click', function(event) {
+                  
+                  if (this.classList.contains('selected')) {
+                    this.classList.remove('selected');
+                    // Optionally clear selectedOpponentId if you want to unselect opponent
+                    // this.selectedOpponentId = null;
+                    return;
+                  }
+                  
+                  const tablePlayerId = this.id.replace('lvt-player-table-', '');
+debugger;
+                  if (tablePlayerId === String(_this.player_id)) {
+                    // Check if click was in your own card area
+                    const cardArea = document.getElementById('lvt-player-table-card-' + tablePlayerId);
+                    if (cardArea.contains(event.target) && event.target !== cardArea) {
+                      // It's a card click in your own hand; do nothing.
+                      return;
+                    }
+                  }
+
+                  const playerTables = Array.from(document.querySelectorAll('.lvt-player-table'));
+                  playerTables.forEach(pt => pt.classList.remove('selected'));
+                  this.classList.add('selected');
+
+                  // Store selected opponent (even if it's yourself)
+                  // this.selectedOpponentId = tableId;
+                  // (If this is inside a class, use the right scope)
+                });
             });
 
-              console.log("Setting up player table for player", this.player_id);
-              this.playerHand = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
 
+              this.playerHand = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
+              this.playerHand.setSelectionMode('single');
               this.playerHand.onCardClick = (card) => {
                   console.log("Clicked card:", card);
-                  this.handleHandClick(card);
+                  //this.handleHandClick(card);
               };
 
               const handValues = Object.values(gamedatas.hand);
@@ -146,6 +176,7 @@ debugger;
               Object.values(gamedatas.players).forEach(player => {
                 if (player.id != this.player_id) {
                   const opponentLine = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + player.id), {});
+                  opponentLine.setSelectionMode('single');
                   const opponentHandSize = gamedatas.cardcount.hand[player.id];
                     for (let i = 0; i < opponentHandSize; i++) {
                       const fakeCard = {
@@ -172,10 +203,11 @@ debugger;
             });
 
             this.discard = new Deck(this.deckManager, document.getElementById('lvt-badges-area'), {});
-
-            this.deck.element.addEventListener('click', (event) => {
-                this.handleDeckClick();
-            });
+            
+            // Testing only
+            // this.deck.element.addEventListener('click', (event) => {
+            //     this.handleDeckClick();
+            // });
 
             buildPlayedCardBadges(gamedatas);
 

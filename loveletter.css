@@ -186,15 +186,33 @@ html, body {
 }
 
 .lvt-player-table {
-  min-height: 220px;
+    min-height: 220px;
+    background: #fff8;
+    border: 1px solid #333;
+    border-radius: 8px;
+    text-align: center;
+    padding: 6px;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.lvt-player-table.selected {
+  outline: 3px solid red; 
 }
 
 .lvt-player-table-name {
-
+  margin: 5px 0;
 }
 
 .lvt-player-table-card {
     min-height: 220px;
+}
+
+.card.bga-cards_selected-card > .card-sides > .front {
+  outline: 3px solid red; 
+  /*box-shadow: 0 0 10px 2px #ffd70088;*/
 }
 
 /************************************************************
