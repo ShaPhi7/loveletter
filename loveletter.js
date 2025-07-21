@@ -129,18 +129,15 @@ function (dojo, declare) {
                   
                   if (this.classList.contains('selected')) {
                     this.classList.remove('selected');
-                    // Optionally clear selectedOpponentId if you want to unselect opponent
-                    // this.selectedOpponentId = null;
+                    _this.selectedOpponentId = null;
                     return;
                   }
                   
                   const tablePlayerId = this.id.replace('lvt-player-table-', '');
-debugger;
                   if (tablePlayerId === String(_this.player_id)) {
                     // Check if click was in your own card area
                     const cardArea = document.getElementById('lvt-player-table-card-' + tablePlayerId);
                     if (cardArea.contains(event.target) && event.target !== cardArea) {
-                      // It's a card click in your own hand; do nothing.
                       return;
                     }
                   }
@@ -152,15 +149,15 @@ debugger;
                   // Store selected opponent (even if it's yourself)
                   // this.selectedOpponentId = tableId;
                   // (If this is inside a class, use the right scope)
+                  _this.onSelectPlayer(tablePlayerId);
                 });
             });
 
 
               this.playerHand = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
               this.playerHand.setSelectionMode('single');
-              this.playerHand.onCardClick = (card) => {
-                  console.log("Clicked card:", card);
-                  //this.handleHandClick(card);
+              this.playerHand.onSelectionChange = (selectedCards) => {
+                this.onPlayerHandSelectionChanged(selectedCards[0]);
               };
 
               const handValues = Object.values(gamedatas.hand);
@@ -272,31 +269,25 @@ debugger;
 
         },
 
-        onSelectPlayer: function(event) {
-            const playerId = event.currentTarget.id.replace('lvt-playertable-', '');
-
-            Object.keys(this.lvtPlayers).forEach(pid => {
-              dojo.removeClass('lvt-playertable-' + pid, 'selectedOpponent');
-            });
-            dojo.addClass('lvt-playertable-' + playerId, 'selectedOpponent');
-
+        onSelectPlayer: function(playerId) {
             this.selectedOpponentId = playerId;
-
-            this.tryPlaySelectedCard();
+            this.playerCardOrShowMessage();
         },
 
-        onPlayerHandSelectionChanged: function(control_name, item_id) {
-            const items = this.playerHand.getSelectedItems();
-            this.selectedCardId = items.length == 1 ? Number(items[0].id) : null;
-            this.selectedCardType = items.length == 1 ? Number(items[0].type) : null;
+        onPlayerHandSelectionChanged: function(card) {
+            this.selectedCardId = card ? Number(card.id) : null;
+            this.selectedCardType = card ? Number(card.type) : null;
 
-            if (this.selectedCardId) {
-              this.tryPlaySelectedCard();
-            }
+            this.playerCardOrShowMessage();
         },
 
-        tryPlaySelectedCard: function()
-        {
+        playerCardOrShowMessage: function()
+        {          
+          if (this.gamedatas.gamestate.active_player != this.player_id) {
+            this.showMessage(_("It is not your turn."), "error");
+            return;
+          }
+
           if (!this.selectedCardId) {
             this.showMessage(_("Please select a card to play."), "info");
             return;
