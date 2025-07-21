@@ -127,12 +127,6 @@ function (dojo, declare) {
                 const playerTable = document.getElementById(`lvt-player-table-${player.id}`);
                 playerTable.addEventListener('click', function(event) {
                   
-                  if (this.classList.contains('selected')) {
-                    this.classList.remove('selected');
-                    _this.selectedOpponentId = null;
-                    return;
-                  }
-                  
                   const tablePlayerId = this.id.replace('lvt-player-table-', '');
                   if (tablePlayerId === String(_this.player_id)) {
                     // Check if click was in your own card area
@@ -140,6 +134,12 @@ function (dojo, declare) {
                     if (cardArea.contains(event.target) && event.target !== cardArea) {
                       return;
                     }
+                  }
+
+                  if (this.classList.contains('selected')) {
+                    this.classList.remove('selected');
+                    _this.selectedOpponentId = null;
+                    return;
                   }
 
                   const playerTables = Array.from(document.querySelectorAll('.lvt-player-table'));
@@ -157,7 +157,9 @@ function (dojo, declare) {
               this.playerHand = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
               this.playerHand.setSelectionMode('single');
               this.playerHand.onSelectionChange = (selectedCards) => {
-                this.onPlayerHandSelectionChanged(selectedCards[0]);
+                if (selectedCards.length > 0) {
+                  this.onPlayerHandSelectionChanged(selectedCards[0]);
+                }
               };
 
               const handValues = Object.values(gamedatas.hand);
