@@ -195,10 +195,10 @@ function (dojo, declare) {
                     extraClasses: 'text-shadow',
                     hideWhenEmpty: false,
                 },
-              onCardClick: (card) => { //TODO - why does this not work?
-                  console.log("Deck clicked", card);
-                  this.handleDeckClick();
-                },
+              // onCardClick: (card) => {
+              //     console.log("Deck clicked", card);
+              //     this.handleDeckClick();
+              //   },
             });
 
             this.discard = new Deck(this.deckManager, document.getElementById('lvt-badges-area'), {});
@@ -209,67 +209,68 @@ function (dojo, declare) {
             // });
 
             buildPlayedCardBadges(gamedatas);
+            this.setupNotifications();
 
         },
 
-        handleDeckClick: function() {
-          // console.log("Deck clicked!");
-          // const othercard = this.playerHand.getCards()[0];
-          const card = {
-            id: 12345,
-            type: 25,
-            type_arg: 25
-          };
-          // this.playerHand.addCard(card, { fromStock: this.deck });
-          // this.discard.addCard(othercard, { fromStock: this.playerHand });
+      //   handleDeckClick: function() {
+      //     // console.log("Deck clicked!");
+      //     // const othercard = this.playerHand.getCards()[0];
+      //     const card = {
+      //       id: 12345,
+      //       type: 25,
+      //       type_arg: 25
+      //     };
+      //     // this.playerHand.addCard(card, { fromStock: this.deck });
+      //     // this.discard.addCard(othercard, { fromStock: this.playerHand });
 
-        //this is how to flip the card
-        opponentStock = this.opponentHands[Object.keys(this.opponentHands)[0]];
-        opponentCard = opponentStock.getCards()[0];
-        // Object.assign(opponentCard, {
-        //   type: 25,
-        //   type_arg: 25
-        // });
-        // console.log("Adding card to opponent hand", opponentCard);
+      //   //this is how to flip the card
+      //   opponentStock = this.opponentHands[Object.keys(this.opponentHands)[0]];
+      //   opponentCard = opponentStock.getCards()[0];
+      //   // Object.assign(opponentCard, {
+      //   //   type: 25,
+      //   //   type_arg: 25
+      //   // });
+      //   // console.log("Adding card to opponent hand", opponentCard);
 
-        //this.opponentHands[Object.keys(this.opponentHands)[0]].setCardVisible(opponentCard, true);
-        Object.assign(opponentCard, {
-            type: this.PRINCE,
-            type_arg: this.PRINCE
-        });
-        this.discard.addCard(opponentCard, {
-            fromStock: opponentStock,
-            updateInformations: {
-                id: opponentCard.id,
-                type: this.PRINCE,
-                type_arg: this.PRINCE
-            },
-            visible: true
-        });
-      },
+      //   //this.opponentHands[Object.keys(this.opponentHands)[0]].setCardVisible(opponentCard, true);
+      //   Object.assign(opponentCard, {
+      //       type: this.PRINCE,
+      //       type_arg: this.PRINCE
+      //   });
+      //   this.discard.addCard(opponentCard, {
+      //       fromStock: opponentStock,
+      //       updateInformations: {
+      //           id: opponentCard.id,
+      //           type: this.PRINCE,
+      //           type_arg: this.PRINCE
+      //       },
+      //       visible: true
+      //   });
+      // },
 
-        handleHandClick: async function(card) {
-          console.log("Hand clicked!", card);
-          const cardElement = this.handManager.getCardElement(card); // your card object
+        // handleHandClick: async function(card) {
+        //   console.log("Hand clicked!", card);
+        //   const cardElement = this.handManager.getCardElement(card); // your card object
 
-          const opponentHandElementId = this.opponentHands[Object.keys(this.opponentHands)[0]].element.id;
-          const opponentId = opponentHandElementId.replace('lvt-player-table-card-', '');
-          this.opponentHands[Object.keys(this.opponentHands)[0]].element.classList.add('highlight');
-          document.getElementById(`lvt-player-table-${opponentId}`).classList.add('highlight');
+        //   const opponentHandElementId = this.opponentHands[Object.keys(this.opponentHands)[0]].element.id;
+        //   const opponentId = opponentHandElementId.replace('lvt-player-table-card-', '');
+        //   this.opponentHands[Object.keys(this.opponentHands)[0]].element.classList.add('highlight');
+        //   document.getElementById(`lvt-player-table-${opponentId}`).classList.add('highlight');
 
-          await this.discard.addCard(card, { fromStock: this.playerHand });
+        //   await this.discard.addCard(card, { fromStock: this.playerHand });
 
-          cardElement.classList.add('fade-out');
-          const allDescendants = cardElement.querySelectorAll('*');
-          for (const descendant of allDescendants) {
-            descendant.classList.add('fade-out');
-          }
+        //   cardElement.classList.add('fade-out');
+        //   const allDescendants = cardElement.querySelectorAll('*');
+        //   for (const descendant of allDescendants) {
+        //     descendant.classList.add('fade-out');
+        //   }
 
-          setTimeout(() => {
-            this.discard.removeCard(card);
-          }, 2000);
+        //   setTimeout(() => {
+        //     this.discard.removeCard(card);
+        //   }, 2000);
 
-        },
+        // },
 
         onSelectPlayer: function(playerId) {
             this.selectedOpponentId = playerId;
@@ -341,6 +342,72 @@ function (dojo, declare) {
                                                       guess: guess_id,
                                                       opponent: opponent_id
                                                     },    this, function( result ) {  }, function( is_error) { } );  
+        },
+
+        setupNotifications: function()
+        {
+            console.log( 'notifications subscriptions setup' );
+
+            dojo.subscribe( 'newCard', this, "notif_newCard" );
+            dojo.subscribe( 'cardPlayedLong', this, "notif_cardPlayed" );
+            dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
+            this.notifqueue.setSynchronous( 'cardPlayedLong', 3000 );
+        },
+
+        notif_newCard: function( notif )
+        {
+          debugger;
+          let card = {};
+          Object.assign(card, {
+            id: notif.args.card.id,
+            type: notif.args.card.type,
+          });
+
+          //TODO - do you need to add the player_id to the notification?
+          //if( this.player_id == notif.args.player_id )
+          //{
+            this.playerHand.addCard(card, { fromStock: this.deck });
+            this.playerHand.setCardVisible(card, true);
+          //}
+          //else
+          //{
+            //TODO - test
+            // Add a fake card to the opponent's hand
+            // const opponentHand = this.opponentHands[notif.args.player_id];
+            // opponentHand.addCard(card, { fromStock: this.deck });
+            // opponentHand.setCardVisible(card, false);
+          //}
+        },
+
+        notif_cardPlayed: function( notif )
+        {
+          let card = {};
+          Object.assign(card, {
+          id: notif.args.card.id,
+          type: notif.args.card.type,
+          });
+
+          if( this.player_id == notif.args.player_id )
+          {
+            
+            this.discard.addCard(card, { fromStock: this.playerHand });
+            const cardElement = this.handManager.getCardElement(card);
+            cardElement.classList.add('fade-out');
+            const allDescendants = cardElement.querySelectorAll('*');
+            for (const descendant of allDescendants) {
+              descendant.classList.add('fade-out');
+            }
+
+            setTimeout(() => {
+              this.discard.removeCard(card);
+            }, 2000);
+          }
+          else
+          {
+            //TODO - play card when not player
+          }
+
+
         },
 
     });

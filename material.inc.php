@@ -51,7 +51,7 @@ $this->card_types = array(
         "nametr" => self::_('Handmaid'),
         "description" => clienttranslate('Until next turn, ignore all effects from other player`s cards.'),
         "shortdescr" => self::_("Protection until your next turn."),
-        'qt' => 2,
+        'qt' => 100,
         'value' => 4
     ),
     25 => array( 
