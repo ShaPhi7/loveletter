@@ -126,6 +126,10 @@ html, body {
   max-height: calc(var(--card-height) * var(--hand-scale));
 }
 
+.lvt-card-badge.played {
+  opacity: 0.3;
+}
+
 .deck {
     border-radius: 12px;
 }

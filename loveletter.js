@@ -362,7 +362,6 @@ function (dojo, declare) {
 
         notif_newCard: function( notif )
         {
-          debugger;
           let card = {};
           Object.assign(card, {
             id: notif.args.card.id,
@@ -403,15 +402,23 @@ function (dojo, declare) {
             for (const descendant of allDescendants) {
               descendant.classList.add('fade-out');
             }
-
-            setTimeout(() => {
-              this.discard.removeCard(card);
-            }, 2000);
           }
           else
           {
-            //TODO - play card when not player
+            const opponentHand = this.opponentHands[notif.args.player_id];
+            this.discard.addCard(card, {
+                fromStock: opponentHand,
+                updateInformations: {
+                    id: card.id,
+                    type: card.type,
+                },
+                visible: true
+            });
           }
+          setTimeout(() => {
+            this.discard.removeCard(card);
+            markBadgeAsPlayed(notif.args.card_type.value);
+          }, 2000);
         },
 
         notif_reveal: function( notif )

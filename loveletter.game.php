@@ -604,6 +604,7 @@ class loveletter extends Table
             'i18n' => array('card_name'),
             'player_id' => $opponent_id,
             'player_name' => $players[$opponent_id]['player_name'],
+            'card_type' => $this->card_types[$card['type']],
             'card_name' => $this->card_types[$card['type']]['name'],
             'card' => $card,
             'noeffect'=> 1
