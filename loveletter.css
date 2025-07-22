@@ -109,6 +109,8 @@ html, body {
   box-shadow: 0 2px 8px #0002;
   min-width: calc(var(--card-width) * var(--hand-scale));
   min-height: calc(var(--card-height) * var(--hand-scale));
+  max-width: calc(var(--card-width) * var(--hand-scale));
+  max-height: calc(var(--card-height) * var(--hand-scale));
 }
 
 .lvt-badge-grid {
@@ -120,6 +122,8 @@ html, body {
   gap: var(--badge-gap);
   min-width: calc(var(--card-width) * var(--hand-scale));
   min-height: calc(var(--card-height) * var(--hand-scale));
+  max-width: calc(var(--card-width) * var(--hand-scale));
+  max-height: calc(var(--card-height) * var(--hand-scale));
 }
 
 .deck {

@@ -273,12 +273,12 @@ function (dojo, declare) {
         // },
 
         onSelectPlayer: function(playerId) {
-            this.selectedOpponentId = playerId;
+          this.selectedOpponentId = playerId;
             this.playerCardOrShowMessage();
         },
 
         onPlayerHandSelectionChanged: function(card) {
-            this.selectedCardId = card ? Number(card.id) : null;
+          this.selectedCardId = card ? Number(card.id) : null;
             this.selectedCardType = card ? Number(card.type) : null;
 
             this.playerCardOrShowMessage();
@@ -318,14 +318,14 @@ function (dojo, declare) {
             }
 
             // Check out of the round
-            if(dojo.hasClass('lvt-playertable-'+this.selectedOpponentId, 'outOfTheRound'))
+            if(dojo.hasClass('lvt-player-table-'+this.selectedOpponentId, 'outOfTheRound'))
             {
               this.showMessage( _("This player is out of the round"), 'error' );
               return;
             }   
         
             // Check protection
-            if(dojo.style('lvt-playertable-'+this.selectedOpponentId, 'protected'))
+            if(dojo.style('lvt-player-table-'+this.selectedOpponentId, 'protected'))
             {
               this.showMessage( _("This player is protected and cannot be targeted by any card effect."), 'error' );
               return;
@@ -336,6 +336,7 @@ function (dojo, declare) {
 
         playCard: function(card, guess_id, opponent_id)
         {
+          console.log("Playing card", card, "guess_id:", guess_id, "opponent_id:", opponent_id);
           this.ajaxcall( "/loveletter/loveletter/playCard.html", { 
                                                       lock: true, 
                                                       card: card,
@@ -351,7 +352,12 @@ function (dojo, declare) {
             dojo.subscribe( 'newCard', this, "notif_newCard" );
             dojo.subscribe( 'cardPlayedLong', this, "notif_cardPlayed" );
             dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            this.notifqueue.setSynchronous( 'cardPlayedLong', 3000 );
+            //this.notifqueue.setSynchronous( 'cardPlayedLong', 3000 );
+
+            dojo.subscribe( 'reveal', this, 'notif_reveal' );
+            dojo.subscribe( 'reveal_long', this, 'notif_reveal' );
+            this.notifqueue.setSynchronous( 'reveal', 2000 );
+            this.notifqueue.setSynchronous( 'reveal_long', 3000 );
         },
 
         notif_newCard: function( notif )
@@ -406,8 +412,21 @@ function (dojo, declare) {
           {
             //TODO - play card when not player
           }
+        },
 
+        notif_reveal: function( notif )
+        {
+          let card = {};
+          Object.assign(card, {
+            id: notif.args.player_id + '-fake-0',
+            type: notif.args.card_type,
+          });
 
+          opponentHand = this.opponentHands[notif.args.player_id];
+          opponentHand.setCardVisible(card, true);
+          setTimeout(() => {
+            opponentHand.setCardVisible(card, false);
+          }, 2000);
         },
 
     });

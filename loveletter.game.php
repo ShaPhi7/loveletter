@@ -268,6 +268,8 @@ class loveletter extends Table
 
     function playCard(int $card_id, array $opponents, int $guess_id)
     {
+        //throw new feException("TEST");
+        
         // Check that this is the player's turn and that it is a "possible action" at this game state (see states.inc.php)
         self::checkAction('playCard'); 
         
@@ -470,7 +472,7 @@ class loveletter extends Table
             'card_name' => $this->card_types[$opponent_card['type']]['name']
         ));
 
-        self::notifyPlayer($player_id, 'unreveal', '', array('player_id' => $opponent_id));
+        //self::notifyPlayer($player_id, 'unreveal', '', array('player_id' => $opponent_id));
     }
 
     function validateBaron($player_id, $opponent_id)
