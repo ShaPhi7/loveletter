@@ -760,21 +760,34 @@ class loveletter extends Table
 
         $opponent_cards = $this->cards->getCardsInLocation( 'hand', $opponent_id );
         $opponent_card = reset($opponent_cards);
-        
-        $players = self::loadPlayersBasicInfos();
-        self::notifyAllPlayers( 'cardexchange', clienttranslate('King: ${player_name} and ${player_name2} exchange their hand.'), array(
-            'player_name' => $players[ $player_id ]['player_name'],
-            'player_name2' => $players[ $opponent_id ]['player_name'],
-            'player_1' => $player_id,
-            'player_2' => $opponent_id
-        ));
                 
         // Exchange hands
         $this->cards->moveCard( $player_card['id'], 'hand', $opponent_id );
         $this->cards->moveCard( $opponent_card['id'], 'hand', $player_id );
                 
-        self::notifyPlayer( $opponent_id, 'newCard', '', array( 'card' => $player_card, 'from' => $player_id, 'remove' => $opponent_card ) );
-        self::notifyPlayer( $player_id, 'newCard', '', array( 'card' => $opponent_card, 'from' => $opponent_id, 'remove' => $player_card ) );
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers( 'cardexchange_opponents', clienttranslate('King: ${player_name} and ${player_name2} exchange their hand.'), array(
+            'player_name' => $players[ $player_id ]['player_name'],
+            'player_name2' => $players[ $opponent_id ]['player_name'],
+            'player_1' => $player_id,
+            'player_2' => $opponent_id,
+        ));
+
+        self::notifyPlayer( $opponent_id, 'cardexchange', '', array(
+            'player_name' => $players[ $player_id ]['player_name'],
+            'player_name2' => $players[ $opponent_id ]['player_name'],
+            'player_1' => $player_id,
+            'player_2' => $opponent_id, 
+            'player_1_card' => $player_card,
+            'player_2_card' => $opponent_card) );
+
+        self::notifyPlayer( $player_id, 'cardexchange', '', array(
+            'player_name' => $players[ $opponent_id ]['player_name'],
+            'player_name2' => $players[ $player_id ]['player_name'],
+            'player_1' => $opponent_id,
+            'player_2' => $player_id,
+            'player_1_card' => $opponent_card,
+            'player_2_card' => $player_card) );
     }
 
     function playCountess($card, $opponent_id)

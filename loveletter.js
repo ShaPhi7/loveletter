@@ -310,7 +310,8 @@ function (dojo, declare) {
             }
 
             if (this.selectedOpponentId == this.player_id
-              && cardType !== this.PRINCE)
+              && cardType !== this.PRINCE
+              && cardType !== this.KING)
             {
               this.showMessage(_("You cannot target yourself with this card."), "error");
               return;
@@ -446,6 +447,9 @@ function (dojo, declare) {
             dojo.subscribe( 'reveal_long', this, 'notif_reveal' );
             this.notifqueue.setSynchronous( 'reveal', 2000 );
             this.notifqueue.setSynchronous( 'reveal_long', 3000 );
+
+            dojo.subscribe( 'cardexchange', this, 'notif_cardexchange' );
+            dojo.subscribe( 'cardexchange_opponents', this, 'notif_cardexchange_opponents' );
         },
 
         notif_newCard: function( notif )
@@ -524,6 +528,80 @@ function (dojo, declare) {
           }, 2000);
         },
 
+        notif_cardexchange: function( notif )
+        {
+          debugger;
+          firstPlayer = Number(notif.args.player_1);
+          secondPlayer = Number(notif.args.player_2);
+
+            const [otherPlayerId, playerCardDetails, opponentCardDetails] =
+                (firstPlayer === this.player_id)
+                    ? [secondPlayer, notif.args.player_1_card, notif.args.player_2_card]
+                    : [firstPlayer, notif.args.player_2_card, notif.args.player_1_card];
+
+            opponentHand = this.opponentHands[otherPlayerId];
+
+            playerCard = this.playerHand.getCards()[0];
+            opponentCard = opponentHand.getCards()[0];
+
+            this.playerHand.removeAll();
+            opponentHand.removeAll();
+
+            newPlayerCard = {
+              id: opponentCardDetails.id,  
+              type: opponentCardDetails.type
+            }
+
+            newOpponentCard = {
+              id: `${otherPlayerId}-fake-0`, 
+            }
+
+            this.playerHand.addCard(newPlayerCard, {
+                fromStock: opponentHand,
+                visible: true
+            });
+
+            opponentHand.addCard(newOpponentCard, {
+                fromStock: this.playerHand,
+                visible: false
+            });
+        },
+
+        notif_cardexchange_opponents: function( notif )
+        {
+          firstPlayer = Number(notif.args.player_1);
+          secondPlayer = Number(notif.args.player_2);
+
+          if (firstPlayer === this.player_id
+            || secondPlayer === this.player_id) {
+            return;
+          }
+            
+          //both opponents
+          const stock1 = this.opponentHands[firstPlayer];
+          const stock2 = this.opponentHands[secondPlayer];
+
+          stock1.removeAll();
+          stock2.removeAll();
+
+          newPlayer1Card = {
+            id: `${firstPlayer}-fake-0`, 
+          }
+
+          newPlayer2Card = {
+            id: `${secondPlayer}-fake-0`, 
+          }
+
+          stock1.addCard(newPlayer1Card, {
+            fromStock: stock2,
+            visible: true
+          });
+
+          stock2.addCard(newPlayer2Card, {
+            fromStock: stock1,
+            visible: true
+          });
+        }
     });
 
   function getCardSpriteBackgroundPosition(card, cardHeight, cardWidth, cardScale, cardConstants) {
