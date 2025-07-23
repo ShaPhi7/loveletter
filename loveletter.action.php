@@ -59,21 +59,13 @@
         self::ajaxResponse( );
     }
 
-	public function bishopChoice()
+    public function actionChancellor()
     {
         self::setAjaxMode();     
-        $bDiscard = self::getArg( 'choice', AT_bool, true );
-        $this->game->bishopChoice( $bDiscard );
-        self::ajaxResponse( );
-    }
-
-    public function cardinalchoice()
-    {
-        self::setAjaxMode();     
-        $player_id = self::getArg( 'choice', AT_posint, true );
-        $this->game->cardinalchoice( $player_id );
-        self::ajaxResponse( );
-
+        $keep = self::getArg('keep', AT_int, true);
+        $bottom = self::getArg('bottom', AT_int, true);
+        $this->game->actionChancellor($keep, $bottom);
+        self::ajaxResponse();
     }
 
 

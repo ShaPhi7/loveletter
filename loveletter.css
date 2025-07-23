@@ -225,6 +225,15 @@ html, body {
   /*box-shadow: 0 0 10px 2px #ffd70088;*/
 }
 
+.card.keep > .card-sides > .front {
+  outline: 3px solid #ffd700;
+  box-shadow: 0 0 12px 3px rgba(255, 215, 0, 0.6);
+  border-radius: 8px;
+  z-index: 5;
+  position: relative;
+  transition: all 0.2s ease-in-out;
+}
+
 .guardchoiceicon {
     width: var(--badge-width);
     height: var(--badge-height);

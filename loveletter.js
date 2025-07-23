@@ -37,6 +37,10 @@ function (dojo, declare) {
             this.selectedCardId = null; 
             this.selectedCardType = null;
 
+            this.chancellorState = false;
+            chancellorCardToKeep = null;
+            chancellorCardToPlaceOnBottomOfDeck = null;
+
             const rootStyles = getComputedStyle(document.documentElement);
             this.cardWidth    = parseFloat(rootStyles.getPropertyValue('--card-width'));
             this.cardHeight   = parseFloat(rootStyles.getPropertyValue('--card-height'));
@@ -137,8 +141,7 @@ function (dojo, declare) {
                   }
 
                   if (this.classList.contains('selected')) {
-                    this.classList.remove('selected');
-                    _this.selectedOpponentId = null;
+                    _this.removePlayerSelections();
                     return;
                   }
 
@@ -152,13 +155,16 @@ function (dojo, declare) {
                 });
             });
 
-
               this.playerHand = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
               this.playerHand.setSelectionMode('single');
               this.playerHand.onSelectionChange = (selectedCards) => {
-                debugger;
+                if (this._suppressUnselectCallback) return;
                 if (selectedCards.length > 0) {
                   this.onPlayerHandSelectionChanged(selectedCards[0]);
+                }
+                else
+                {
+                  this.removeCardSelections();
                 }
               };
 
@@ -174,7 +180,7 @@ function (dojo, declare) {
 
               Object.values(gamedatas.players).forEach(player => {
                 if (player.id != this.player_id) {
-                  const opponentLine = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + player.id), {});
+                  const opponentLine = new HandStock(this.handManager, document.getElementById('lvt-player-table-card-' + player.id), {});
                   opponentLine.setSelectionMode('single');
                   const opponentHandSize = gamedatas.cardcount.hand[player.id];
                     for (let i = 0; i < opponentHandSize; i++) {
@@ -272,16 +278,74 @@ function (dojo, declare) {
 
         // },
 
+        resetActions: function () { //TODO - needed?
+          let e = document.getElementById("pagemaintitletext");
+          e.innerHTML = "";
+          this.removeActionButtons();
+          KvBoard.removeTargets();
+        },
+
+        setInvite: function (pInvite) {
+          let e = document.getElementById("pagemaintitletext");
+          e.innerHTML = pInvite;
+        },
+
+        doChancellorAction: function()
+        {
+          if (!this.chancellorCardToKeep)
+          {
+            this.chancellorCardToKeep = this.playerHand.selectedCards[0];
+            const cardElement = this.playerHand.getCardElement(this.chancellorCardToKeep);
+            
+            if (cardElement) {
+              dojo.addClass(cardElement, 'keep');
+            }
+            this.deselect();
+            this.setInvite(_("You must choose which card to place on the bottom of the deck"));
+            return;
+          }
+
+          if (this.chancellorCardToKeep.id == this.selectedCardId)
+          {
+            this.deselect();
+            this.showMessage(_("You must choose a different card to the one that you chose to keep."), "error");
+            return;
+          }
+
+          this.chancellorCardToPlaceOnBottomOfDeck = this.selectedCardId;
+          this.bgaPerformAction('actionChancellor', { keep: Number(this.chancellorCardToKeep.id), bottom: Number(this.chancellorCardToPlaceOnBottomOfDeck) });
+        },
+
+        onEnteringState: function(stateName, args) {
+            if (stateName === 'chancellor') {
+              this.deselect();
+              this.chancellorState = true;  
+            }
+        },
+
+        onLeavingState: function(stateName, args) {
+            if (stateName === 'chancellor') {
+              this.deselect();
+              this.chancellorState = false;
+            }
+        },
+
         onSelectPlayer: function(playerId) {
           this.selectedOpponentId = playerId;
             this.playCardOrShowMessage();
         },
 
         onPlayerHandSelectionChanged: function(card) {
-          debugger;
           this.selectedCardId = card ? Number(card.id) : null;
           this.selectedCardType = card ? Number(card.type) : null;
-          this.playCardOrShowMessage();
+          if (this.chancellorState)
+          {
+            this.doChancellorAction();
+          }
+          else
+          {
+            this.playCardOrShowMessage();
+          }
         },
 
         playCardOrShowMessage: function()
@@ -289,6 +353,13 @@ function (dojo, declare) {
           if (this.gamedatas.gamestate.active_player != this.player_id) {
             this.showMessage(_("It is not your turn."), "error");
             this.deselect();
+            return;
+          }
+
+          if (this.chancellorState)
+          {
+            this.showMessage(_("You must a select cards."), "error");
+            this.removePlayerSelections();
             return;
           }
 
@@ -419,7 +490,6 @@ function (dojo, declare) {
             } );
             
             dojo.query( '.guardchoicelink' ).connect( 'onclick', this, function( evt ) {
-              debugger;
                 evt.preventDefault();
                 var guess_id = parseInt(evt.currentTarget.getAttribute('data-id'));
                 console.log(guess_id);
@@ -450,13 +520,16 @@ function (dojo, declare) {
         {
           this.removeCardSelections();
           this.removePlayerSelections();
+          this.removeChancellorSelections();
         },
 
         removeCardSelections: function()
         {
           this.selectedCardId = null;
           this.selectedCardType = null;
+          this._suppressUnselectCallback = true;
           this.playerHand.unselectAll();
+          this._suppressUnselectCallback = false;
         },
 
         removePlayerSelections: function()
@@ -464,6 +537,12 @@ function (dojo, declare) {
           this.selectedOpponentId = null;
           const playerTables = Array.from(document.querySelectorAll('.lvt-player-table'));
           playerTables.forEach(pt => pt.classList.remove('selected'));
+        },
+
+        removeChancellorSelections: function()
+        {
+          chancellorCardToKeep = null;
+          chancellorCardToPlaceOnBottomOfDeck = null;
         },
 
         setupNotifications: function()
@@ -483,34 +562,61 @@ function (dojo, declare) {
             dojo.subscribe( 'cardexchange', this, 'notif_cardexchange' );
             dojo.subscribe( 'cardexchange_opponents', this, 'notif_cardexchange_opponents' );
 
-            dojo.subscribe( 'chancellor', this, 'notif_chancellor' );
+            dojo.subscribe( 'chancellor_draw', this, 'notif_chancellor_draw' );
+            dojo.subscribe( 'chancellor_bury', this, 'notif_chancellor_bury' );
         },
 
-        notif_chancellor: function( notif )
+        notif_chancellor_draw: function( notif )
         {
+
+          if (notif.args.card)
+          {
+            let card = {};
+            Object.assign(card, {
+              id: notif.args.card.id,
+              type: notif.args.card.type,
+            });
+
+            this.playerHand.addCard(card, { fromStock: this.deck });
+            this.playerHand.setCardVisible(card, true);
+          }
+          
+          if (notif.args.card_2)
+          {
+            let card2 = {};
+            Object.assign(card2, {
+              id: notif.args.card_2.id,
+              type: notif.args.card_2.type,
+            });
+
+            this.playerHand.addCard(card2, { fromStock: this.deck });
+            this.playerHand.setCardVisible(card2, true);
+          }
+        },
+
+        notif_chancellor_bury: function( notif )
+        {
+          const keptCardId = notif.args.card.id;
+          const allCards = this.playerHand.getCards();
           debugger;
-          let card = {};
-          Object.assign(card, {
-            id: notif.args.card.id,
-            type: notif.args.card.type,
+          allCards.forEach(card => {
+          if (card.id != keptCardId) {
+            this.deck.addCard(card, {
+                fromStock: this.playerHand,
+                visible: false,
+                index: this.deck.getCards().length,
+                updateInformations: { type: null}
+                }); //TODO - how do we handle this better?
+            }
           });
 
-          this.playerHand.addCard(card, { fromStock: this.deck });
-          this.playerHand.setCardVisible(card, true);
-
-          let card2 = {};
-          Object.assign(card2, {
-            id: notif.args.card_2.id,
-            type: notif.args.card_2.type,
-          });
-
-          this.playerHand.addCard(card2, { fromStock: this.deck });
-          this.playerHand.setCardVisible(card2, true);
+          this.playerHand.unselectAll?.();
+          document.querySelectorAll('.keep').forEach(el => dojo.removeClass(el, 'keep'));
+          this.deselect();
         },
 
         notif_newCard: function( notif )
         {
-          debugger;
           let card = {};
           Object.assign(card, {
             id: notif.args.card.id,
@@ -587,7 +693,6 @@ function (dojo, declare) {
 
         notif_cardexchange: function( notif )
         {
-          debugger;
           firstPlayer = Number(notif.args.player_1);
           secondPlayer = Number(notif.args.player_2);
 

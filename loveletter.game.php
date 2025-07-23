@@ -33,6 +33,8 @@ class loveletter extends Table
     public const PRINCESS   = 29;
     public const SPY        = 30;
 
+    public bool $activateChancellorState = false;
+
 	function __construct( )
 	{
         	
@@ -304,8 +306,9 @@ class loveletter extends Table
         // e.g. "guard_played", "priest_played", etc.
         self::incStat(1, strtolower($this->card_types[$card['type']]['name']) . '_played', $player_id);
        
-        if ($card['type'] == SELF::CHANCELLOR) {
+        if ($this->activateChancellorState) {
             $this->gamestate->nextState('chancellor');
+            $this->activateChancellorState = false;
         }
         else {
             $this->gamestate->nextState('nextPlayer');
@@ -677,6 +680,8 @@ class loveletter extends Table
                     'card_name' => $this->card_types[$card_1['type']]['name'],
                     'card_name_2' => ''
                 ));
+
+                $this->activateChancellorState = true;
             break;
 
             default:
@@ -687,49 +692,71 @@ class loveletter extends Table
                     'player_name' => $players[$player_id]['player_name'],
                 ));
 
-                self::notifyPlayer($player_id, 'chancellor', clienttranslate('Chancellor: you draw ${card_name} and ${card_name_2}'), array(
+                self::notifyPlayer($player_id, 'chancellor_draw', clienttranslate('Chancellor: you draw ${card_name} and ${card_name_2}'), array(
                 'i18n' => array('card_name', 'card_name_2'),
                 'card' => $card_1,
                 'card_2' => $card_2,
                 'card_name' => $this->card_types[$card_1['type']]['name'],
                 'card_name_2' => $this->card_types[$card_2['type']]['name']
                 ));
+
+                $this->activateChancellorState = true;
             break;
         }
     }
 
-    function validateActionChancellor($chosenCard)
+    function validateActionChancellor($keep, $bottom)
     {
         $player_id = self::getActivePlayerId();
         $player_cards = $this->cards->getCardsInLocation('hand', $player_id);
         $valid_card_ids = array_map(function($card) { return $card['id']; }, $player_cards);
 
-        if (!in_array($chosenCard, $valid_card_ids)) {
-            throw new feException("You must choose to keep one of the cards in your hand");
+        if (!in_array($keep, $valid_card_ids)) {
+            throw new feException("You must choose one of the cards in your hand to keep");
+        }
+
+        if (!in_array($bottom, $valid_card_ids)) {
+            throw new feException("You must choose one of the cards in your hand to place on the bottom of the deck");
         }
     }
 
-    function actionChancellor($chosenCard)
+    function actionChancellor($keep, $bottom)
     {
+        self::validateActionChancellor($keep, $bottom);
+
         $players = self::loadPlayersBasicInfos();
         $player_id = self::getActivePlayerId();
         $player_cards = $this->cards->getCardsInLocation('hand', $player_id);
-
+        
         foreach ($player_cards as $card) {
-            if ($card['id'] != $chosenCard) {
-                $this->cards->insertCardOnExtremePosition($card['id'], 'deck', false);
-            }
-            //TODO - handle ordering
+        $card_by_id[$card['id']] = $card;
         }
+
+        $keep_card = $card_by_id[$keep];
+        $bottom_card = $card_by_id[$bottom];
+        $other_card = null;
+        foreach ($player_cards as $card) {
+        if ($card['id'] != $keep && $card['id'] != $bottom) {
+            $other_card = $card;
+            break;
+            }
+        }
+
+        if ($other_card != null) //happens if not enough cards in deck, then player only have draws 1 instead of 2.
+        {
+            $this->cards->insertCardOnExtremePosition($other_card['id'], 'deck', false);
+        }
+        $this->cards->insertCardOnExtremePosition($bottom_card['id'], 'deck', false);
 
         self::notifyAllPlayers('simpleNote', clienttranslate('Chancellor: ${player_name} keeps 1 card, and places the other 2 on the bottom of the deck'), array(
             'player_name' => $players[$player_id]['player_name'],
         ));
 
-        self::notifyPlayer($player_id, 'newCard', clienttranslate('Chancellor: you keep ${card_name}'), array(
+        //TODO - add other and bottom card
+        self::notifyPlayer($player_id, 'chancellor_bury', clienttranslate('Chancellor: you keep ${card_name}'), array(
             'i18n' => array('card_name'),
-            'card' => $card,
-            'card_name' => $this->card_types[$chosenCard['type']]['name'],
+            'card' => $keep_card,
+            'card_name' => $this->card_types[$keep_card['type']]['name'],
         ));
 
         $this->gamestate->nextState('nextPlayer');

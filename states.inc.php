@@ -96,8 +96,8 @@ $machinestates = array(
 
     26 => array(
     		"name" => "chancellor",
-    		"description" => clienttranslate('Chancellor : ${actplayer} must keep 1 card and put the other 2 on the bottom of the deck in any order.'),
-    		"descriptionmyturn" => clienttranslate('Chancellor : ${you} must keep 1 card and put the other 2 on the bottom of the deck in any order.'),
+    		"description" => clienttranslate('${actPlayer} must keep 1 card and put the other 2 on the bottom of the deck in any order.'),
+    		"descriptionmyturn" => clienttranslate('${you} must choose a card to keep'),
     		"type" => "activeplayer",
     		"possibleactions" => array("actionChancellor"),
     		"transitions" => array("nextPlayer" => 21)
