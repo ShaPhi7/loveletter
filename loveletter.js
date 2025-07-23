@@ -142,8 +142,7 @@ function (dojo, declare) {
                     return;
                   }
 
-                  const playerTables = Array.from(document.querySelectorAll('.lvt-player-table'));
-                  playerTables.forEach(pt => pt.classList.remove('selected'));
+                  _this.removePlayerSelections();
                   this.classList.add('selected');
 
                   // Store selected opponent (even if it's yourself)
@@ -157,6 +156,7 @@ function (dojo, declare) {
               this.playerHand = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
               this.playerHand.setSelectionMode('single');
               this.playerHand.onSelectionChange = (selectedCards) => {
+                debugger;
                 if (selectedCards.length > 0) {
                   this.onPlayerHandSelectionChanged(selectedCards[0]);
                 }
@@ -278,6 +278,7 @@ function (dojo, declare) {
         },
 
         onPlayerHandSelectionChanged: function(card) {
+          debugger;
           this.selectedCardId = card ? Number(card.id) : null;
           this.selectedCardType = card ? Number(card.type) : null;
           this.playCardOrShowMessage();
@@ -287,6 +288,7 @@ function (dojo, declare) {
         {     
           if (this.gamedatas.gamestate.active_player != this.player_id) {
             this.showMessage(_("It is not your turn."), "error");
+            this.deselect();
             return;
           }
 
@@ -314,6 +316,7 @@ function (dojo, declare) {
               && cardType !== this.KING)
             {
               this.showMessage(_("You cannot target yourself with this card."), "error");
+              this.deselect();
               return;
             }
 
@@ -321,6 +324,7 @@ function (dojo, declare) {
             if(dojo.hasClass('lvt-player-table-'+this.selectedOpponentId, 'outOfTheRound'))
             {
               this.showMessage( _("This player is out of the round"), 'error' );
+              this.deselect();
               return;
             }   
         
@@ -328,6 +332,7 @@ function (dojo, declare) {
             if(dojo.style('lvt-player-table-'+this.selectedOpponentId, 'protected'))
             {
               this.showMessage( _("This player is protected and cannot be targeted by any card effect."), 'error' );
+              this.deselect();
               return;
             }
           }
@@ -343,10 +348,15 @@ function (dojo, declare) {
         },
 
         showConfirmationDialog: function() {
-         if (this.selectedCardType === this.PRINCESS) {
+          if (this.selectedCardType === this.PRINCESS) {
           this.confirmationDialog(_("Playing the Princess will knock you out of the round. Are you sure?"),
           ( () => {  
             this.playCard(this.selectedCardId, -1, this.selectedOpponentId);
+            }
+          ),
+          (
+            () => {
+              this.deselect();
             }
           ))
           }
@@ -405,6 +415,7 @@ function (dojo, declare) {
             {
                 evt.preventDefault();
                 guardDlg.hide();
+                this.deselect();
             } );
             
             dojo.query( '.guardchoicelink' ).connect( 'onclick', this, function( evt ) {
@@ -432,6 +443,27 @@ function (dojo, declare) {
                                                       guess: guess_id,
                                                       opponent: opponent_id
                                                     },    this, function( result ) {  }, function( is_error) { } );  
+          this.deselect();
+        },
+
+        deselect: function()
+        {
+          this.removeCardSelections();
+          this.removePlayerSelections();
+        },
+
+        removeCardSelections: function()
+        {
+          this.selectedCardId = null;
+          this.selectedCardType = null;
+          this.playerHand.unselectAll();
+        },
+
+        removePlayerSelections: function()
+        {
+          this.selectedOpponentId = null;
+          const playerTables = Array.from(document.querySelectorAll('.lvt-player-table'));
+          playerTables.forEach(pt => pt.classList.remove('selected'));
         },
 
         setupNotifications: function()
