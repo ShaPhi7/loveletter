@@ -61,6 +61,8 @@
   --badge-width: 36px; 
   --badge-height: 36px;
   --badge-gap: 0px;
+  --badge-sprite-height: 127px;
+  --badge-sprite-width: 127px;
 
   /* Scaled total sprite size */
   /*--sprite-width: calc(var(--card-width) * var(--sprite-cols) * var(--card-scale));
@@ -221,6 +223,20 @@ html, body {
 .card.bga-cards_selected-card > .card-sides > .front {
   outline: 3px solid red; 
   /*box-shadow: 0 0 10px 2px #ffd70088;*/
+}
+
+.guardchoiceicon {
+    width: var(--badge-width);
+    height: var(--badge-height);
+    display: inline-block;
+    background-image: url('img/cardnumbers.png');
+}
+.guardchoicename {
+    font-weight: bold;
+    position: relative;
+    top: -17px;
+    left: 10px;
+    display: inline-block;
 }
 
 /************************************************************

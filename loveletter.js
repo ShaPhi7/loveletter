@@ -278,31 +278,13 @@ function (dojo, declare) {
         },
 
         onPlayerHandSelectionChanged: function(card) {
-          debugger;
           this.selectedCardId = card ? Number(card.id) : null;
-            this.selectedCardType = card ? Number(card.type) : null;
-          if (this.selectedCardType === this.GUARD
-            || this.selectedCardType === this.PRINCESS)
-          {
-            this.showConfirmationDialog();
-          }  
-          else
-          {
-            this.playCardOrShowMessage();
-          }
-        },
-
-        showConfirmationDialog: function() {
-         this.confirmationDialog(_("Playing the Princess will knock you out of the round. Are you sure?"),
-          ( () => {  
-            this.playCardOrShowMessage();
-            }
-          ))
+          this.selectedCardType = card ? Number(card.type) : null;
+          this.playCardOrShowMessage();
         },
 
         playCardOrShowMessage: function()
-        { 
-          console.log("valid");         
+        {     
           if (this.gamedatas.gamestate.active_player != this.player_id) {
             this.showMessage(_("It is not your turn."), "error");
             return;
@@ -348,8 +330,96 @@ function (dojo, declare) {
               return;
             }
           }
+          if (this.selectedCardType === this.GUARD
+            || this.selectedCardType === this.PRINCESS)
+          {
+            this.showConfirmationDialog();
+          }  
+          else
+          {
+            this.playCard(this.selectedCardId, -1, this.selectedOpponentId);
+          }
+        },
 
-          this.playCard(this.selectedCardId, -1, this.selectedOpponentId);
+        showConfirmationDialog: function() {
+         if (this.selectedCardType === this.PRINCESS) {
+          this.confirmationDialog(_("Playing the Princess will knock you out of the round. Are you sure?"),
+          ( () => {  
+            this.playCard(this.selectedCardId, -1, this.selectedOpponentId);
+            }
+          ))
+          }
+          else
+          {
+            const rootStyles = getComputedStyle(document.documentElement);
+            const SPRITE_WIDTH_ORIGINAL = parseFloat(rootStyles.getPropertyValue('--badge-sprite-width'));
+            const SPRITE_HEIGHT_ORIGINAL = parseFloat(rootStyles.getPropertyValue('--badge-sprite-height'));
+            const BADGE_WIDTH = 36;
+            const BADGE_HEIGHT = 36;
+            
+            if( $('guard_dialog') )
+            {   dojo.destroy( 'guard_dialog' );  }
+            
+            var title = _('Who is ${player}?');
+            
+            var guardDlg = new dijit.Dialog({ title: dojo.string.substitute( title , { player: this.gamedatas.players[ this.selectedOpponentId ].name } ) });
+
+            var html = "<div id='guard_dialog' style='max-width:500px;'>";
+
+            var cardlist = [
+                  {id: this.PRINCESS,   num: this.gamedatas.card_types[this.PRINCESS   ].value, nam: _(this.gamedatas.card_types[ this.PRINCESS ].name) },
+                  {id: this.COUNTESS,   num: this.gamedatas.card_types[this.COUNTESS   ].value, nam: _(this.gamedatas.card_types[ this.COUNTESS ].name) },
+                  {id: this.KING,       num: this.gamedatas.card_types[this.KING       ].value, nam: _(this.gamedatas.card_types[ this.KING ].name) },
+                  {id: this.CHANCELLOR, num: this.gamedatas.card_types[this.CHANCELLOR ].value, nam: _(this.gamedatas.card_types[ this.CHANCELLOR ].name) },
+                  {id: this.PRINCE,     num: this.gamedatas.card_types[this.PRINCE     ].value, nam: _(this.gamedatas.card_types[ this.PRINCE ].name) },
+                  {id: this.HANDMAID,   num: this.gamedatas.card_types[this.HANDMAID   ].value, nam: _(this.gamedatas.card_types[ this.HANDMAID ].name) },
+                  {id: this.BARON,      num: this.gamedatas.card_types[this.BARON      ].value, nam: _(this.gamedatas.card_types[ this.BARON ].name) },
+                  {id: this.PRIEST,     num: this.gamedatas.card_types[this.PRIEST     ].value, nam: _(this.gamedatas.card_types[ this.PRIEST ].name) },
+                  {id: this.SPY,        num: this.gamedatas.card_types[this.SPY        ].value, nam: _(this.gamedatas.card_types[ this.SPY ].name) },
+              ];
+
+            for( var i in cardlist )
+            {
+                var num = cardlist[i].num;
+                var names = cardlist[i].nam;
+            
+                html += '<div id="guardchoicewrap_'+num+'">'; 
+                html += `<a href="#" class="guardchoicelink" data-id="${cardlist[i].id}">`;
+                var xOffset = -(num * SPRITE_WIDTH_ORIGINAL * (BADGE_HEIGHT / SPRITE_HEIGHT_ORIGINAL));
+                html += `<div class="guardchoiceicon" style="background-size: auto ${BADGE_HEIGHT}px; background-position: ${xOffset}px 0px; width: ${BADGE_WIDTH}px; height: ${BADGE_HEIGHT}px;"></div>`;
+                html += '<div class="guardchoicename">'+names+'</div>';
+                html += '</a>';
+                html += '</div>';
+            }
+
+            html += '<p style="font-size:60%">('+_('You cannot target a Guard with a guard')+')</p>';
+            html += "<br/><div style='text-align: center;'>";
+            html += "<a class='bgabutton bgabutton_gray' id='cancel_btn' href='#'><span>"+_("Cancel")+"</a>";
+            html += "</div></div>";
+
+            guardDlg.attr("content", html );
+            guardDlg.show();
+
+            dojo.connect( $('cancel_btn'), 'onclick', this, function( evt )
+            {
+                evt.preventDefault();
+                guardDlg.hide();
+            } );
+            
+            dojo.query( '.guardchoicelink' ).connect( 'onclick', this, function( evt ) {
+              debugger;
+                evt.preventDefault();
+                var guess_id = parseInt(evt.currentTarget.getAttribute('data-id'));
+                console.log(guess_id);
+
+                this.playCard(this.selectedCardId, guess_id, this.selectedOpponentId)
+                dojo.query( '.selectedOpponent' ).removeClass( 'selectedOpponent' );            
+
+                guardDlg.hide();                        
+            } );
+
+            return ;
+          }
         },
 
         playCard: function(card, guess_id, opponent_id)
@@ -380,7 +450,6 @@ function (dojo, declare) {
 
         notif_newCard: function( notif )
         {
-          debugger;
           let card = {};
           Object.assign(card, {
             id: notif.args.card.id,
@@ -436,7 +505,6 @@ function (dojo, declare) {
           }
           setTimeout(() => {
             this.discard.removeCard(card);
-            debugger;
             markBadgeAsPlayed(notif.args.card_type.value);
           }, 2000);
         },
@@ -482,10 +550,11 @@ function (dojo, declare) {
     }
 
     function buildPlayedCardBadges(gamedatas) {
-      const BADGE_WIDTH_ORIGINAL = 127;  // original badge width in the sprite
-      const BADGE_WIDTH = 36;            // new displayed badge width
+      const rootStyles = getComputedStyle(document.documentElement);
+      const SPRITE_WIDTH_ORIGINAL = parseFloat(rootStyles.getPropertyValue('--badge-sprite-width'));
+      const SPRITE_HEIGHT_ORIGINAL = parseFloat(rootStyles.getPropertyValue('--badge-sprite-height'));
+      const BADGE_WIDTH = 36;
       const BADGE_HEIGHT = 36;
-      const SPRITE_HEIGHT_ORIGINAL = 127; // (if the sprite image is exactly square)
 
       const COLUMNS = 4;
       const ROWS = 6; // up to 24 slots
@@ -519,7 +588,7 @@ function (dojo, declare) {
           // Scale the full image to fit vertically
           badge.style.backgroundSize = `auto ${BADGE_HEIGHT}px`;
           // Scale the offset: (value * original width) * (displayed height / original height)
-          const xOffset = -(value * BADGE_WIDTH_ORIGINAL * (BADGE_HEIGHT / SPRITE_HEIGHT_ORIGINAL));
+          const xOffset = -(value * SPRITE_WIDTH_ORIGINAL * (BADGE_HEIGHT / SPRITE_HEIGHT_ORIGINAL));
           badge.style.backgroundPosition = `${xOffset}px 0`;
           badge.style.width = BADGE_WIDTH + "px";
           badge.style.height = BADGE_HEIGHT + "px";

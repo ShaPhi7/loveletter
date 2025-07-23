@@ -382,6 +382,12 @@ class loveletter extends Table
         
     function playGuard($card, $opponent_id, int $guess_id)
     {
+        // self::notifyAllPlayers('simpleNote', clienttranslate('${opponent}, ${card}, ${guess}'), array(
+        //                     'opponent' => $opponent_id,
+        //                     'card' => $card,
+        //                     "guess" => $guess_id
+        // ));
+        
         $player_id = self::getActivePlayerId();
 
         if (!$opponent_id)
