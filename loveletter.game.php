@@ -687,9 +687,10 @@ class loveletter extends Table
                     'player_name' => $players[$player_id]['player_name'],
                 ));
 
-                self::notifyPlayer($player_id, 'newCard', clienttranslate('Chancellor: you draw ${card_name} and ${card_name_2}'), array(
+                self::notifyPlayer($player_id, 'chancellor', clienttranslate('Chancellor: you draw ${card_name} and ${card_name_2}'), array(
                 'i18n' => array('card_name', 'card_name_2'),
-                'card' => $card,
+                'card' => $card_1,
+                'card_2' => $card_2,
                 'card_name' => $this->card_types[$card_1['type']]['name'],
                 'card_name_2' => $this->card_types[$card_2['type']]['name']
                 ));

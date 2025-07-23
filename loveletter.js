@@ -450,10 +450,35 @@ function (dojo, declare) {
 
             dojo.subscribe( 'cardexchange', this, 'notif_cardexchange' );
             dojo.subscribe( 'cardexchange_opponents', this, 'notif_cardexchange_opponents' );
+
+            dojo.subscribe( 'chancellor', this, 'notif_chancellor' );
+        },
+
+        notif_chancellor: function( notif )
+        {
+          debugger;
+          let card = {};
+          Object.assign(card, {
+            id: notif.args.card.id,
+            type: notif.args.card.type,
+          });
+
+          this.playerHand.addCard(card, { fromStock: this.deck });
+          this.playerHand.setCardVisible(card, true);
+
+          let card2 = {};
+          Object.assign(card2, {
+            id: notif.args.card_2.id,
+            type: notif.args.card_2.type,
+          });
+
+          this.playerHand.addCard(card2, { fromStock: this.deck });
+          this.playerHand.setCardVisible(card2, true);
         },
 
         notif_newCard: function( notif )
         {
+          debugger;
           let card = {};
           Object.assign(card, {
             id: notif.args.card.id,
