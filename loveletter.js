@@ -274,18 +274,35 @@ function (dojo, declare) {
 
         onSelectPlayer: function(playerId) {
           this.selectedOpponentId = playerId;
-            this.playerCardOrShowMessage();
+            this.playCardOrShowMessage();
         },
 
         onPlayerHandSelectionChanged: function(card) {
+          debugger;
           this.selectedCardId = card ? Number(card.id) : null;
             this.selectedCardType = card ? Number(card.type) : null;
-
-            this.playerCardOrShowMessage();
+          if (this.selectedCardType === this.GUARD
+            || this.selectedCardType === this.PRINCESS)
+          {
+            this.showConfirmationDialog();
+          }  
+          else
+          {
+            this.playCardOrShowMessage();
+          }
         },
 
-        playerCardOrShowMessage: function()
-        {          
+        showConfirmationDialog: function() {
+         this.confirmationDialog(_("Playing the Princess will knock you out of the round. Are you sure?"),
+          ( () => {  
+            this.playCardOrShowMessage();
+            }
+          ))
+        },
+
+        playCardOrShowMessage: function()
+        { 
+          console.log("valid");         
           if (this.gamedatas.gamestate.active_player != this.player_id) {
             this.showMessage(_("It is not your turn."), "error");
             return;
@@ -331,7 +348,8 @@ function (dojo, declare) {
               return;
             }
           }
-            this.playCard(this.selectedCardId, -1, this.selectedOpponentId);
+
+          this.playCard(this.selectedCardId, -1, this.selectedOpponentId);
         },
 
         playCard: function(card, guess_id, opponent_id)
@@ -362,6 +380,7 @@ function (dojo, declare) {
 
         notif_newCard: function( notif )
         {
+          debugger;
           let card = {};
           Object.assign(card, {
             id: notif.args.card.id,
@@ -417,6 +436,7 @@ function (dojo, declare) {
           }
           setTimeout(() => {
             this.discard.removeCard(card);
+            debugger;
             markBadgeAsPlayed(notif.args.card_type.value);
           }, 2000);
         },
