@@ -43,7 +43,7 @@ $this->card_types = array(
         "nametr" => self::_('Baron'),
         "description" => clienttranslate('You and another player secretly compare hands. The player with the lower value is out of the round.'),
         "shortdescr" => self::_("Compare hands; lower hand is out."),
-        'qt' => 2,
+        'qt' => 10,
         'value' => 3
     ),
     24 => array( 

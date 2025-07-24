@@ -27,17 +27,25 @@ function (dojo, declare) {
         constructor: function () {
             console.log('loveletter constructor');
 
-            this.playerHand = new ebg.stock();
+            this.playerHand = null;
             this.deck = null;
             this.opponentHands = {};
-            this.discards = {};
+            this.discard = null;
             this.discussionTimeout = {};
 
             this.selectedOpponentId = null;
             this.selectedCardId = null; 
             this.selectedCardType = null;
 
-            this.animationManager = new AnimationManager(this, { duration: 700 });
+            this.chancellorState = false;
+            this.chancellorCardToKeep = null;
+            this.chancellorCardToPlaceOnBottomOfDeck = null;
+
+            const rootStyles = getComputedStyle(document.documentElement);
+            this.cardWidth    = parseFloat(rootStyles.getPropertyValue('--card-width'));
+            this.cardHeight   = parseFloat(rootStyles.getPropertyValue('--card-height'));
+            this.deckScale    = parseFloat(rootStyles.getPropertyValue('--deck-scale'));
+            this.handScale    = parseFloat(rootStyles.getPropertyValue('--hand-scale'));
 
             Object.assign(this, window.CARD_CONSTANTS);
         },
@@ -45,136 +53,328 @@ function (dojo, declare) {
         setup: function(gamedatas) {
             console.log("Love Letter setup", gamedatas);
 
-            dojo.place('lvt-center-area', 'lvt-playertables');
+            this.getGameAreaElement().insertAdjacentHTML("beforeend", `
+                <div id="lvt-background"></div>
+            `);
+
+            this.getGameAreaElement().insertAdjacentHTML("beforeend", `
+                <div id="lvt-play-area">
+                    <div id="lvt-center-area">
+                        <div id="lvt-deck-area"></div>
+                        <div id="lvt-badges-area"></div>
+                    </div>
+                    <div id="lvt-player-tables"></div>
+                </div>
+            `);
+
             console.log(gamedatas);
             this.lvtPlayers = {};
             const playerIds = Object.keys(gamedatas.players);
             const totalPlayers = playerIds.length;
+            this.deckManager = new CardManager(this, {
+              getId: (card) => `lvt-card-${card.id}`,
+              
+              cardHeight: this.cardHeight,
+              cardWidth: this.cardWidth,
+              
+              setupDiv: (card, div) => {
+              div.classList.add('lvt-card-container');
+              div.style.position = 'relative';
+              },
+              
+              setupFrontDiv: (card, div) => {
+                    div.classList.add('lvt-card');
+                        div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, this.cardHeight, this.cardWidth, this.deckScale, window.CARD_CONSTANTS);
+                    div.id = `card-${card.id}-front`;
+                },
 
-            // Rotate so local player is first
-            const rotatedPlayerIds = [...playerIds];
-            while (rotatedPlayerIds[0] !== String(this.player_id)) {
-                rotatedPlayerIds.push(rotatedPlayerIds.shift());
-            }
-
-            const radius = 350;
-
-            rotatedPlayerIds.forEach((player_id, index) => {
-                const player = gamedatas.players[player_id];
-                const angle = (2 * Math.PI * index) / totalPlayers;
-
-                const x = Math.cos(angle) * radius;
-                const y = Math.sin(angle) * radius;
-
-                const html = `
-                    <div id="lvt-playertable-${player_id}" class="lvt-playertable"
-                         style="left: calc(50% + ${x}px); top: calc(50% + ${y}px); transform: translate(-50%, -50%)">
-                        <div id="lvt-player-name-${player_id}" class="lvt-player-name" style="color:#${player.color}">${player.name}</div>
-                        <div id="lvt-player-card-${player_id}" class="lvt-player-card"></div>
-                    </div>`;
-
-                dojo.place(html, "lvt-playertables");
-
-                this.lvtPlayers[player_id] = {
-                    id: player_id,
-                    node: document.getElementById(`lvt-playertable-${player_id}`)
-                };
+              setupBackDiv: (card, div) => {
+                  div.classList.add('lvt-card');
+                      div.style.backgroundPosition = getCardSpriteBackgroundPosition("back", this.cardHeight, this.cardWidth, this.deckScale, window.CARD_CONSTANTS);
+                  div.id = `card-${card.id}-back`;
+                },
             });
 
-            const rootStyles = getComputedStyle(document.documentElement);
-            const cardWidth    = parseFloat(rootStyles.getPropertyValue('--card-width'));
-            const cardHeight   = parseFloat(rootStyles.getPropertyValue('--card-height'));
-            // Get cardScale from the .hand element if present, otherwise fallback to root
-            const spriteCols   = parseFloat(rootStyles.getPropertyValue('--sprite-cols'));
-            const spriteRows   = parseFloat(rootStyles.getPropertyValue('--sprite-rows'));
-            const cardScale    = parseFloat(rootStyles.getPropertyValue('--hand-card-scale'));
+              this.handManager = new CardManager(this, {
+              getId: (card) => `lvt-card-${card.id}`,
+              
+              cardHeight: this.cardHeight,
+              cardWidth: this.cardWidth,
+              
+              setupDiv: (card, div) => {
+              div.classList.add('lvt-card-container');
+              div.style.position = 'relative';
+              },
+              
+              setupFrontDiv: (card, div) => {
+                    div.classList.add('lvt-card');
+                        div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, this.cardHeight, this.cardWidth, this.handScale, window.CARD_CONSTANTS);
+                    div.id = `card-${card.id}-front`;
+                },
 
-            this.playerHand.create(this, $('lvt-player-card-' + this.player_id), cardWidth * cardScale * spriteCols, cardHeight * cardScale * spriteRows);
-            this.playerHand.selectable = 1;
-            this.playerHand.autowidth = true;
-            this.playerHand.resizeItems(cardWidth * cardScale, cardHeight * cardScale, cardWidth * spriteCols * cardScale, cardHeight * spriteRows * cardScale);
-            this.playerHand.apparenceBorderWidth = '3px';
-            this.playerHand.image_items_per_row = spriteCols;
-            dojo.connect( this.playerHand, 'onChangeSelection', this, 'onPlayerHandSelectionChanged' );
+              setupBackDiv: (card, div) => {
+                  div.classList.add('lvt-card');
+                      div.style.backgroundPosition = getCardSpriteBackgroundPosition("back", this.cardHeight, this.cardWidth, this.handScale, window.CARD_CONSTANTS);
+                  div.id = `card-${card.id}-back`;
+                },
+            });
 
-            // Ensure gamedatas.hand is iterable
-            for( var type_id in gamedatas.card_types ) {
-              this.playerHand.addItemType(type_id, 0, g_gamethemeurl+'img/cards.jpg', type_id-21);
-            }
-
-            for( var i in this.gamedatas.hand )
-            {
-                var card = this.gamedatas.hand[i];
-                console.log(gamedatas.hand[i]);
-                console.log(card.type, card.id);
-                this.playerHand.addToStockWithId(card.type, card.id);
-            }
-
-            rotatedPlayerIds.forEach((player_id) => {
-              const player = gamedatas.players[player_id];
-                if (!player.eliminated && player_id != this.player_id) {
-                const opponentHand = new ebg.stock();
-                const handDiv = document.createElement('div');
-                handDiv.className = 'lvt-hand';
-                handDiv.id = `lvt-hand-${player_id}`;
-                this.lvtPlayers[player_id].node.appendChild(handDiv);
-                // Make the player table clickable and trigger onSelectPlayer
-                console.log(this.lvtPlayers[player_id].node);
-                dojo.connect(this.lvtPlayers[player_id].node, 'onclick', this, 'onSelectPlayer');
-                this.lvtPlayers[player_id].node.style.cursor = 'pointer';
-
-                opponentHand.create(this, handDiv, cardWidth * cardScale * spriteCols, cardHeight * cardScale * spriteRows);
-                opponentHand.autowidth = true;
-                opponentHand.resizeItems(cardWidth * cardScale, cardHeight * cardScale, cardWidth * spriteCols * cardScale, cardHeight * spriteRows * cardScale);
-                opponentHand.image_items_per_row = spriteCols;
-                opponentHand.addItemType('hand-card-back', 0, g_gamethemeurl + 'img/cards.jpg', 10); // -1 for back sprite
-                opponentHand.selectable = 0;
+            _this = this;
+            Object.values(gamedatas.players).forEach((player) => {
+                document.getElementById("lvt-player-tables").insertAdjacentHTML("beforeend", `
+                    <div class="lvt-player-table" id="lvt-player-table-${player.id}">
+                        <div class="lvt-player-table-name" id="lvt-player-table-name-${player.id}" style="color:#${player.color};">${player.name}</div>
+                        <div class="lvt-player-table-card" id="lvt-player-table-card-${player.id}"></div>
+                    </div>
+                `);
                 
-                for (let i = 0; i < gamedatas.cardcount.hand[player_id]; i++) {
-                  opponentHand.addToStockWithId('hand-card-back', `back_${player_id}_${i}`);
-                }
+                const playerTable = document.getElementById(`lvt-player-table-${player.id}`);
+                playerTable.addEventListener('click', function(event) {
+                  if (playerTable.classList.contains('out-of-the-round')) return;
 
-                this.opponentHands[player_id] = opponentHand;
-                }
+                  const tablePlayerId = this.id.replace('lvt-player-table-', '');
+                  if (tablePlayerId === String(_this.player_id)) {
+                    // Check if click was in your own card area
+                    const cardArea = document.getElementById('lvt-player-table-card-' + tablePlayerId);
+                    if (cardArea.contains(event.target) && event.target !== cardArea) {
+                      return;
+                    }
+                  }
+
+                  if (this.classList.contains('selected')) {
+                    _this.removePlayerSelections();
+                    return;
+                  }
+
+                  _this.removePlayerSelections();
+                  this.classList.add('selected');
+
+                  // Store selected opponent (even if it's yourself)
+                  // this.selectedOpponentId = tableId;
+                  // (If this is inside a class, use the right scope)
+                  _this.onSelectPlayer(tablePlayerId);
+                });
             });
 
-            stackDeckCards();
+              this.playerHand = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
+              this.playerHand.setSelectionMode('single');
+              this.playerHand.onSelectionChange = (selectedCards) => {
+                if (this._suppressUnselectCallback) return;
+                if (selectedCards.length > 0) {
+                  this.onSelectCard(selectedCards[0]);
+                }
+                else
+                {
+                  this.removeCardSelections();
+                }
+              };
+
+              const handValues = Object.values(gamedatas.hand);
+              handValues.forEach(card => {
+                console.log("Adding card to player table", card);
+                this.playerHand.addCard(card);
+                this.playerHand.setCardVisible(card, true);
+              });
+
+              const opponentHand = gamedatas.cardcount.hand[this.player_id];
+              console.log("Setting up player table for opponent with hand", opponentHand);
+
+              Object.values(gamedatas.players).forEach(player => {
+                if (player.id != this.player_id) {
+                  const opponentLine = new HandStock(this.handManager, document.getElementById('lvt-player-table-card-' + player.id), {});
+                  opponentLine.setSelectionMode('single');
+                  const opponentHandSize = gamedatas.cardcount.hand[player.id];
+                    for (let i = 0; i < opponentHandSize; i++) {
+                      const fakeCard = {
+                        id: `${player.id}-fake-${i}`,
+                      };
+                      opponentLine.addCard(fakeCard);
+                      opponentLine.setCardVisible(fakeCard, false);
+                    }
+                  this.opponentHands[player.id] = opponentLine;
+                }
+
+                if (player.alive == 0)
+                {
+                  this.setOutOfTheRound(player.id);
+                }
+                
+                if (player.protection == 1)
+                {
+                  this.setProtected(player_id);
+                }
+              });
+
+            this.deck = new Deck(this.deckManager, document.getElementById('lvt-deck-area'), {
+              cardNumber: gamedatas.deck.length,
+              counter: {
+                    position: 'center',
+                    extraClasses: 'text-shadow',
+                    hideWhenEmpty: false,
+                },
+              // onCardClick: (card) => {
+              //     console.log("Deck clicked", card);
+              //     this.handleDeckClick();
+              //   },
+            });
+
+            this.discard = new Deck(this.deckManager, document.getElementById('lvt-badges-area'), {});
+            
+            // Testing only
+            // this.deck.element.addEventListener('click', (event) => {
+            //     this.handleDeckClick();
+            // });
 
             buildPlayedCardBadges(gamedatas);
-            
             this.setupNotifications();
-            //TODO - put in proper place, here for testing only.
-            // Add shuffle animation
-            shuffleDeckAnimation().then(() => {
-                console.log('Deck shuffled!');
-            });
+
         },
 
-        onSelectPlayer: function(event) {
-            const playerId = event.currentTarget.id.replace('lvt-playertable-', '');
+      //   handleDeckClick: function() {
+      //     // console.log("Deck clicked!");
+      //     // const othercard = this.playerHand.getCards()[0];
+      //     const card = {
+      //       id: 12345,
+      //       type: 25,
+      //       type_arg: 25
+      //     };
+      //     // this.playerHand.addCard(card, { fromStock: this.deck });
+      //     // this.discard.addCard(othercard, { fromStock: this.playerHand });
 
-            Object.keys(this.lvtPlayers).forEach(pid => {
-              dojo.removeClass('lvt-playertable-' + pid, 'selectedOpponent');
-            });
-            dojo.addClass('lvt-playertable-' + playerId, 'selectedOpponent');
+      //   //this is how to flip the card
+      //   opponentStock = this.opponentHands[Object.keys(this.opponentHands)[0]];
+      //   opponentCard = opponentStock.getCards()[0];
+      //   // Object.assign(opponentCard, {
+      //   //   type: 25,
+      //   //   type_arg: 25
+      //   // });
+      //   // console.log("Adding card to opponent hand", opponentCard);
 
-            this.selectedOpponentId = playerId;
+      //   //this.opponentHands[Object.keys(this.opponentHands)[0]].setCardVisible(opponentCard, true);
+      //   Object.assign(opponentCard, {
+      //       type: this.PRINCE,
+      //       type_arg: this.PRINCE
+      //   });
+      //   this.discard.addCard(opponentCard, {
+      //       fromStock: opponentStock,
+      //       updateInformations: {
+      //           id: opponentCard.id,
+      //           type: this.PRINCE,
+      //           type_arg: this.PRINCE
+      //       },
+      //       visible: true
+      //   });
+      // },
 
-            this.tryPlaySelectedCard();
+        // handleHandClick: async function(card) {
+        //   console.log("Hand clicked!", card);
+        //   const cardElement = this.handManager.getCardElement(card); // your card object
+
+        //   const opponentHandElementId = this.opponentHands[Object.keys(this.opponentHands)[0]].element.id;
+        //   const opponentId = opponentHandElementId.replace('lvt-player-table-card-', '');
+        //   this.opponentHands[Object.keys(this.opponentHands)[0]].element.classList.add('highlight');
+        //   document.getElementById(`lvt-player-table-${opponentId}`).classList.add('highlight');
+
+        //   await this.discard.addCard(card, { fromStock: this.playerHand });
+
+        //   cardElement.classList.add('fade-out');
+        //   const allDescendants = cardElement.querySelectorAll('*');
+        //   for (const descendant of allDescendants) {
+        //     descendant.classList.add('fade-out');
+        //   }
+
+        //   setTimeout(() => {
+        //     this.discard.removeCard(card);
+        //   }, 2000);
+
+        // },
+
+        resetActions: function () { //TODO - needed?
+          let e = document.getElementById("pagemaintitletext");
+          e.innerHTML = "";
+          this.removeActionButtons();
+          KvBoard.removeTargets();
         },
 
-        onPlayerHandSelectionChanged: function(control_name, item_id) {
-            const items = this.playerHand.getSelectedItems();
-            this.selectedCardId = items.length == 1 ? Number(items[0].id) : null;
-            this.selectedCardType = items.length == 1 ? Number(items[0].type) : null;
+        setInvite: function (pInvite) {
+          let e = document.getElementById("pagemaintitletext");
+          e.innerHTML = pInvite;
+        },
 
-            if (this.selectedCardId) {
-              this.tryPlaySelectedCard();
+        doChancellorAction: function()
+        {
+          debugger;
+          if (!this.chancellorCardToKeep)
+          {
+            this.chancellorCardToKeep = this.playerHand.selectedCards[0];
+            const cardElement = this.playerHand.getCardElement(this.chancellorCardToKeep);
+            
+            if (cardElement) {
+              dojo.addClass(cardElement, 'keep');
+            }
+
+            this.setInvite(_("You must choose which card to place on the bottom of the deck"));
+            return;
+          }
+
+          if (this.chancellorCardToKeep.id == this.selectedCardId)
+          {
+            this.removeCardSelections();
+            this.showMessage(_("You must choose a different card to the one that you chose to keep."), "error");
+            return;
+          }
+
+          this.chancellorCardToPlaceOnBottomOfDeck = this.selectedCardId;
+          this.bgaPerformAction('actionChancellor', { keep: Number(this.chancellorCardToKeep.id), bottom: Number(this.chancellorCardToPlaceOnBottomOfDeck) });
+        },
+
+        onEnteringState: function(stateName, args) {
+            if (stateName === 'chancellor') {
+              this.deselect();
+              this.chancellorState = true;  
             }
         },
 
-        tryPlaySelectedCard: function()
-        {
+        onLeavingState: function(stateName, args) {
+            if (stateName === 'chancellor') {
+              this.deselect();
+              this.chancellorState = false;
+            }
+        },
+
+        onSelectPlayer: function(playerId) {
+          this.selectedOpponentId = playerId;
+            this.playCardOrShowMessage();
+        },
+
+        onSelectCard: function(card) {
+          this.selectedCardId = card ? Number(card.id) : null;
+          this.selectedCardType = card ? Number(card.type) : null;
+          if (this.chancellorState)
+          {
+            this.doChancellorAction();
+          }
+          else
+          {
+            this.playCardOrShowMessage();
+          }
+        },
+
+        playCardOrShowMessage: function()
+        {     
+          if (this.gamedatas.gamestate.active_player != this.player_id) {
+            this.showMessage(_("It is not your turn."), "error");
+            this.deselect();
+            return;
+          }
+
+          if (this.chancellorState)
+          {
+            this.showMessage(_("You must a select cards."), "error");
+            this.removePlayerSelections();
+            return;
+          }
+
           if (!this.selectedCardId) {
             this.showMessage(_("Please select a card to play."), "info");
             return;
@@ -195,408 +395,547 @@ function (dojo, declare) {
             }
 
             if (this.selectedOpponentId == this.player_id
-              && cardType !== this.PRINCE)
+              && cardType !== this.PRINCE
+              && cardType !== this.KING)
             {
               this.showMessage(_("You cannot target yourself with this card."), "error");
+              this.deselect();
               return;
             }
 
             // Check out of the round
-            if(dojo.hasClass('lvt-playertable-'+this.selectedOpponentId, 'outOfTheRound'))
+            if(dojo.hasClass('lvt-player-table-' + this.selectedOpponentId, 'out-of-the-round'))
             {
               this.showMessage( _("This player is out of the round"), 'error' );
+              this.deselect();
               return;
             }   
         
             // Check protection
-            if(dojo.style('lvt-playertable-'+this.selectedOpponentId, 'protected'))
+            if(dojo.style('lvt-player-table-' + this.selectedOpponentId, 'protected'))
             {
               this.showMessage( _("This player is protected and cannot be targeted by any card effect."), 'error' );
+              this.deselect();
               return;
             }
           }
+          if (this.selectedCardType === this.GUARD
+            || this.selectedCardType === this.PRINCESS)
+          {
+            this.showConfirmationDialog();
+          }  
+          else
+          {
             this.playCard(this.selectedCardId, -1, this.selectedOpponentId);
+          }
+        },
+
+        showConfirmationDialog: function() {
+          if (this.selectedCardType === this.PRINCESS) {
+          this.confirmationDialog(_("Playing the Princess will knock you out of the round. Are you sure?"),
+          ( () => {  
+            this.playCard(this.selectedCardId, -1, this.selectedOpponentId);
+            }
+          ),
+          (
+            () => {
+              this.deselect();
+            }
+          ))
+          }
+          else
+          {
+            const rootStyles = getComputedStyle(document.documentElement);
+            const SPRITE_WIDTH_ORIGINAL = parseFloat(rootStyles.getPropertyValue('--badge-sprite-width'));
+            const SPRITE_HEIGHT_ORIGINAL = parseFloat(rootStyles.getPropertyValue('--badge-sprite-height'));
+            const BADGE_WIDTH = 36;
+            const BADGE_HEIGHT = 36;
+            
+            if( $('guard_dialog') )
+            {   dojo.destroy( 'guard_dialog' );  }
+            
+            var title = _('Who is ${player}?');
+            
+            var guardDlg = new dijit.Dialog({ title: dojo.string.substitute( title , { player: this.gamedatas.players[ this.selectedOpponentId ].name } ) });
+
+            var html = "<div id='guard_dialog' style='max-width:500px;'>";
+
+            var cardlist = [
+                  {id: this.PRINCESS,   num: this.gamedatas.card_types[this.PRINCESS   ].value, nam: _(this.gamedatas.card_types[ this.PRINCESS ].name) },
+                  {id: this.COUNTESS,   num: this.gamedatas.card_types[this.COUNTESS   ].value, nam: _(this.gamedatas.card_types[ this.COUNTESS ].name) },
+                  {id: this.KING,       num: this.gamedatas.card_types[this.KING       ].value, nam: _(this.gamedatas.card_types[ this.KING ].name) },
+                  {id: this.CHANCELLOR, num: this.gamedatas.card_types[this.CHANCELLOR ].value, nam: _(this.gamedatas.card_types[ this.CHANCELLOR ].name) },
+                  {id: this.PRINCE,     num: this.gamedatas.card_types[this.PRINCE     ].value, nam: _(this.gamedatas.card_types[ this.PRINCE ].name) },
+                  {id: this.HANDMAID,   num: this.gamedatas.card_types[this.HANDMAID   ].value, nam: _(this.gamedatas.card_types[ this.HANDMAID ].name) },
+                  {id: this.BARON,      num: this.gamedatas.card_types[this.BARON      ].value, nam: _(this.gamedatas.card_types[ this.BARON ].name) },
+                  {id: this.PRIEST,     num: this.gamedatas.card_types[this.PRIEST     ].value, nam: _(this.gamedatas.card_types[ this.PRIEST ].name) },
+                  {id: this.SPY,        num: this.gamedatas.card_types[this.SPY        ].value, nam: _(this.gamedatas.card_types[ this.SPY ].name) },
+              ];
+
+            for( var i in cardlist )
+            {
+                var num = cardlist[i].num;
+                var names = cardlist[i].nam;
+            
+                html += '<div id="guardchoicewrap_'+num+'">'; 
+                html += `<a href="#" class="guardchoicelink" data-id="${cardlist[i].id}">`;
+                var xOffset = -(num * SPRITE_WIDTH_ORIGINAL * (BADGE_HEIGHT / SPRITE_HEIGHT_ORIGINAL));
+                html += `<div class="guardchoiceicon" style="background-size: auto ${BADGE_HEIGHT}px; background-position: ${xOffset}px 0px; width: ${BADGE_WIDTH}px; height: ${BADGE_HEIGHT}px;"></div>`;
+                html += '<div class="guardchoicename">'+names+'</div>';
+                html += '</a>';
+                html += '</div>';
+            }
+
+            html += '<p style="font-size:60%">('+_('You cannot target a Guard with a guard')+')</p>';
+            html += "<br/><div style='text-align: center;'>";
+            html += "<a class='bgabutton bgabutton_gray' id='cancel_btn' href='#'><span>"+_("Cancel")+"</a>";
+            html += "</div></div>";
+
+            guardDlg.attr("content", html );
+            guardDlg.show();
+
+            dojo.connect( $('cancel_btn'), 'onclick', this, function( evt )
+            {
+                evt.preventDefault();
+                guardDlg.hide();
+                this.deselect();
+            } );
+            
+            dojo.query( '.guardchoicelink' ).connect( 'onclick', this, function( evt ) {
+                evt.preventDefault();
+                var guess_id = parseInt(evt.currentTarget.getAttribute('data-id'));
+                console.log(guess_id);
+
+                this.playCard(this.selectedCardId, guess_id, this.selectedOpponentId)
+                dojo.query( '.selectedOpponent' ).removeClass( 'selectedOpponent' );            
+
+                guardDlg.hide();                        
+            } );
+
+            return ;
+          }
         },
 
         playCard: function(card, guess_id, opponent_id)
         {
+          console.log("Playing card", card, "guess_id:", guess_id, "opponent_id:", opponent_id);
           this.ajaxcall( "/loveletter/loveletter/playCard.html", { 
                                                       lock: true, 
                                                       card: card,
                                                       guess: guess_id,
                                                       opponent: opponent_id
                                                     },    this, function( result ) {  }, function( is_error) { } );  
+          this.deselect();
+        },
+
+        deselect: function()
+        {
+          this.removeCardSelections();
+          this.removePlayerSelections();
+          this.removeChancellorSelections();
+        },
+
+        removeCardSelections: function()
+        {
+          this.selectedCardId = null;
+          this.selectedCardType = null;
+          this._suppressUnselectCallback = true;
+          this.playerHand.unselectAll();
+          this._suppressUnselectCallback = false;
+        },
+
+        removePlayerSelections: function()
+        {
+          this.selectedOpponentId = null;
+          const playerTables = Array.from(document.querySelectorAll('.lvt-player-table'));
+          playerTables.forEach(pt => pt.classList.remove('selected'));
+        },
+
+        removeChancellorSelections: function()
+        {
+          this.chancellorCardToKeep = null;
+          this.chancellorCardToPlaceOnBottomOfDeck = null;
+        },
+
+        /*discardCard: function(playerId, card)
+        {
+          debugger;
+          if (this.player_id == playerId)
+          {
+            this.discard.addCard(card, { fromStock: this.playerHand });
+          }
+          else
+          {
+            const opponentHand = this.opponentHands[playerId];
+            this.discard.addCard(card, { fromStock: opponentHand, visible: true });
+          }
+          markBadgeAsPlayed(card.value);
+        },
+
+        discardCards: function(playerId)
+        {
+          if (this.player_id == playerId)
+          {
+            if (this.playerHand.getCards().length > 0) {
+              const playerCard = this.playerHand.getCards()[0];
+              this.discardCard(playerId, playerCard);
+            }
+          }
+          else
+          {
+            const opponentHand = this.opponentHands[playerId];
+            if (opponentHand && opponentHand.getCards().length > 0) {
+              const opponentCard = opponentHand.getCards()[0];
+              this.discardCard(playerId, opponentCard);
+            }
+          }
+        },*/
+
+        setOutOfTheRound: function(playerId)
+        {
+          //this.discardCards(playerId);
+          dojo.addClass( 'lvt-player-table-' + playerId, 'out-of-the-round' );
+        },
+
+        setProtected: function(playerId)
+        {
+          //TODO
         },
 
         setupNotifications: function()
         {
             console.log( 'notifications subscriptions setup' );
 
-            //dojo.subscribe( 'newCard', this, "notif_newCard" );
+            dojo.subscribe( 'newCard', this, "notif_newCard" );
             dojo.subscribe( 'cardPlayedLong', this, "notif_cardPlayed" );
             dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            this.notifqueue.setSynchronous( 'cardPlayedLong', 3000 );
+            //this.notifqueue.setSynchronous( 'cardPlayedLong', 3000 );
+
+            dojo.subscribe( 'reveal', this, 'notif_reveal' );
+            dojo.subscribe( 'reveal_long', this, 'notif_reveal' );
+            this.notifqueue.setSynchronous( 'reveal', 2000 );
+            this.notifqueue.setSynchronous( 'reveal_long', 3000 );
+
+            dojo.subscribe( 'cardexchange', this, 'notif_cardexchange' );
+            dojo.subscribe( 'cardexchange_opponents', this, 'notif_cardexchange_opponents' );
+
+            dojo.subscribe( 'chancellor_draw', this, 'notif_chancellor_draw' );
+            dojo.subscribe( 'chancellor_bury', this, 'notif_chancellor_bury' );
+
+            dojo.subscribe( 'outOfTheRound', this, 'notif_outOfTheRound' );
         },
 
-        notif_newCard: function( notif ) 
+        notif_outOfTheRound: function(notif)
         {
-            console.log( 'notif_newCard', notif );
+          var player_id = notif.args.player_id;
+          this.setOutOfTheRound(player_id);
+        },
 
-            if( notif.args.from )
-            {
-                this.playerHand.addToStockWithId( notif.args.card.type, notif.args.card.id, 'lvt-playertable-' + notif.args.from );            
+        notif_chancellor_draw: function( notif )
+        {
+          if (notif.args.card)
+          {
+            let card = {};
+            Object.assign(card, {
+              id: notif.args.card.id,
+              type: notif.args.card.type,
+            });
+
+            this.playerHand.addCard(card, { fromStock: this.deck });
+            this.playerHand.setCardVisible(card, true);
+          }
+          
+          if (notif.args.card_2)
+          {
+            let card2 = {};
+            Object.assign(card2, {
+              id: notif.args.card_2.id,
+              type: notif.args.card_2.type,
+            });
+
+            this.playerHand.addCard(card2, { fromStock: this.deck });
+            this.playerHand.setCardVisible(card2, true);
+          }
+        },
+
+        notif_chancellor_bury: function( notif )
+        {
+          const keptCardId = notif.args.card.id;
+          const allCards = this.playerHand.getCards();
+
+          allCards.forEach(card => {
+          if (card.id != keptCardId) {
+            const buriedCard = {
+              id: card.id,
+              type: null,
+            };
+
+            this.deck.addCard(buriedCard, {
+                fromStock: this.playerHand,
+                visible: false,
+                index: this.deck.getCards().length,
+                updateInformations: true
+                });
             }
-            else
-            {        
-                this.playerHand.addToStockWithId( notif.args.card.type, notif.args.card.id, 'deck' );            
-            }
-            
-            if( notif.args.remove )
-            {
-                this.playerHand.removeFromStockById( notif.args.remove.id );
-            }
+            debugger;
+          this.deselect();
+          });
+
+          this.playerHand.unselectAll?.();
+          document.querySelectorAll('.keep').forEach(el => dojo.removeClass(el, 'keep'));
+          this.deselect();
+        },
+
+        notif_newCard: function( notif )
+        {
+          let card = {};
+          Object.assign(card, {
+            id: notif.args.card.id,
+            type: notif.args.card.type,
+          });
+
+          //TODO - do you need to add the player_id to the notification?
+          //if( this.player_id == notif.args.player_id )
+          //{
+            this.playerHand.addCard(card, { fromStock: this.deck });
+            this.playerHand.setCardVisible(card, true);
+          //}
+          //else
+          //{
+            //TODO - test
+            // Add a fake card to the opponent's hand
+            // const opponentHand = this.opponentHands[notif.args.player_id];
+            // opponentHand.addCard(card, { fromStock: this.deck });
+            // opponentHand.setCardVisible(card, false);
+          //}
         },
 
         notif_cardPlayed: function( notif )
         {
-            console.log( 'notif_cardPlayed', notif );
+          let card = {};
+          Object.assign(card, {
+          id: notif.args.card.id,
+          type: notif.args.card.type,
+          });
 
-            if(this.player_id == notif.args.player_id) {
-            this.playerHand.removeFromStockById(notif.args.card.id);
+          if( this.player_id == notif.args.player_id )
+          {
+            
+            this.discard.addCard(card, { fromStock: this.playerHand });
+            const cardElement = this.handManager.getCardElement(card);
+            cardElement.classList.add('fade-out');
+            const allDescendants = cardElement.querySelectorAll('*');
+            for (const descendant of allDescendants) {
+              descendant.classList.add('fade-out');
+            }
+          }
+          else
+          {
+            const opponentHand = this.opponentHands[notif.args.player_id];
+            
+            discardedCard = {
+              id: notif.args.player_id + '-fake-0',
+              type: card.type
             }
 
-            const badgeValue = this.gamedatas.card_types[notif.args.card.type].value;
-
-            animateRealCardPlay({
-                cardId: notif.args.card.id,
-                cardType: notif.args.card.type,
-                badgeValue,
-                thisId: String(this.player_id),
-                activeId: notif.args.player_id,
-                opponentId: notif.args.opponent_id,
-                animationManager: this.animationManager
+            this.discard.addCard(discardedCard, {
+                fromStock: opponentHand,
+                updateInformations: true,
+                visible: true
             });
-            
-/*            if( typeof notif.args.noeffect == 'undefined' )
-            {
-                if( notif.args.card.type == this.GUARD )
-                {
-                  // Guard : who are you?
-                  this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name}, I think you are a ${guess}!'), { 
-                    player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>',
-                    guess: '<b>'+notif.args.guess_name+'</b>'
-                  } ) );
-                }
-                else if( notif.args.card.type == this.PRIEST)
-                {
-                  // Priest : show your card
-
-                  var delay = 0;
-                  for( var i in notif.args.opponents )
-                  {
-                    var opponent_id = notif.args.opponents[i];
-                    this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name} please show me your card.'), { player_name: '<span style="color:#'+this.gamedatas.players[ opponent_id ].color+'">'+ this.gamedatas.players[ opponent_id ].name+'</span>' } ), delay );
-                    this.showDiscussion( opponent_id, _('Here it is.'), delay+2000 );
-                    
-                    delay += 2000;
-                  }
-                }
-                else if( notif.args.card.type == this.BARON || notif.args.card.type == 11 )
-                {
-                  this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name}, let`s compare our cards...'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>' } ) );
-                  this.showDiscussion( notif.args.opponent_id, _('Alright.'), 2000 );
-                }
-                else if( notif.args.card.type == this.HANDMAID )
-                {
-                  this.showDiscussion( notif.args.player_id, _("I'm protected for one turn.") );
-                }
-                else if( notif.args.card.type == this.PRINCE )
-                {
-                  if( notif.args.player_id != notif.args.opponent_id )
-                  {
-                    this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name}, you must discard your card.'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>' } ) );
-                    this.showDiscussion( notif.args.opponent_id, _('Alright.'), 2000 );
-                  }
-                  else
-                  {
-                    this.showDiscussion( notif.args.player_id, _('I play the Prince effect against myself and discard my card.') );
-                  }
-                }
-                else if( notif.args.card.type == this.KING  )
-                {
-                  this.showDiscussion( notif.args.player_id, dojo.string.substitute( _('${player_name}, we must exchange our hand.'), { player_name: '<span style="color:#'+this.gamedatas.players[ notif.args.opponent_id ].color+'">'+ this.gamedatas.players[ notif.args.opponent_id ].name+'</span>' } ) );
-                  this.showDiscussion( notif.args.opponent_id, _('Alright.'), 2000 );
-                }
-            } */           
-        },
-    });
-
-function shuffleDeckAnimation({
-  containerId = 'lvt-deck-area',
-  cardClass = 'lvt-card-back',
-  spreadRadius = 80,
-  hopRadius = 60,
-  duration = 200,
-  delayStep = 45,
-} = {}) {
-  return new Promise((resolve) => {
-    const container = document.getElementById(containerId);
-    if (!container) {
-      console.warn('Deck container not found:', containerId);
-      resolve(false);
-      return;
-    }
-
-    const elements = [];
-
-    elements.push(...Array.from(container.getElementsByClassName(cardClass)));
-    elements.reverse();
-
-    elements.forEach((el, i) => {
-      const angle = Math.random() * 2 * Math.PI;
-      const dist = spreadRadius + Math.random() * 20;
-      const x1 = Math.cos(angle) * dist;
-      const y1 = Math.sin(angle) * dist;
-
-      setTimeout(() => {
-        el.style.transition = `transform ${duration}ms ease-out`;
-        el.style.transform = `translate(${x1}px, ${y1}px)`;
-
-        setTimeout(() => {
-          const hopAngle = Math.random() * 2 * Math.PI;
-          const x2 = Math.cos(hopAngle) * hopRadius;
-          const y2 = Math.sin(hopAngle) * hopRadius;
-
-          el.style.transition = `transform ${duration}ms ease-in-out`;
-          el.style.transform = `translate(${x1 + x2}px, ${y1 + y2}px)`;
-
+          }
           setTimeout(() => {
-            el.style.transition = `transform ${duration}ms ease-in`;
-            el.style.transform = `translate(0px, 0px)`;
+            this.discard.removeCard(discardedCard);
+            markBadgeAsPlayed(notif.args.card_type.value);
+          }, 2000);
+        },
 
-          }, duration);
-        }, duration);
-      }, i * delayStep);
-    });
-  });
-}
+        notif_reveal: function( notif )
+        {
+          let card = {};
+          Object.assign(card, {
+            id: notif.args.player_id + '-fake-0',
+            type: notif.args.card_type,
+          });
 
-function buildPlayedCardBadges(gamedatas) {
-const BADGE_WIDTH_ORIGINAL = 127;  // original badge width in the sprite
-const BADGE_WIDTH = 36;            // new displayed badge width
-const BADGE_HEIGHT = 36;
-const SPRITE_HEIGHT_ORIGINAL = 127; // (if the sprite image is exactly square)
+          opponentHand = this.opponentHands[notif.args.player_id];
+          opponentHand.setCardVisible(card, true);
+          setTimeout(() => {
+            opponentHand.setCardVisible(card, false);
+          }, 2000);
+        },
 
-    const COLUMNS = 4;
-    const ROWS = 6; // up to 24 slots
+        notif_cardexchange: function( notif )
+        {
+          firstPlayer = Number(notif.args.player_1);
+          secondPlayer = Number(notif.args.player_2);
 
-    const container = document.getElementById('lvt-badges-area');
-    container.innerHTML = '';
+            const [otherPlayerId, playerCardDetails, opponentCardDetails] =
+                (firstPlayer === this.player_id)
+                    ? [secondPlayer, notif.args.player_1_card, notif.args.player_2_card]
+                    : [firstPlayer, notif.args.player_2_card, notif.args.player_1_card];
 
-    // Create the grid container
-    const grid = document.createElement('div');
-    grid.className = 'lvt-badge-grid';
+            opponentHand = this.opponentHands[otherPlayerId];
 
-    // Gather all badges in a flat array (sorted for consistent order)
-    const badges = [];
-    Object.values(gamedatas.card_types).forEach(cardInfo => {
-        const value = cardInfo.value;
-        const count = cardInfo.qt;
-        for (let i = 0; i < count; i++) {
-            badges.push(value);
+            playerCard = this.playerHand.getCards()[0];
+            opponentCard = opponentHand.getCards()[0];
+
+            this.playerHand.removeAll();
+            opponentHand.removeAll();
+
+            newPlayerCard = {
+              id: opponentCardDetails.id,  
+              type: opponentCardDetails.type
+            }
+
+            newOpponentCard = {
+              id: `${otherPlayerId}-fake-0`, 
+            }
+
+            this.playerHand.addCard(newPlayerCard, {
+                fromStock: opponentHand,
+                visible: true
+            });
+
+            opponentHand.addCard(newOpponentCard, {
+                fromStock: this.playerHand,
+                visible: false
+            });
+        },
+
+        notif_cardexchange_opponents: function( notif )
+        {
+          firstPlayer = Number(notif.args.player_1);
+          secondPlayer = Number(notif.args.player_2);
+
+          if (firstPlayer === this.player_id
+            || secondPlayer === this.player_id) {
+            return;
+          }
+            
+          //both opponents
+          const stock1 = this.opponentHands[firstPlayer];
+          const stock2 = this.opponentHands[secondPlayer];
+
+          stock1.removeAll();
+          stock2.removeAll();
+
+          newPlayer1Card = {
+            id: `${firstPlayer}-fake-0`, 
+          }
+
+          newPlayer2Card = {
+            id: `${secondPlayer}-fake-0`, 
+          }
+
+          stock1.addCard(newPlayer1Card, {
+            fromStock: stock2,
+            visible: true
+          });
+
+          stock2.addCard(newPlayer2Card, {
+            fromStock: stock1,
+            visible: true
+          });
         }
     });
-    badges.sort((a, b) => a - b);
 
-    // Add up to COLUMNS * ROWS badges, filling down each column
-    for (let index = 0; index < badges.length && index < COLUMNS * ROWS; index++) {
-        const value = badges[index];
-        const badge = document.createElement('div');
-        badge.className = 'lvt-card-badge';
-        badge.id = `lvt-card-badge-${index+1}`;
-        badge.setAttribute('data-type', value);
-        badge.style.backgroundImage = `url(${g_gamethemeurl}img/cardnumbers.png)`;
-        // Scale the full image to fit vertically
-        badge.style.backgroundSize = `auto ${BADGE_HEIGHT}px`;
-        // Scale the offset: (value * original width) * (displayed height / original height)
-        const xOffset = -(value * BADGE_WIDTH_ORIGINAL * (BADGE_HEIGHT / SPRITE_HEIGHT_ORIGINAL));
-        badge.style.backgroundPosition = `${xOffset}px 0`;
-        badge.style.width = BADGE_WIDTH + "px";
-        badge.style.height = BADGE_HEIGHT + "px";
-        grid.appendChild(badge);
+  function getCardSpriteBackgroundPosition(card, cardHeight, cardWidth, cardScale, cardConstants) {
+
+    const CARD_SPRITE_MAP = {
+        [cardConstants.GUARD]: { col: 0, row: 0 }, // Guard
+        [cardConstants.PRIEST]: { col: 1, row: 0 }, // Priest
+        [cardConstants.BARON]: { col: 2, row: 0 }, // Baron
+        [cardConstants.HANDMAID]: { col: 3, row: 0 }, // Handmaid
+        [cardConstants.PRINCE]: { col: 4, row: 0 }, // Prince
+        [cardConstants.CHANCELLOR]: { col: 5, row: 0 }, // Chancellor
+        [cardConstants.KING]: { col: 0, row: 1 }, // King
+        [cardConstants.COUNTESS]: { col: 1, row: 1 }, // Countess
+        [cardConstants.PRINCESS]: { col: 2, row: 1 }, // Princess
+        [cardConstants.SPY]: { col: 3, row: 1 }, // Spy
+        "back": { col: 4, row: 1 }, // Card Back
+          "rules": { col: 5, row: 1 } // Rules Card
+      };
+        let mapping = CARD_SPRITE_MAP[card.type];
+        if (!mapping) mapping = CARD_SPRITE_MAP["back"];
+        const x = mapping.col * cardWidth * cardScale;
+        const y = mapping.row * cardHeight * cardScale;
+        return `-${x}px -${y}px`;
     }
 
-    container.appendChild(grid);
+    function buildPlayedCardBadges(gamedatas) {
+      const rootStyles = getComputedStyle(document.documentElement);
+      const SPRITE_WIDTH_ORIGINAL = parseFloat(rootStyles.getPropertyValue('--badge-sprite-width'));
+      const SPRITE_HEIGHT_ORIGINAL = parseFloat(rootStyles.getPropertyValue('--badge-sprite-height'));
+      const BADGE_WIDTH = 36;
+      const BADGE_HEIGHT = 36;
 
-    markBadgesAsPlayed(gamedatas);
-}
+      const COLUMNS = 4;
+      const ROWS = 6; // up to 24 slots
 
-function markBadgesAsPlayed(gamedatas) {
-  Object.values(gamedatas.discard).forEach(discardArray => {
-    if (Array.isArray(discardArray)) {
-      discardArray.forEach(card => {
-        const value = gamedatas.card_types[card.type].value;
-        markBadgeAsPlayed(value);
+      const container = document.getElementById('lvt-badges-area');
+      container.innerHTML = '';
+
+      // Create the grid container
+      const grid = document.createElement('div');
+      grid.className = 'lvt-badge-grid';
+
+      // Gather all badges in a flat array (sorted for consistent order)
+      const badges = [];
+      Object.values(gamedatas.card_types).forEach(cardInfo => {
+          const value = cardInfo.value;
+          const count = cardInfo.qt;
+          for (let i = 0; i < count; i++) {
+              badges.push(value);
+          }
       });
-    }
-  });
-}
+      badges.sort((a, b) => a - b);
 
-function markBadgeAsPlayed(value) {
-  const badges = Array.from(document.querySelectorAll(`.lvt-card-badge[data-type="${value}"]`));
-  badges.reverse();
-  if (badges && badges.length > 0) {
-    for (let i = 0; i < badges.length; i++) {
-      if (!badges[i].classList.contains('played')) {
-        badges[i].classList.add('played');
-        return badges[i];
+      // Add up to COLUMNS * ROWS badges, filling down each column
+      for (let index = 0; index < badges.length && index < COLUMNS * ROWS; index++) {
+          const value = badges[index];
+          const badge = document.createElement('div');
+          badge.className = 'lvt-card-badge';
+          badge.id = `lvt-card-badge-${index+1}`;
+          badge.setAttribute('data-type', value);
+          badge.style.backgroundImage = `url(${g_gamethemeurl}img/cardnumbers.png)`;
+          // Scale the full image to fit vertically
+          badge.style.backgroundSize = `auto ${BADGE_HEIGHT}px`;
+          // Scale the offset: (value * original width) * (displayed height / original height)
+          const xOffset = -(value * SPRITE_WIDTH_ORIGINAL * (BADGE_HEIGHT / SPRITE_HEIGHT_ORIGINAL));
+          badge.style.backgroundPosition = `${xOffset}px 0`;
+          badge.style.width = BADGE_WIDTH + "px";
+          badge.style.height = BADGE_HEIGHT + "px";
+          grid.appendChild(badge);
+      }
+
+      container.appendChild(grid);
+
+      markBadgesAsPlayed(gamedatas);
+  }
+
+  function markBadgesAsPlayed(gamedatas) {
+    Object.values(gamedatas.discard).forEach(discardArray => {
+      if (Array.isArray(discardArray)) {
+        discardArray.forEach(card => {
+          const value = gamedatas.card_types[card.type].value;
+          markBadgeAsPlayed(value);
+        });
+      }
+    });
+  }
+
+  function markBadgeAsPlayed(value) {
+    const badges = Array.from(document.querySelectorAll(`.lvt-card-badge[data-type="${value}"]`));
+    badges.reverse();
+    if (badges && badges.length > 0) {
+      for (let i = 0; i < badges.length; i++) {
+        if (!badges[i].classList.contains('played')) {
+          badges[i].classList.add('played');
+          return badges[i];
+        }
       }
     }
   }
-}
-
-function stackDeckCards(containerId = 'lvt-deck-area', offsetX = 1, offsetY = 1) {
-  const TOTAL_CARDS = 21;
-
-  // Remove all existing deck cards
-  const container = document.getElementById(containerId);
-  container.querySelectorAll('.lvt-card-back').forEach(card => card.remove());
-
-  // Count cards in hands and discards
-  const handCards = document.querySelectorAll('.lvt-hand .lvt-card, .lvt-discard .lvt-card');
-  const toRemove = handCards.length;
-
-  // Calculate how many cards should be in the deck
-  const deckCount = TOTAL_CARDS - toRemove;
-
-  // Create the correct number of deck cards
-  for (let i = 0; i < deckCount; i++) {
-    const cardDiv = document.createElement('div');
-    cardDiv.className = 'lvt-card-back';
-    cardDiv.id = `deck_${i+1}`;
-    container.appendChild(cardDiv);
-  }
-
-  // Stack the deck cards visually
-  const cards = Array.from(container.querySelectorAll('.lvt-card-back'));
-  cards.forEach((card, i) => {
-    card.style.right = `${i * offsetY}px`;
-    card.style.bottom = `${i * offsetX}px`;
-    card.style.zIndex = i;
-  });
-  console.log('Stacked deck cards in', containerId, 'Count:', cards.length);
-}
-
-async function animateRealCardPlay({
-    cardId,
-    cardType,    // Not directly used but available for future effects
-    badgeValue,
-    thisId,      // String
-    activeId,    // String or Number
-    opponentId   // String or Number
-}) {
-    let handCard = null;
-    if (String(thisId) == String(activeId)) {
-        handCard = document.getElementById(`lvt-player-card-${thisId}_item_${cardId}`);
-    } else {
-        const opponentHandDiv = document.getElementById(`lvt-hand-${activeId}`);
-        if (opponentHandDiv) {
-            handCard = opponentHandDiv.querySelector(`[id^="lvt-hand-${activeId}_item_back_${activeId}_1"]`);
-        }
-    }
-    if (!handCard) {
-        console.warn('Could not find hand card element for animation');
-        return;
-    }
-
-    const badge = markBadgeAsPlayed(badgeValue);
-    if (!badge) {
-        console.warn('Could not find badge to animate to');
-        return;
-    }
-
-    // 1. Get card's starting position and move to body
-    const fromRect = handCard.getBoundingClientRect();
-    document.body.appendChild(handCard);
-    Object.assign(handCard.style, {
-        position: 'fixed',
-        left: `${fromRect.left}px`,
-        top: `${fromRect.top}px`,
-        width: `${fromRect.width}px`,
-        height: `${fromRect.height}px`,
-        margin: '0',
-        zIndex: 9999,
-        pointerEvents: 'none',
-        transition: ''
-    });
-
-    // Helper to do slide/fade sequence after flip (or immediately if no flip)
-    function doSlideAndFade() {
-        // Step 1: Move to opponent if needed
-        if (opponentId && String(opponentId) !== String(thisId)) {
-            const opponentTable = document.getElementById(`lvt-playertable-${opponentId}`);
-            if (opponentTable) {
-                const oppRect = opponentTable.getBoundingClientRect();
-                setTimeout(() => {
-                    handCard.style.transition = 'left 0.5s cubic-bezier(.5,1.4,.6,1), top 0.5s cubic-bezier(.5,1.4,.6,1)';
-                    handCard.style.left = `${oppRect.left}px`;
-                    handCard.style.top = `${oppRect.top}px`;
-
-                    // Step 2: After move to opponent, move to badge
-                    setTimeout(() => {
-                        const badgeRect = badge.getBoundingClientRect();
-                        handCard.style.transition = 'left 0.6s cubic-bezier(.7,1.6,.7,1), top 0.6s cubic-bezier(.7,1.6,.7,1)';
-                        handCard.style.left = `${badgeRect.left}px`;
-                        handCard.style.top = `${badgeRect.top}px`;
-
-                        // Step 3: After move to badge, fade and remove
-                        setTimeout(() => {
-                            handCard.style.transition = 'opacity 0.4s';
-                            handCard.style.opacity = '0';
-                            setTimeout(() => handCard.remove(), 400);
-                        }, 650); // after move to badge finishes
-                    }, 550); // after move to opponent finishes
-                }, 20);
-
-                return;
-            }
-        }
-
-        // If no opponent, slide directly to badge then fade
-        setTimeout(() => {
-            const badgeRect = badge.getBoundingClientRect();
-            handCard.style.transition = 'left 0.6s cubic-bezier(.7,1.6,.7,1), top 0.6s cubic-bezier(.7,1.6,.7,1)';
-            handCard.style.left = `${badgeRect.left}px`;
-            handCard.style.top = `${badgeRect.top}px`;
-
-            setTimeout(() => {
-                handCard.style.transition = 'opacity 0.4s';
-                handCard.style.opacity = '0';
-                setTimeout(() => handCard.remove(), 400);
-            }, 650); // after slide to badge finishes
-        }, 20);
-    }
-
-    // If opponent's card (so needs flip)
-    if (String(thisId) !== String(activeId)) {
-        // CSS FLIP ANIMATION (simple version)
-        handCard.style.transition = 'transform 0.4s';
-        handCard.style.transform = 'rotateY(180deg)';
-        setTimeout(() => {
-            handCard.classList.remove('lvt-card-back');
-            handCard.classList.add('lvt-card-front');
-            handCard.style.transition = '';
-            handCard.style.transform = '';
-            doSlideAndFade();
-        }, 400);
-    } else {
-        // Active player—already face up
-        doSlideAndFade();
-    }
-}
-
-
-
-
 
 });

@@ -33,6 +33,8 @@ class loveletter extends Table
     public const PRINCESS   = 29;
     public const SPY        = 30;
 
+    public bool $activateChancellorState = false;
+
 	function __construct( )
 	{
         	
@@ -268,6 +270,8 @@ class loveletter extends Table
 
     function playCard(int $card_id, array $opponents, int $guess_id)
     {
+        //throw new feException("TEST");
+        
         // Check that this is the player's turn and that it is a "possible action" at this game state (see states.inc.php)
         self::checkAction('playCard'); 
         
@@ -302,8 +306,9 @@ class loveletter extends Table
         // e.g. "guard_played", "priest_played", etc.
         self::incStat(1, strtolower($this->card_types[$card['type']]['name']) . '_played', $player_id);
        
-        if ($card['type'] == SELF::CHANCELLOR) {
+        if ($this->activateChancellorState) {
             $this->gamestate->nextState('chancellor');
+            $this->activateChancellorState = false;
         }
         else {
             $this->gamestate->nextState('nextPlayer');
@@ -335,6 +340,10 @@ class loveletter extends Table
 
         if (self::getUniqueValueFromDB("SELECT player_protected FROM player WHERE player_id='$opponent_id'") == 1) {
             throw new feException("This player is protected by the handmaid and cannot be targeted");
+        }
+
+        if (self::getUniqueValueFromDB("SELECT player_alive FROM player WHERE player_id='$opponent_id'") == 0) {
+            throw new feException("This player is out of the round and cannot be targeted");
         }
 
         $opponent_cards = $this->cards->getCardsInLocation('hand', $opponent_id);
@@ -380,6 +389,12 @@ class loveletter extends Table
         
     function playGuard($card, $opponent_id, int $guess_id)
     {
+        // self::notifyAllPlayers('simpleNote', clienttranslate('${opponent}, ${card}, ${guess}'), array(
+        //                     'opponent' => $opponent_id,
+        //                     'card' => $card,
+        //                     "guess" => $guess_id
+        // ));
+        
         $player_id = self::getActivePlayerId();
 
         if (!$opponent_id)
@@ -470,7 +485,7 @@ class loveletter extends Table
             'card_name' => $this->card_types[$opponent_card['type']]['name']
         ));
 
-        self::notifyPlayer($player_id, 'unreveal', '', array('player_id' => $opponent_id));
+        //self::notifyPlayer($player_id, 'unreveal', '', array('player_id' => $opponent_id));
     }
 
     function validateBaron($player_id, $opponent_id)
@@ -508,7 +523,6 @@ class loveletter extends Table
             'card_type' => $opponent_card['type'],
             'card_name' => $this->card_types[$opponent_card['type']]['name']
         ));
-        self::notifyPlayer($player_id, 'unreveal', '', array('player_id' => $opponent_id));
 
         self::notifyPlayer($opponent_id, 'reveal', clienttranslate('${player_name} reveals a ${card_name}'), array(
             'i18n' => array('card_name'),
@@ -517,7 +531,6 @@ class loveletter extends Table
             'card_type' => $player_card['type'],
             'card_name' => $this->card_types[$player_card['type']]['name']
         ));
-        self::notifyPlayer($opponent_id, 'unreveal', '', array('player_id' => $player_id));
 
         $players = self::loadPlayersBasicInfos();
 
@@ -602,6 +615,7 @@ class loveletter extends Table
             'i18n' => array('card_name'),
             'player_id' => $opponent_id,
             'player_name' => $players[$opponent_id]['player_name'],
+            'card_type' => $this->card_types[$card['type']],
             'card_name' => $this->card_types[$card['type']]['name'],
             'card' => $card,
             'noeffect'=> 1
@@ -668,6 +682,8 @@ class loveletter extends Table
                     'card_name' => $this->card_types[$card_1['type']]['name'],
                     'card_name_2' => ''
                 ));
+
+                $this->activateChancellorState = true;
             break;
 
             default:
@@ -678,48 +694,71 @@ class loveletter extends Table
                     'player_name' => $players[$player_id]['player_name'],
                 ));
 
-                self::notifyPlayer($player_id, 'newCard', clienttranslate('Chancellor: you draw ${card_name} and ${card_name_2}'), array(
+                self::notifyPlayer($player_id, 'chancellor_draw', clienttranslate('Chancellor: you draw ${card_name} and ${card_name_2}'), array(
                 'i18n' => array('card_name', 'card_name_2'),
-                'card' => $card,
+                'card' => $card_1,
+                'card_2' => $card_2,
                 'card_name' => $this->card_types[$card_1['type']]['name'],
                 'card_name_2' => $this->card_types[$card_2['type']]['name']
                 ));
+
+                $this->activateChancellorState = true;
             break;
         }
     }
 
-    function validateActionChancellor($chosenCard)
+    function validateActionChancellor($keep, $bottom)
     {
         $player_id = self::getActivePlayerId();
         $player_cards = $this->cards->getCardsInLocation('hand', $player_id);
         $valid_card_ids = array_map(function($card) { return $card['id']; }, $player_cards);
 
-        if (!in_array($chosenCard, $valid_card_ids)) {
-            throw new feException("You must choose to keep one of the cards in your hand");
+        if (!in_array($keep, $valid_card_ids)) {
+            throw new feException("You must choose one of the cards in your hand to keep");
+        }
+
+        if (!in_array($bottom, $valid_card_ids)) {
+            throw new feException("You must choose one of the cards in your hand to place on the bottom of the deck");
         }
     }
 
-    function actionChancellor($chosenCard)
+    function actionChancellor($keep, $bottom)
     {
+        self::validateActionChancellor($keep, $bottom);
+
         $players = self::loadPlayersBasicInfos();
         $player_id = self::getActivePlayerId();
         $player_cards = $this->cards->getCardsInLocation('hand', $player_id);
-
+        
         foreach ($player_cards as $card) {
-            if ($card['id'] != $chosenCard) {
-                $this->cards->insertCardOnExtremePosition($card['id'], 'deck', false);
-            }
-            //TODO - handle ordering
+        $card_by_id[$card['id']] = $card;
         }
+
+        $keep_card = $card_by_id[$keep];
+        $bottom_card = $card_by_id[$bottom];
+        $other_card = null;
+        foreach ($player_cards as $card) {
+        if ($card['id'] != $keep && $card['id'] != $bottom) {
+            $other_card = $card;
+            break;
+            }
+        }
+
+        if ($other_card != null) //happens if not enough cards in deck, then player only have draws 1 instead of 2.
+        {
+            $this->cards->insertCardOnExtremePosition($other_card['id'], 'deck', false);
+        }
+        $this->cards->insertCardOnExtremePosition($bottom_card['id'], 'deck', false);
 
         self::notifyAllPlayers('simpleNote', clienttranslate('Chancellor: ${player_name} keeps 1 card, and places the other 2 on the bottom of the deck'), array(
             'player_name' => $players[$player_id]['player_name'],
         ));
 
-        self::notifyPlayer($player_id, 'newCard', clienttranslate('Chancellor: you keep ${card_name}'), array(
+        //TODO - add other and bottom card
+        self::notifyPlayer($player_id, 'chancellor_bury', clienttranslate('Chancellor: you keep ${card_name}'), array(
             'i18n' => array('card_name'),
-            'card' => $card,
-            'card_name' => $this->card_types[$chosenCard['type']]['name'],
+            'card' => $keep_card,
+            'card_name' => $this->card_types[$keep_card['type']]['name'],
         ));
 
         $this->gamestate->nextState('nextPlayer');
@@ -751,21 +790,34 @@ class loveletter extends Table
 
         $opponent_cards = $this->cards->getCardsInLocation( 'hand', $opponent_id );
         $opponent_card = reset($opponent_cards);
-        
-        $players = self::loadPlayersBasicInfos();
-        self::notifyAllPlayers( 'cardexchange', clienttranslate('King: ${player_name} and ${player_name2} exchange their hand.'), array(
-            'player_name' => $players[ $player_id ]['player_name'],
-            'player_name2' => $players[ $opponent_id ]['player_name'],
-            'player_1' => $player_id,
-            'player_2' => $opponent_id
-        ));
                 
         // Exchange hands
         $this->cards->moveCard( $player_card['id'], 'hand', $opponent_id );
         $this->cards->moveCard( $opponent_card['id'], 'hand', $player_id );
                 
-        self::notifyPlayer( $opponent_id, 'newCard', '', array( 'card' => $player_card, 'from' => $player_id, 'remove' => $opponent_card ) );
-        self::notifyPlayer( $player_id, 'newCard', '', array( 'card' => $opponent_card, 'from' => $opponent_id, 'remove' => $player_card ) );
+        $players = self::loadPlayersBasicInfos();
+        self::notifyAllPlayers( 'cardexchange_opponents', clienttranslate('King: ${player_name} and ${player_name2} exchange their hand.'), array(
+            'player_name' => $players[ $player_id ]['player_name'],
+            'player_name2' => $players[ $opponent_id ]['player_name'],
+            'player_1' => $player_id,
+            'player_2' => $opponent_id,
+        ));
+
+        self::notifyPlayer( $opponent_id, 'cardexchange', '', array(
+            'player_name' => $players[ $player_id ]['player_name'],
+            'player_name2' => $players[ $opponent_id ]['player_name'],
+            'player_1' => $player_id,
+            'player_2' => $opponent_id, 
+            'player_1_card' => $player_card,
+            'player_2_card' => $opponent_card) );
+
+        self::notifyPlayer( $player_id, 'cardexchange', '', array(
+            'player_name' => $players[ $opponent_id ]['player_name'],
+            'player_name2' => $players[ $player_id ]['player_name'],
+            'player_1' => $opponent_id,
+            'player_2' => $player_id,
+            'player_1_card' => $opponent_card,
+            'player_2_card' => $player_card) );
     }
 
     function playCountess($card, $opponent_id)
@@ -822,6 +874,7 @@ class loveletter extends Table
                 'i18n' => array('card_name'),
                 'player_id' => $player_id,
                 'player_name' => $players[$player_id]['player_name'],
+                'card_type' => $this->card_types[$card['type']],
                 'card_name' => $this->card_types[$card['type']]['name'],
                 'card' => $card,
                 'noeffect'=>1
