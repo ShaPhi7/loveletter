@@ -67,7 +67,7 @@ $this->card_types = array(
         "nametr" => self::_('Chancellor'),
         "description" => clienttranslate('Draw 2 cards. Keep 1 card and put your other 2 on the bottom of the deck in any order.'),
         "shortdescr" => self::_("Take 2 cards, keep 1, discard 2."),
-        'qt' => 100,
+        'qt' => 2,
         'value' => 6
     ),
     27 => array( 

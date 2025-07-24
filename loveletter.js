@@ -38,8 +38,8 @@ function (dojo, declare) {
             this.selectedCardType = null;
 
             this.chancellorState = false;
-            chancellorCardToKeep = null;
-            chancellorCardToPlaceOnBottomOfDeck = null;
+            this.chancellorCardToKeep = null;
+            this.chancellorCardToPlaceOnBottomOfDeck = null;
 
             const rootStyles = getComputedStyle(document.documentElement);
             this.cardWidth    = parseFloat(rootStyles.getPropertyValue('--card-width'));
@@ -292,6 +292,7 @@ function (dojo, declare) {
 
         doChancellorAction: function()
         {
+          debugger;
           if (!this.chancellorCardToKeep)
           {
             this.chancellorCardToKeep = this.playerHand.selectedCards[0];
@@ -300,14 +301,14 @@ function (dojo, declare) {
             if (cardElement) {
               dojo.addClass(cardElement, 'keep');
             }
-            this.deselect();
+
             this.setInvite(_("You must choose which card to place on the bottom of the deck"));
             return;
           }
 
           if (this.chancellorCardToKeep.id == this.selectedCardId)
           {
-            this.deselect();
+            this.removeCardSelections();
             this.showMessage(_("You must choose a different card to the one that you chose to keep."), "error");
             return;
           }
@@ -541,8 +542,8 @@ function (dojo, declare) {
 
         removeChancellorSelections: function()
         {
-          chancellorCardToKeep = null;
-          chancellorCardToPlaceOnBottomOfDeck = null;
+          this.chancellorCardToKeep = null;
+          this.chancellorCardToPlaceOnBottomOfDeck = null;
         },
 
         setupNotifications: function()
@@ -598,16 +599,23 @@ function (dojo, declare) {
         {
           const keptCardId = notif.args.card.id;
           const allCards = this.playerHand.getCards();
-          debugger;
+
           allCards.forEach(card => {
           if (card.id != keptCardId) {
-            this.deck.addCard(card, {
+            const buriedCard = {
+              id: card.id,
+              type: null,
+            };
+
+            this.deck.addCard(buriedCard, {
                 fromStock: this.playerHand,
                 visible: false,
                 index: this.deck.getCards().length,
-                updateInformations: { type: null}
-                }); //TODO - how do we handle this better?
+                updateInformations: true
+                });
             }
+            debugger;
+          this.deselect();
           });
 
           this.playerHand.unselectAll?.();
