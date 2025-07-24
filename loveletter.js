@@ -130,7 +130,8 @@ function (dojo, declare) {
                 
                 const playerTable = document.getElementById(`lvt-player-table-${player.id}`);
                 playerTable.addEventListener('click', function(event) {
-                  
+                  if (playerTable.classList.contains('out-of-the-round')) return;
+
                   const tablePlayerId = this.id.replace('lvt-player-table-', '');
                   if (tablePlayerId === String(_this.player_id)) {
                     // Check if click was in your own card area
@@ -160,7 +161,7 @@ function (dojo, declare) {
               this.playerHand.onSelectionChange = (selectedCards) => {
                 if (this._suppressUnselectCallback) return;
                 if (selectedCards.length > 0) {
-                  this.onPlayerHandSelectionChanged(selectedCards[0]);
+                  this.onSelectCard(selectedCards[0]);
                 }
                 else
                 {
@@ -191,6 +192,16 @@ function (dojo, declare) {
                       opponentLine.setCardVisible(fakeCard, false);
                     }
                   this.opponentHands[player.id] = opponentLine;
+                }
+
+                if (player.alive == 0)
+                {
+                  this.setOutOfTheRound(player.id);
+                }
+                
+                if (player.protection == 1)
+                {
+                  this.setProtected(player_id);
                 }
               });
 
@@ -336,7 +347,7 @@ function (dojo, declare) {
             this.playCardOrShowMessage();
         },
 
-        onPlayerHandSelectionChanged: function(card) {
+        onSelectCard: function(card) {
           this.selectedCardId = card ? Number(card.id) : null;
           this.selectedCardType = card ? Number(card.type) : null;
           if (this.chancellorState)
@@ -393,7 +404,7 @@ function (dojo, declare) {
             }
 
             // Check out of the round
-            if(dojo.hasClass('lvt-player-table-'+this.selectedOpponentId, 'outOfTheRound'))
+            if(dojo.hasClass('lvt-player-table-' + this.selectedOpponentId, 'out-of-the-round'))
             {
               this.showMessage( _("This player is out of the round"), 'error' );
               this.deselect();
@@ -401,7 +412,7 @@ function (dojo, declare) {
             }   
         
             // Check protection
-            if(dojo.style('lvt-player-table-'+this.selectedOpponentId, 'protected'))
+            if(dojo.style('lvt-player-table-' + this.selectedOpponentId, 'protected'))
             {
               this.showMessage( _("This player is protected and cannot be targeted by any card effect."), 'error' );
               this.deselect();
@@ -546,6 +557,51 @@ function (dojo, declare) {
           this.chancellorCardToPlaceOnBottomOfDeck = null;
         },
 
+        /*discardCard: function(playerId, card)
+        {
+          debugger;
+          if (this.player_id == playerId)
+          {
+            this.discard.addCard(card, { fromStock: this.playerHand });
+          }
+          else
+          {
+            const opponentHand = this.opponentHands[playerId];
+            this.discard.addCard(card, { fromStock: opponentHand, visible: true });
+          }
+          markBadgeAsPlayed(card.value);
+        },
+
+        discardCards: function(playerId)
+        {
+          if (this.player_id == playerId)
+          {
+            if (this.playerHand.getCards().length > 0) {
+              const playerCard = this.playerHand.getCards()[0];
+              this.discardCard(playerId, playerCard);
+            }
+          }
+          else
+          {
+            const opponentHand = this.opponentHands[playerId];
+            if (opponentHand && opponentHand.getCards().length > 0) {
+              const opponentCard = opponentHand.getCards()[0];
+              this.discardCard(playerId, opponentCard);
+            }
+          }
+        },*/
+
+        setOutOfTheRound: function(playerId)
+        {
+          //this.discardCards(playerId);
+          dojo.addClass( 'lvt-player-table-' + playerId, 'out-of-the-round' );
+        },
+
+        setProtected: function(playerId)
+        {
+          //TODO
+        },
+
         setupNotifications: function()
         {
             console.log( 'notifications subscriptions setup' );
@@ -565,11 +621,18 @@ function (dojo, declare) {
 
             dojo.subscribe( 'chancellor_draw', this, 'notif_chancellor_draw' );
             dojo.subscribe( 'chancellor_bury', this, 'notif_chancellor_bury' );
+
+            dojo.subscribe( 'outOfTheRound', this, 'notif_outOfTheRound' );
+        },
+
+        notif_outOfTheRound: function(notif)
+        {
+          var player_id = notif.args.player_id;
+          this.setOutOfTheRound(player_id);
         },
 
         notif_chancellor_draw: function( notif )
         {
-
           if (notif.args.card)
           {
             let card = {};
@@ -669,17 +732,20 @@ function (dojo, declare) {
           else
           {
             const opponentHand = this.opponentHands[notif.args.player_id];
-            this.discard.addCard(card, {
+            
+            discardedCard = {
+              id: notif.args.player_id + '-fake-0',
+              type: card.type
+            }
+
+            this.discard.addCard(discardedCard, {
                 fromStock: opponentHand,
-                updateInformations: {
-                    id: card.id,
-                    type: card.type,
-                },
+                updateInformations: true,
                 visible: true
             });
           }
           setTimeout(() => {
-            this.discard.removeCard(card);
+            this.discard.removeCard(discardedCard);
             markBadgeAsPlayed(notif.args.card_type.value);
           }, 2000);
         },

@@ -342,6 +342,10 @@ class loveletter extends Table
             throw new feException("This player is protected by the handmaid and cannot be targeted");
         }
 
+        if (self::getUniqueValueFromDB("SELECT player_alive FROM player WHERE player_id='$opponent_id'") == 0) {
+            throw new feException("This player is out of the round and cannot be targeted");
+        }
+
         $opponent_cards = $this->cards->getCardsInLocation('hand', $opponent_id);
         if (count($opponent_cards) === 0) {
             throw new feException("Error: cannot find opponent card");
@@ -519,7 +523,6 @@ class loveletter extends Table
             'card_type' => $opponent_card['type'],
             'card_name' => $this->card_types[$opponent_card['type']]['name']
         ));
-        self::notifyPlayer($player_id, 'unreveal', '', array('player_id' => $opponent_id));
 
         self::notifyPlayer($opponent_id, 'reveal', clienttranslate('${player_name} reveals a ${card_name}'), array(
             'i18n' => array('card_name'),
@@ -528,7 +531,6 @@ class loveletter extends Table
             'card_type' => $player_card['type'],
             'card_name' => $this->card_types[$player_card['type']]['name']
         ));
-        self::notifyPlayer($opponent_id, 'unreveal', '', array('player_id' => $player_id));
 
         $players = self::loadPlayersBasicInfos();
 
