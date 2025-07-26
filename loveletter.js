@@ -712,8 +712,8 @@ function (dojo, declare) {
 
         notif_cardPlayed: function( notif )
         {
-          let card = {};
-          Object.assign(card, {
+          let discardedCard = {};
+          Object.assign(discardedCard, {
           id: notif.args.card.id,
           type: notif.args.card.type,
           });
@@ -721,8 +721,8 @@ function (dojo, declare) {
           if( this.player_id == notif.args.player_id )
           {
             
-            this.discard.addCard(card, { fromStock: this.playerHand });
-            const cardElement = this.handManager.getCardElement(card);
+            this.discard.addCard(discardedCard, { fromStock: this.playerHand });
+            const cardElement = this.handManager.getCardElement(discardedCard);
             cardElement.classList.add('fade-out');
             const allDescendants = cardElement.querySelectorAll('*');
             for (const descendant of allDescendants) {
@@ -735,7 +735,7 @@ function (dojo, declare) {
             
             discardedCard = {
               id: notif.args.player_id + '-fake-0',
-              type: card.type
+              type: notif.args.card.type
             }
 
             this.discard.addCard(discardedCard, {
