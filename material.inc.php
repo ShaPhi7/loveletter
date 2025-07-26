@@ -59,7 +59,7 @@ $this->card_types = array(
         "nametr" => self::_('Prince'),
         "description" => clienttranslate('Choose any player (including yourself) to discard his or her hand and draw a new card.'),
         "shortdescr" => self::_("One player discards his or her hand."),
-        'qt' => 100,
+        'qt' => 2,
         'value' => 5
     ),
     26 => array( 
@@ -83,7 +83,7 @@ $this->card_types = array(
         "nametr" => self::_('Countess'),
         "description" => clienttranslate('If you have this card and the King or Prince in your hand, you must discard this card.'),
         "shortdescr" => self::_("Discard if caught with King or Prince."),
-        'qt' => 1,
+        'qt' => 100,
         'value' => 8
     ),
     29 => array( 

@@ -49,11 +49,13 @@
 @import url(../../../css/csslayer.css);
 
 :root {
+  --display-card-width: 33vw;
+  --display-card-height: calc(var(--display-card-width) * 1.366);
   --card-width: 410px;
   --card-height: 560px;
-  --card-scale: 0.7;
   --deck-scale: 0.4;
   --hand-scale: 0.4;
+  
   --sprite-cols: 6;
   --sprite-rows: 2;
   --badge-grid-cols: 4;
@@ -63,10 +65,6 @@
   --badge-gap: 0px;
   --badge-sprite-height: 127px;
   --badge-sprite-width: 127px;
-
-  /* Scaled total sprite size */
-  /*--sprite-width: calc(var(--card-width) * var(--sprite-cols) * var(--card-scale));
-  --sprite-height: calc(var(--card-height) * var(--sprite-rows) * var(--card-scale));*/
 }
 
 
@@ -89,11 +87,48 @@ html, body {
     z-index: -1;
 }
 
+#lvt-play-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#lvt-play-area-grid {
+  display: grid;
+  max-width: 100%;
+  max-height: 100%;
+  overflow-x: hidden;
+  grid-template-areas:
+    "top-left    top    top-right"
+    "left        center right"
+    "bottom-left bottom bottom-right";
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-rows: auto 1fr auto;
+  gap: 10px;
+  position: relative;
+  align-items: center;
+  justify-items: center;
+}
+
+.lvt-player-area.top-left     { grid-area: top-left; }
+.lvt-player-area.top          { grid-area: top; }
+.lvt-player-area.top-right    { grid-area: top-right; }
+.lvt-player-area.left         { grid-area: left; }
+.lvt-player-area.right        { grid-area: right; }
+.lvt-player-area.bottom-left  { grid-area: bottom-left; }
+.lvt-player-area.bottom       { grid-area: bottom; }
+.lvt-player-area.bottom-right { grid-area: bottom-right; }
+
 #lvt-center-area {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
+  grid-area: center;
 }
 
 #lvt-deck-area {
@@ -137,14 +172,12 @@ html, body {
 }
 
 .lvt-card-container {
-  width: calc(var(--card-width) * var(--card-scale));
-  height: calc(var(--card-height) * var(--card-scale));
   position: relative;
 }
 
 .lvt-player-table .lvt-card-container {
-  width: calc(var(--card-width) * var(--hand-scale));
-  height: calc(var(--card-height) * var(--hand-scale));
+  width: calc(var(--display-card-width) * var(--hand-scale));
+  height: calc(var(--display-card-height) * var(--hand-scale));
   position: relative;
 }
 
@@ -155,10 +188,9 @@ html, body {
 }
 
 .lvt-card {
-  width: calc(var(--card-width) * var(--card-scale));
-  height: calc(var(--card-height) * var(--card-scale));
   background-image: url('img/cards.jpg');
   border-radius: 12%;
+  box-shadow: 5px 5px 5px 0px rgba(0,0,0,0.4);
 }
 
 .lvt-card.fade-out {
@@ -175,19 +207,15 @@ html, body {
 }
 
 .lvt-player-table .lvt-card {
-  width: calc(var(--card-width) * var(--hand-scale));
-  height: calc(var(--card-height) * var(--hand-scale));
-  background-size:
-    calc(var(--card-width) * var(--sprite-cols) * var(--hand-scale))
-    calc(var(--card-height) * var(--sprite-rows) * var(--hand-scale))
+  width: calc(var(--display-card-width) * var(--hand-scale));
+  height: calc(var(--display-card-height) * var(--hand-scale));
+  background-size: 600% 200%
 }
 
 .deck .lvt-card {
   width: calc(var(--card-width) * var(--deck-scale));
   height: calc(var(--card-height) * var(--deck-scale));
-  background-size:
-    calc(var(--card-width) * var(--sprite-cols) * var(--deck-scale))
-    calc(var(--card-height) * var(--sprite-rows) * var(--deck-scale))
+  background-size: 600% 200%
 }
 
 #lvt-player-tables {
@@ -196,7 +224,7 @@ html, body {
 }
 
 .lvt-player-table {
-    min-height: 220px;
+    min-height: 50px;
     background: #fff8;
     border: 1px solid #333;
     border-radius: 8px;
@@ -217,7 +245,7 @@ html, body {
 }
 
 .lvt-player-table-card {
-    min-height: 220px;
+    min-height: 50px;
 }
 
 .card.bga-cards_selected-card > .card-sides > .front {

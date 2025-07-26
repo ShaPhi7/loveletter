@@ -59,13 +59,23 @@ function (dojo, declare) {
 
             this.getGameAreaElement().insertAdjacentHTML("beforeend", `
                 <div id="lvt-play-area">
-                    <div id="lvt-center-area">
+                  <div id="lvt-play-area-grid">
+                    <div class="lvt-player-area top-left" id="lvt-player-area-top-left"></div>
+                    <div class="lvt-player-area top" id="lvt-player-area-top"></div>
+                    <div class="lvt-player-area top-right" id="lvt-player-area-top-right"></div>
+                    <div class="lvt-player-area left" id="lvt-player-area-left"></div>
+                    <div "lvt-center" id="lvt-center-area">
                         <div id="lvt-deck-area"></div>
                         <div id="lvt-badges-area"></div>
                     </div>
+                    <div class="lvt-player-area right" id="lvt-player-area-right"></div>
+                    <div class="lvt-player-area bottom-left" id="lvt-player-area-bottom-left"></div>
+                    <div class="lvt-player-area bottom" id="lvt-player-area-bottom"></div>
+                    <div class="lvt-player-area bottom-right" id="lvt-player-area-bottom-right"></div>
                     <div id="lvt-player-tables"></div>
+                  </div>
                 </div>
-            `);
+            `);//TODO - remove last line
 
             console.log(gamedatas);
             this.lvtPlayers = {};
@@ -84,13 +94,13 @@ function (dojo, declare) {
               
               setupFrontDiv: (card, div) => {
                     div.classList.add('lvt-card');
-                        div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, this.cardHeight, this.cardWidth, this.deckScale, window.CARD_CONSTANTS);
+                        div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, window.CARD_CONSTANTS);
                     div.id = `card-${card.id}-front`;
                 },
 
               setupBackDiv: (card, div) => {
                   div.classList.add('lvt-card');
-                      div.style.backgroundPosition = getCardSpriteBackgroundPosition("back", this.cardHeight, this.cardWidth, this.deckScale, window.CARD_CONSTANTS);
+                      div.style.backgroundPosition = getCardSpriteBackgroundPosition("back", window.CARD_CONSTANTS);
                   div.id = `card-${card.id}-back`;
                 },
             });
@@ -108,20 +118,32 @@ function (dojo, declare) {
               
               setupFrontDiv: (card, div) => {
                     div.classList.add('lvt-card');
-                        div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, this.cardHeight, this.cardWidth, this.handScale, window.CARD_CONSTANTS);
+                        div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, window.CARD_CONSTANTS);
                     div.id = `card-${card.id}-front`;
                 },
 
               setupBackDiv: (card, div) => {
                   div.classList.add('lvt-card');
-                      div.style.backgroundPosition = getCardSpriteBackgroundPosition("back", this.cardHeight, this.cardWidth, this.handScale, window.CARD_CONSTANTS);
+                      div.style.backgroundPosition = getCardSpriteBackgroundPosition("back", window.CARD_CONSTANTS);
                   div.id = `card-${card.id}-back`;
                 },
             });
 
+            const layoutOrder = {
+              2: ['bottom', 'top'],
+              3: ['bottom', 'top-left', 'top-right'],
+              4: ['bottom', 'left', 'top', 'right'],
+              5: ['bottom', 'left', 'top-left', 'top-right', 'right'],
+              6: ['bottom', 'left', 'top-left', 'top', 'top-right', 'right']
+            };
+            
+            const playerPositions = layoutOrder[playerIds.length];
+
             _this = this;
-            Object.values(gamedatas.players).forEach((player) => {
-                document.getElementById("lvt-player-tables").insertAdjacentHTML("beforeend", `
+            Object.values(gamedatas.players).forEach((player, index) => {
+              const position = playerPositions[index];  
+
+              document.getElementById(`lvt-player-area-${position}`).insertAdjacentHTML("beforeend", `
                     <div class="lvt-player-table" id="lvt-player-table-${player.id}">
                         <div class="lvt-player-table-name" id="lvt-player-table-name-${player.id}" style="color:#${player.color};">${player.name}</div>
                         <div class="lvt-player-table-card" id="lvt-player-table-card-${player.id}"></div>
@@ -840,7 +862,7 @@ function (dojo, declare) {
         }
     });
 
-  function getCardSpriteBackgroundPosition(card, cardHeight, cardWidth, cardScale, cardConstants) {
+  function getCardSpriteBackgroundPosition(card, cardConstants) {
 
     const CARD_SPRITE_MAP = {
         [cardConstants.GUARD]: { col: 0, row: 0 }, // Guard
@@ -858,11 +880,12 @@ function (dojo, declare) {
       };
         let mapping = CARD_SPRITE_MAP[card.type];
         if (!mapping) mapping = CARD_SPRITE_MAP["back"];
-        const x = mapping.col * cardWidth * cardScale;
-        const y = mapping.row * cardHeight * cardScale;
-        return `-${x}px -${y}px`;
+        const x = mapping.col * 100
+        const y = mapping.row * 100
+        return `-${x}% -${y}%`;
     }
 
+    //TODO - can we make this also use percentages?
     function buildPlayedCardBadges(gamedatas) {
       const rootStyles = getComputedStyle(document.documentElement);
       const SPRITE_WIDTH_ORIGINAL = parseFloat(rootStyles.getPropertyValue('--badge-sprite-width'));
