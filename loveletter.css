@@ -139,7 +139,6 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
   padding: 10px;
   background: #fff8;
   border-radius: 12px;
@@ -154,6 +153,8 @@ html, body {
   display: grid;
   position: absolute;
   grid-auto-flow: row;
+  align-content: space-around;
+  justify-content: space-around;
   grid-template-columns: repeat(var(--badge-grid-cols), var(--badge-width));
   grid-auto-rows: var(--badge-height);
   gap: var(--badge-gap);

@@ -83,7 +83,7 @@ $this->card_types = array(
         "nametr" => self::_('Countess'),
         "description" => clienttranslate('If you have this card and the King or Prince in your hand, you must discard this card.'),
         "shortdescr" => self::_("Discard if caught with King or Prince."),
-        'qt' => 100,
+        'qt' => 1,
         'value' => 8
     ),
     29 => array( 

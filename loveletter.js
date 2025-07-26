@@ -44,8 +44,6 @@ function (dojo, declare) {
             const rootStyles = getComputedStyle(document.documentElement);
             this.cardWidth    = parseFloat(rootStyles.getPropertyValue('--card-width'));
             this.cardHeight   = parseFloat(rootStyles.getPropertyValue('--card-height'));
-            this.deckScale    = parseFloat(rootStyles.getPropertyValue('--deck-scale'));
-            this.handScale    = parseFloat(rootStyles.getPropertyValue('--hand-scale'));
 
             Object.assign(this, window.CARD_CONSTANTS);
         },
