@@ -70,10 +70,9 @@ function (dojo, declare) {
                     <div class="lvt-player-area bottom-left" id="lvt-player-area-bottom-left"></div>
                     <div class="lvt-player-area bottom" id="lvt-player-area-bottom"></div>
                     <div class="lvt-player-area bottom-right" id="lvt-player-area-bottom-right"></div>
-                    <div id="lvt-player-tables"></div>
                   </div>
                 </div>
-            `);//TODO - remove last line
+            `);
 
             console.log(gamedatas);
             this.lvtPlayers = {};
@@ -128,17 +127,28 @@ function (dojo, declare) {
             });
 
             const layoutOrder = {
-              2: ['bottom', 'top'],
-              3: ['bottom', 'top-left', 'top-right'],
-              4: ['bottom', 'left', 'top', 'right'],
-              5: ['bottom', 'left', 'top-left', 'top-right', 'right'],
-              6: ['bottom', 'left', 'top-left', 'top', 'top-right', 'right']
+              2: ['left', 'right'],
+              3: ['left', 'top', 'right'],
+              4: ['left', 'top', 'right', 'bottom'],
+              5: ['left', 'top-left', 'top', 'top-right', 'right'],
+              6: ['left', 'top-left', 'top', 'top-right', 'right', 'bottom']
             };
             
             const playerPositions = layoutOrder[playerIds.length];
+            const startIndex = gamedatas.playerorder.findIndex(id => id == this.player_id);
+            const orderedPlayers = [];
+            console.log(startIndex);
+            for (let i = 0; i < gamedatas.playerorder.length; i++) {
+              const rotatedIndex = (startIndex + i) % gamedatas.playerorder.length;
+              orderedPlayers.push(gamedatas.playerorder[rotatedIndex]);
+            }
 
             _this = this;
-            Object.values(gamedatas.players).forEach((player, index) => {
+            Object.values(orderedPlayers).forEach((playerId, index) => {
+
+              console.log(orderedPlayers[index]);
+              console.log(playerId);
+              const player = gamedatas.players[playerId];
               const position = playerPositions[index];  
 
               document.getElementById(`lvt-player-area-${position}`).insertAdjacentHTML("beforeend", `
