@@ -871,7 +871,7 @@ class loveletter extends Table
     }
 
     function notifyPlayCard($card, $opponent_id) {
-        self::notifyPlayCard($card, $opponent_id, null);
+        self::notifycardPlayed($card, $opponent_id, null);
     }
 
     function notifycardPlayed($card, $opponent_id, $guess_id) {
