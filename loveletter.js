@@ -67,10 +67,8 @@ function (dojo, declare) {
                         <div id="lvt-badges-area"></div>
                     </div>
                     <div class="lvt-player-area right" id="lvt-player-area-right"></div>
-                    <div class="lvt-player-area bottom-left" id="lvt-player-area-bottom-left"></div>
-                    <div class="lvt-player-area bottom" id="lvt-player-area-bottom"></div>
-                    <div class="lvt-player-area bottom-right" id="lvt-player-area-bottom-right"></div>
                   </div>
+                  <div class="lvt-player-area bottom" id="lvt-player-area-bottom"></div>
                 </div>
             `);
 
@@ -127,11 +125,11 @@ function (dojo, declare) {
             });
 
             const layoutOrder = {
-              2: ['left', 'right'],
-              3: ['left', 'top', 'right'],
-              4: ['left', 'top', 'right', 'bottom'],
-              5: ['left', 'top-left', 'top', 'top-right', 'right'],
-              6: ['left', 'top-left', 'top', 'top-right', 'right', 'bottom']
+              2: ['bottom', 'top'],
+              3: ['bottom', 'top-left', 'top-right'],
+              4: ['bottom', 'left', 'top', 'right'],
+              5: ['bottom', 'left', 'top-left', 'top', 'right'],
+              6: ['bottom', 'left', 'top-left', 'top', 'top-right', 'right']
             };
             
             const playerPositions = layoutOrder[playerIds.length];
@@ -157,7 +155,7 @@ function (dojo, declare) {
                         <div class="lvt-player-table-card" id="lvt-player-table-card-${player.id}"></div>
                     </div>
                 `);
-                
+
                 const playerTable = document.getElementById(`lvt-player-table-${player.id}`);
                 playerTable.addEventListener('click', function(event) {
                   if (playerTable.classList.contains('out-of-the-round')) return;
@@ -333,7 +331,6 @@ function (dojo, declare) {
 
         doChancellorAction: function()
         {
-          debugger;
           if (!this.chancellorCardToKeep)
           {
             this.chancellorCardToKeep = this.playerHand.selectedCards[0];
@@ -589,7 +586,6 @@ function (dojo, declare) {
 
         /*discardCard: function(playerId, card)
         {
-          debugger;
           if (this.player_id == playerId)
           {
             this.discard.addCard(card, { fromStock: this.playerHand });
@@ -707,7 +703,6 @@ function (dojo, declare) {
                 updateInformations: true
                 });
             }
-            debugger;
           this.deselect();
           });
 

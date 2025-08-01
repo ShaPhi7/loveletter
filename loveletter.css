@@ -89,6 +89,7 @@ html, body {
 
 #lvt-play-area {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100%;
@@ -101,11 +102,10 @@ html, body {
   display: grid;
   max-width: 100%;
   max-height: 100%;
-  overflow-x: hidden;
+  overflow: hidden;
   grid-template-areas:
     "top-left    top    top-right"
-    "left        center right"
-    "bottom-left bottom bottom-right";
+    "left        center right";
   grid-template-columns: 1fr auto 1fr;
   grid-template-rows: auto 1fr auto;
   gap: 10px;
@@ -119,9 +119,12 @@ html, body {
 .lvt-player-area.top-right    { grid-area: top-right; }
 .lvt-player-area.left         { grid-area: left; }
 .lvt-player-area.right        { grid-area: right; }
-.lvt-player-area.bottom-left  { grid-area: bottom-left; }
-.lvt-player-area.bottom       { grid-area: bottom; }
-.lvt-player-area.bottom-right { grid-area: bottom-right; }
+
+.lvt-player-area-bottom {
+  min-height: 100px;
+  min-width: 100px;
+  background-color: yellow;
+}
 
 #lvt-center-area {
   display: flex;
@@ -219,13 +222,9 @@ html, body {
   background-size: 600% 200%
 }
 
-#lvt-player-tables {
-  display: flex;  
-  justify-content: space-evenly;
-}
-
 .lvt-player-table {
-    min-height: 50px;
+    min-height: 300px;
+    min-width: 300px;
     background: #fff8;
     border: 1px solid #333;
     border-radius: 8px;
