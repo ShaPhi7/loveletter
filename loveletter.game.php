@@ -405,7 +405,7 @@ class loveletter extends Table
 
         self::validateGuard($opponent_id, $guess_id);
 
-        self::notifyPlayCard($card, $opponent_id);
+        self::notifyCardPlayed($card, $opponent_id, $guess_id);
         
         $players = self::loadPlayersBasicInfos();
 
@@ -415,18 +415,6 @@ class loveletter extends Table
         $guess_name = $this->card_types[ $guess_id ]['name'];
 
         $args['guess_name'] = $guess_name;
-
-        self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name} against ${player_name2} and asks, are you a ${guess_name}?'), array(
-            'i18n' => array('card_name','guess_name'),
-            'player_name' => $players[$player_id]['player_name'],
-            'player_name2' => $players[$opponent_id]['player_name'],
-            'guess_name' => $guess_name,
-            'card_type' => $this->card_types[$card['type']],
-            'card_name' => $this->card_types[$card['type']]['name'],
-            'card' => $card,
-            'player_id' => $player_id,
-            'opponent_id' => $opponent_id,
-        ));
 
         if ($this->card_types[$opponent_card['type']]['value'] == $this->card_types[$guess_id]['value']) {
             // Successfully guessed!
@@ -883,10 +871,29 @@ class loveletter extends Table
     }
 
     function notifyPlayCard($card, $opponent_id) {
+        self::notifyPlayCard($card, $opponent_id, null);
+    }
+
+    function notifycardPlayed($card, $opponent_id, $guess_id) {
         $player_id = self::getActivePlayerId();
         $players = self::loadPlayersBasicInfos();
         
-        if ($opponent_id)
+        if ($guess_id)
+        {
+            self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name} against ${player_name2} and asks, are you a ${guess_name}?'),
+            array(
+                'i18n' => array('card_name','guess_name'),
+                'player_name' => $players[$player_id]['player_name'],
+                'player_name2' => $players[$opponent_id]['player_name'],
+                'guess_name' => $this->card_types[ $guess_id ]['name'],
+                'card_type' => $this->card_types[$card['type']],
+                'card_name' => $this->card_types[$card['type']]['name'],
+                'card' => $card,
+                'player_id' => $player_id,
+                'opponent_id' => $opponent_id,
+            ));
+        }
+        else if ($opponent_id)
         {
             self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name} against ${player_name2}'),
             array(
