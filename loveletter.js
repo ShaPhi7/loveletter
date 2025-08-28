@@ -56,20 +56,20 @@ function (dojo, declare) {
             `);
 
             this.getGameAreaElement().insertAdjacentHTML("beforeend", `
-                <div id="lvt-play-area">
-                  <div id="lvt-play-area-grid">
-                    <div class="lvt-player-area top-left" id="lvt-player-area-top-left"></div>
-                    <div class="lvt-player-area top" id="lvt-player-area-top"></div>
-                    <div class="lvt-player-area top-right" id="lvt-player-area-top-right"></div>
-                    <div class="lvt-player-area left" id="lvt-player-area-left"></div>
-                    <div "lvt-center" id="lvt-center-area">
-                        <div id="lvt-deck-area"></div>
-                        <div id="lvt-badges-area"></div>
-                    </div>
-                    <div class="lvt-player-area right" id="lvt-player-area-right"></div>
+              <div id="lvt-play-area">
+                <div id="lvt-play-area-grid">
+                  <div class="lvt-player-area top-left" id="lvt-player-area-top-left"></div>
+                  <div class="lvt-player-area top" id="lvt-player-area-top"></div>
+                  <div class="lvt-player-area top-right" id="lvt-player-area-top-right"></div>
+                  <div class="lvt-player-area left" id="lvt-player-area-left"></div>
+                  <div id="lvt-center-area">
+                      <div id="lvt-deck-area"></div>
+                      <div id="lvt-badges-area"></div>
                   </div>
-                  <div class="lvt-player-area bottom" id="lvt-player-area-bottom"></div>
+                  <div class="lvt-player-area right" id="lvt-player-area-right"></div>
                 </div>
+                <div class="lvt-player-area bottom" id="lvt-player-area-bottom"></div>
+              </div>
             `);
 
             console.log(gamedatas);
