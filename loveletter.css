@@ -96,7 +96,6 @@ html, body {
   position: relative;
   width: 100%;
   box-sizing: border-box;
-  position: relative;
 }
 
 #lvt-play-area-grid {
@@ -111,7 +110,6 @@ html, body {
   grid-template-rows: auto 1fr auto;
   gap: 10px;
   position: relative;
-  z-index: 0;
   align-items: center;
   justify-items: center;
 }
