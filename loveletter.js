@@ -229,7 +229,7 @@ function (dojo, declare) {
                 
                 if (player.protection == 1)
                 {
-                  this.setProtected(player_id);
+                  this.setProtected(player.id);
                 }
               });
 
