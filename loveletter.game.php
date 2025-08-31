@@ -1072,10 +1072,11 @@ class loveletter extends Table
         if (self::roundShouldEnd())
         {
             $this->gamestate->nextState('endRound');
+            return;
         }
 
-        $next_player = self::getActivePlayerId(); //make testing easier with this line
-        //$next_player = self::getNextAlivePlayer();
+        //$next_player = self::getActivePlayerId(); //make testing easier with this line
+        $next_player = self::getNextAlivePlayer();
 
         $this->gamestate->changeActivePlayer($next_player);
         //TODO - do you need to validate here?
@@ -1206,12 +1207,13 @@ class loveletter extends Table
         {
             self::DbQuery("UPDATE player SET player_score=player_score+1 WHERE player_id='$winner_id'");
             $players = self::loadPlayersBasicInfos();
+            $winning_card_type = $this->firstValue($this->cards->getCardsInLocation('hand', $winner_id))['type'];
             self::notifyAllPlayers('score', clienttranslate('${player_name} has the highest card (${card_type} - ${card_name}) and gains 1 favor token'), array(
                 'i18n' => array('card_name'),
                 'player_name' => $players[$winner_id]['player_name'],
                 'player_id' => $winner_id,
-                'card_type' =>  $this->cards->getCardsInLocation('hand', $winner_id)[0]['type'],
-                'card_name' => $this->cards->getCardsInLocation('hand', $winner_id)[0]['name'],
+                'card_type' =>  $this->card_types[$winning_card_type]['value'],
+                'card_name' => $this->card_types[$winning_card_type]['name'],
                 'type' => 'highest'
             ));
 
@@ -1244,6 +1246,12 @@ class loveletter extends Table
     function s()
     {
         $this->cards->shuffle('deck');
+    }
+
+    function firstValue(array $a)
+    {
+        foreach ($a as $v) { return $v; }
+        return null;
     }
 
 //////////////////////////////////////////////////////////////////////////////
