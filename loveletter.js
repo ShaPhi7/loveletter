@@ -636,9 +636,8 @@ function (dojo, declare) {
             dojo.subscribe( 'newCardPublic', this, "notif_newCardPublic" );
             this.notifqueue.setIgnoreNotificationCheck( 'newCardPublic', (notif) => (notif.args.player_id == this.player_id) );
 
-            dojo.subscribe( 'cardPlayedLong', this, "notif_cardPlayed" );
             dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            //this.notifqueue.setSynchronous( 'cardPlayedLong', 3000 );
+            this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
 
             dojo.subscribe( 'reveal', this, 'notif_reveal' );
             dojo.subscribe( 'reveal_long', this, 'notif_reveal' );
