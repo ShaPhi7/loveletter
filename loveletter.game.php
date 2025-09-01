@@ -1088,11 +1088,17 @@ class loveletter extends Table
 
         self::DbQuery("UPDATE player SET player_protected='0' WHERE player_id='$next_player'");
 
-        self::notifyPlayer($next_player, 'newCard', clienttranslate('At the start of your turn, you draw a ${card_name}'), array(
+        self::notifyPlayer($next_player, 'newCardPrivate', clienttranslate('At the start of your turn, you draw a ${card_name}'), array(
             'i18n' => array('card_name'),
             'card' => $card,
             'card_name' => $this->card_types[$card['type']]['name'])
         );
+
+        //the current player will ignore this notification on client side.
+        self::notifyAllPlayers('newCardPublic', '', array(
+            'player_id' => $next_player,
+            'card_id' => $card['id']
+        ));
 
         $this->gamestate->nextState('playerTurn');
     }

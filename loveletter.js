@@ -632,7 +632,10 @@ function (dojo, declare) {
         {
             console.log( 'notifications subscriptions setup' );
 
-            dojo.subscribe( 'newCard', this, "notif_newCard" );
+            dojo.subscribe( 'newCardPrivate', this, "notif_newCardPrivate" );
+            dojo.subscribe( 'newCardPublic', this, "notif_newCardPublic" );
+            this.notifqueue.setIgnoreNotificationCheck( 'newCardPublic', (notif) => (notif.args.player_id == this.player_id) );
+
             dojo.subscribe( 'cardPlayedLong', this, "notif_cardPlayed" );
             dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
             //this.notifqueue.setSynchronous( 'cardPlayedLong', 3000 );
@@ -711,7 +714,7 @@ function (dojo, declare) {
           this.deselect();
         },
 
-        notif_newCard: function( notif )
+        notif_newCardPrivate: function( notif )
         {
           let card = {};
           Object.assign(card, {
@@ -719,20 +722,19 @@ function (dojo, declare) {
             type: notif.args.card.type,
           });
 
-          //TODO - do you need to add the player_id to the notification?
-          //if( this.player_id == notif.args.player_id )
-          //{
             this.playerHand.addCard(card, { fromStock: this.deck });
             this.playerHand.setCardVisible(card, true);
-          //}
-          //else
-          //{
-            //TODO - test
-            // Add a fake card to the opponent's hand
-            // const opponentHand = this.opponentHands[notif.args.player_id];
-            // opponentHand.addCard(card, { fromStock: this.deck });
-            // opponentHand.setCardVisible(card, false);
-          //}
+        },
+
+        notif_newCardPublic: function( notif )
+        {
+          let card = {
+            id: notif.args.card_id
+          };
+
+          const opponentHand = this.opponentHands[notif.args.player_id];
+            opponentHand.addCard(card, { fromStock: this.deck });
+            opponentHand.setCardVisible(card, false);
         },
 
         notif_cardPlayed: function( notif )
