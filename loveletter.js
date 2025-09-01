@@ -409,8 +409,15 @@ function (dojo, declare) {
 
           const cardType = this.selectedCardType;
           const requiresOpponent = [this.GUARD, this.PRIEST, this.BARON, this.PRINCE, this.KING].includes(cardType);
-          if (!requiresOpponent)
+          const canTargetSomeone = Object.values(this.gamedatas.players).some(player => 
+              player.id != this.player_id &&
+              player.alive == 1 &&
+              player.protection != 1
+          );
+          if (!requiresOpponent
+            || !canTargetSomeone)
           {
+            //TODO - add dialog to warn user they are about to target nobody
             this.selectedOpponentId = null; // Clear opponent selection for non-targeting cards
           }
           else
@@ -584,42 +591,47 @@ function (dojo, declare) {
           this.chancellorCardToPlaceOnBottomOfDeck = null;
         },
 
-        /*discardCard: function(playerId, card)
+        updateUiForCardPlayed(id, type, playerId, value)
         {
-          if (this.player_id == playerId)
-          {
-            this.discard.addCard(card, { fromStock: this.playerHand });
-          }
-          else
-          {
-            const opponentHand = this.opponentHands[playerId];
-            this.discard.addCard(card, { fromStock: opponentHand, visible: true });
-          }
-          markBadgeAsPlayed(card.value);
-        },
+          let discardedCard = {};
+          Object.assign(discardedCard, {
+          id: id,
+          type: type,
+          });
 
-        discardCards: function(playerId)
-        {
-          if (this.player_id == playerId)
+          if(this.player_id == playerId)
           {
-            if (this.playerHand.getCards().length > 0) {
-              const playerCard = this.playerHand.getCards()[0];
-              this.discardCard(playerId, playerCard);
-            }
+            this.discard.addCard(discardedCard, { fromStock: this.playerHand });
           }
           else
           {
             const opponentHand = this.opponentHands[playerId];
-            if (opponentHand && opponentHand.getCards().length > 0) {
-              const opponentCard = opponentHand.getCards()[0];
-              this.discardCard(playerId, opponentCard);
-            }
+            
+            discardedCard = {
+              id: playerId + '-fake-0',
+              type: type
+            };
+
+            this.discard.addCard(discardedCard, {
+                fromStock: opponentHand,
+                updateInformations: true,
+                visible: true
+            });
           }
-        },*/
+          const cardElement = this.handManager.getCardElement(discardedCard);
+            cardElement.classList.add('fade-out');
+            const allDescendants = cardElement.querySelectorAll('*');
+            for (const descendant of allDescendants) {
+              descendant.classList.add('fade-out');
+          }
+          setTimeout(() => {
+            this.discard.removeCard(discardedCard);
+            markBadgeAsPlayed(value);
+          }, 2000);
+        },
 
         setOutOfTheRound: function(playerId)
         {
-          //this.discardCards(playerId);
           dojo.addClass( 'lvt-player-table-' + playerId, 'out-of-the-round' );
         },
 
@@ -649,13 +661,46 @@ function (dojo, declare) {
 
             dojo.subscribe( 'chancellor_draw', this, 'notif_chancellor_draw' );
             dojo.subscribe( 'chancellor_bury', this, 'notif_chancellor_bury' );
+            this.notifqueue.setSynchronous( 'chancellor_bury', 3000 );
+
+            dojo.subscribe( 'score', this, 'notif_score' );
+            this.notifqueue.setSynchronous( 'score', 1000 );
 
             dojo.subscribe( 'outOfTheRound', this, 'notif_outOfTheRound' );
+
+            dojo.subscribe( 'newRound', this, 'notif_newRound' );
+        },
+
+        notif_score: function(notif)
+        {
+          this.scoreCtrl[notif.args.player_id].incValue(1);
+        },
+
+        notif_newRound: function(notif)
+        {
+          Object.values(this.opponentHands).forEach(hand => hand.removeAll());
+          this.playerHand.removeAll();
+          this.deck.removeAll();
+          this.discard.removeAll();
+
+          Object.values(this.lvtPlayers).forEach(player => {
+            dojo.removeClass('lvt-player-table-' + player.id, 'out-of-the-round');
+            dojo.removeClass('lvt-player-table-' + player.id, 'protected');
+          });
+
+          document.querySelectorAll('.lvt-card-badge.played').forEach(badge => {
+          badge.classList.remove('played');
+          });
+
+          this.deck.shuffle(); //TODO - move higher?
+
+          this.deselect();
         },
 
         notif_outOfTheRound: function(notif)
         {
           var player_id = notif.args.player_id;
+          this.updateUiForCardPlayed(notif.args.card.id, notif.args.card.type, player_id, notif.args.card_type.value);
           this.setOutOfTheRound(player_id);
         },
 
@@ -738,42 +783,7 @@ function (dojo, declare) {
 
         notif_cardPlayed: function( notif )
         {
-          let discardedCard = {};
-          Object.assign(discardedCard, {
-          id: notif.args.card.id,
-          type: notif.args.card.type,
-          });
-
-          if( this.player_id == notif.args.player_id )
-          {
-            
-            this.discard.addCard(discardedCard, { fromStock: this.playerHand });
-            const cardElement = this.handManager.getCardElement(discardedCard);
-            cardElement.classList.add('fade-out');
-            const allDescendants = cardElement.querySelectorAll('*');
-            for (const descendant of allDescendants) {
-              descendant.classList.add('fade-out');
-            }
-          }
-          else
-          {
-            const opponentHand = this.opponentHands[notif.args.player_id];
-            
-            discardedCard = {
-              id: notif.args.player_id + '-fake-0',
-              type: notif.args.card.type
-            }
-
-            this.discard.addCard(discardedCard, {
-                fromStock: opponentHand,
-                updateInformations: true,
-                visible: true
-            });
-          }
-          setTimeout(() => {
-            this.discard.removeCard(discardedCard);
-            markBadgeAsPlayed(notif.args.card_type.value);
-          }, 2000);
+          this.updateUiForCardPlayed(notif.args.card.id, notif.args.card.type, notif.args.player_id, notif.args.card_type.value);
         },
 
         notif_reveal: function( notif )

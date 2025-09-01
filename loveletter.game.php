@@ -525,7 +525,7 @@ class loveletter extends Table
         $winner_id = ($this->card_types[$player_card['type']]['value'] > $this->card_types[$opponent_card['type']]['value']) ? $player_id : $opponent_id;
         $loser_id = ($this->card_types[$player_card['type']]['value'] < $this->card_types[$opponent_card['type']]['value']) ? $player_id : $opponent_id;
 
-        if ($winner_id === $loser_id) {
+        if ($winner_id === $loser_id) { //TODO - I need a nicer way to deal with players being knocked out, both here and Prince etc.
             // Tie, nothing happens
             $log = clienttranslate('Baron: ${player_name} and ${player_name2} have the same card, so nothing happens.');
             self::notifyAllPlayers('cardPlayedResult', $log, array(
@@ -606,15 +606,14 @@ class loveletter extends Table
             'card_type' => $this->card_types[$card['type']],
             'card_name' => $this->card_types[$card['type']]['name'],
             'card' => $card,
-            'noeffect'=> 1
         ));
 
         if($card['type'] == self::PRINCESS)
         {
             // Discard the princess => out of the round!
-            self::notifyAllPlayers('simpleNote', clienttranslate('Princess : ${player_name} discards the Princess, and is now out of this round.'), array(
-                'player_name' => $players[$opponent_id]['player_name']
-            ));
+            // self::notifyAllPlayers('simpleNote', clienttranslate('Princess : ${player_name} discards the Princess, and is now out of this round.'), array(
+            //     'player_name' => $players[$opponent_id]['player_name']
+            // ));
 
             self::outOfTheRound($opponent_id, $player_id, true);
         }
@@ -622,7 +621,7 @@ class loveletter extends Table
         {            
             $card = $this->cards->pickCard('deck', $opponent_id);
 
-            if($card === null)
+            if ($card === null)
             {
                 // No card => draw the card set aside at the beginning of the round
                 $card = $this->cards->pickCard('aside', $opponent_id);
@@ -632,10 +631,16 @@ class loveletter extends Table
                 ));
             }
 
-            self::notifyPlayer($opponent_id, 'newCard', clienttranslate('Prince: you draw ${card_name}'), array(
+            self::notifyPlayer($opponent_id, 'newCardPrivate', clienttranslate('Prince: you draw ${card_name}'), array(
                 'i18n' => array('card_name'),
                 'card' => $card,
                 'card_name' => $this->card_types[$card['type']]['name']
+            ));
+
+            //the current player will ignore this notification on client side.
+            self::notifyAllPlayers('newCardPublic', '', array(
+                'player_id' => $opponent_id,
+                'card_id' => $card['id']
             ));
         }
     }
@@ -664,11 +669,17 @@ class loveletter extends Table
                     'player_name' => $players[$player_id]['player_name'],
                 ));
                 
-                self::notifyPlayer($player_id, 'newCard', clienttranslate('Chancellor: you draw ${card_name} (only one card left in the deck)'), array(
+                self::notifyPlayer($player_id, 'newCardPrivate', clienttranslate('Chancellor: you draw ${card_name} (only one card left in the deck)'), array(
                     'i18n' => array('card_name'),
                     'card' => $card,
                     'card_name' => $this->card_types[$card_1['type']]['name'],
                     'card_name_2' => ''
+                ));
+                
+                //the current player will ignore this notification on client side.
+                self::notifyAllPlayers('newCardPublic', '', array(
+                    'player_id' => $player_id,
+                    'card_id' => $card['id']
                 ));
 
                 $this->activateChancellorState = true;
@@ -689,6 +700,13 @@ class loveletter extends Table
                 'card_name' => $this->card_types[$card_1['type']]['name'],
                 'card_name_2' => $this->card_types[$card_2['type']]['name']
                 ));
+
+                //TODO - other players need to see drawing two cards
+                //the current player will ignore this notification on client side.
+                // self::notifyAllPlayers('newCardPublic', '', array(
+                //     'player_id' => $player_id,
+                //     'card_id' => $card['id']
+                // ));
 
                 $this->activateChancellorState = true;
             break;
@@ -865,7 +883,6 @@ class loveletter extends Table
                 'card_type' => $this->card_types[$card['type']],
                 'card_name' => $this->card_types[$card['type']]['name'],
                 'card' => $card,
-                'noeffect'=>1
             ));
         }
     }
@@ -880,7 +897,7 @@ class loveletter extends Table
         
         if ($guess_id)
         {
-            self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name} against ${player_name2} and asks, are you a ${guess_name}?'),
+            self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays a ${card_name} against ${player_name2} and asks, are you a ${guess_name}?'),
             array(
                 'i18n' => array('card_name','guess_name'),
                 'player_name' => $players[$player_id]['player_name'],
@@ -895,7 +912,7 @@ class loveletter extends Table
         }
         else if ($opponent_id)
         {
-            self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name} against ${player_name2}'),
+            self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays a ${card_name} against ${player_name2}'),
             array(
                 'i18n' => array('card_name'),
                 'player_name' => $players[$player_id]['player_name'],
@@ -909,7 +926,7 @@ class loveletter extends Table
         }
         else
         {
-            self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays ${card_name}'),
+            self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays a ${card_name}'),
             array(
                 'i18n' => array('card_name'),
                 'player_name' => $players[$player_id]['player_name'],
@@ -943,7 +960,6 @@ class loveletter extends Table
             'card_type' => $this->card_types[$card['type']],
             'card_name' => $this->card_types[$card['type']]['name'],
             'card' => $card,
-            'noeffect' => 1
         ));
     }
     
@@ -1036,7 +1052,7 @@ class loveletter extends Table
         foreach( $players as $player_id => $player)
         {
             $card = $this->cards->pickCard( 'deck', $player_id );    
-            self::notifyPlayer( $player_id, 'newCard', clienttranslate('A new round begins: you draw a ${card_name}'), array(
+            self::notifyPlayer( $player_id, 'newCardPrivate', clienttranslate('A new round begins: you draw a ${card_name}'), array(
                 'i18n' => array('card_name'),
                 'card' => $card,
                 'card_name' => $this->card_types[$card['type']]['name'])
@@ -1045,7 +1061,7 @@ class loveletter extends Table
 
         // +1 card for active player
         $card = $this->cards->pickCard( 'deck', self::getActivePlayerId() );    
-        self::notifyPlayer( self::getActivePlayerId(), 'newCard', clienttranslate('At the start of your turn, you draw a ${card_name}'), array(
+        self::notifyPlayer( self::getActivePlayerId(), 'newCardPrivate', clienttranslate('At the start of your turn, you draw a ${card_name}'), array(
             'i18n' => array('card_name'),
             'card' => $card,
             'card_name' => $this->card_types[$card['type']]['name'])
