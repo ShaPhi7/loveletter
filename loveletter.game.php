@@ -419,8 +419,8 @@ class loveletter extends Table
         if ($this->card_types[$opponent_card['type']]['value'] == $this->card_types[$guess_id]['value']) {
             // Successfully guessed!
             self::incStat(1, 'guard_success', $player_id);
-            $log = clienttranslate('Guard: ${player_name} is actually a ${guess_name} and is out of the round!');
-            self::notifyAllPlayers('cardPlayedResult', $log, array(
+            $log = clienttranslate('Out of the round: ${player_name} is actually a ${card_name}');
+            self::notifyAllPlayers('cardPlayedResult', '', array(
                 'i18n' => array('guess_name'),
                 'player_name' => $players[$opponent_id]['player_name'],
                 'player_name2' => $players[$player_id]['player_name'],
@@ -429,7 +429,7 @@ class loveletter extends Table
                 'card_type' => $card['type'],
                 'player_id' => $opponent_id
             ));
-            self::outOfTheRound($opponent_id, $player_id);
+            self::outOfTheRound($opponent_id, $player_id, $log);
         } else {
             self::notifyAllPlayers('cardPlayedResult', clienttranslate('${player_name} is not a ${guess_name}'), array(
                 'i18n' => array('guess_name'),
@@ -538,8 +538,8 @@ class loveletter extends Table
         }
         else {
             // Notify players about the result
-            $log = clienttranslate('Baron: ${player_name} has a ${card_name}, lower than ${player_name2}`s card, and is out of this round.');
-            self::notifyAllPlayers('cardPlayedResult', $log, array(
+            $log = clienttranslate('Out of the round: ${player_name} has the lower card, and discards a ${card_name}');
+            self::notifyAllPlayers('cardPlayedResult', '', array(
                 'i18n' => array('card_name'),
                 'player_name' => $players[$loser_id]['player_name'],
                 'card_name' => $this->card_types[$loser_id === $player_id ? $player_card['type'] : $opponent_card['type']]['name'],
@@ -549,7 +549,7 @@ class loveletter extends Table
                 'loser_id' => $loser_id
             ));
             // Remove the loser from the round
-            self::outOfTheRound($loser_id, $winner_id);
+            self::outOfTheRound($loser_id, $winner_id, $log);
 
             if ($winner_id === $player_id) {
                 self::incStat(1, 'baron_played_success', $player_id);
@@ -610,12 +610,7 @@ class loveletter extends Table
 
         if($card['type'] == self::PRINCESS)
         {
-            // Discard the princess => out of the round!
-            // self::notifyAllPlayers('simpleNote', clienttranslate('Princess : ${player_name} discards the Princess, and is now out of this round.'), array(
-            //     'player_name' => $players[$opponent_id]['player_name']
-            // ));
-
-            self::outOfTheRound($opponent_id, $player_id, true);
+            self::outOfTheRound($opponent_id, $player_id, '${player_name} discards the Princess and is now out of the round');
         }
         else
         {            
@@ -837,9 +832,9 @@ class loveletter extends Table
     {
         $player_id = self::getActivePlayerId();
 
-        self::notifyPlayCard($card, $opponent_id);
+        self::notifycardPlayed($card, $opponent_id, null, true);
 
-        self::outOfTheRound( $player_id, $player_id );
+        self::outOfTheRound( $player_id, $player_id, clienttranslate('Out of the round: ${player_name} plays a Princess and discards a ${card_name}') );
     }
 
     function playSpy($card, $opponent_id)
@@ -848,50 +843,46 @@ class loveletter extends Table
 
         // nothing happens
     }
-    
-    function outOfTheRound($player_id, $killer_id, $bCardAlreadyDiscarded=false)
+
+    function outOfTheRound($player_id, $killer_id, $gameLogText)
     {
         $players = self::loadPlayersBasicInfos();
-    
+
         self::DbQuery("UPDATE player SET player_alive='0' WHERE player_id='$player_id'");
-        self::notifyAllPlayers('outOfTheRound', '', array(
-            'player_id' => $player_id
-        ));
-        
+
         self::incStat(1, 'killed', $player_id);
-        if($killer_id !== null)
+        if ($killer_id !== null)
             self::incStat(1, 'kills', $killer_id);
-        
-        if($bCardAlreadyDiscarded == false)
-        {
-            $cards = $this->cards->getCardsInLocation('hand', $player_id);
 
-            if(count($cards) == 0)
-                throw new feException("Cannot find card of player $player_id");
+        $cards = $this->cards->getCardsInLocation('hand', $player_id);
 
+        $notify_args = array(
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+        );
+
+        if (count($cards) > 0) {
             $card = reset($cards);
 
-            $this->cards->insertCardOnExtremePosition($card['id'], 'discard'.$player_id, true);
+            $this->cards->insertCardOnExtremePosition($card['id'], 'discard' . $player_id, true);
             self::setGameStateValue('last', $card['type']);
 
             $this->updateCardCount();
 
-            self::notifyAllPlayers("cardPlayed", clienttranslate('${player_name} (out of the round) discards ${card_name}'), array(
-                'i18n' => array('card_name'),
-                'player_id' => $player_id,
-                'player_name' => $players[$player_id]['player_name'],
-                'card_type' => $this->card_types[$card['type']],
-                'card_name' => $this->card_types[$card['type']]['name'],
-                'card' => $card,
-            ));
+            $notify_args['card'] = $card;
+            $notify_args['i18n'] = array('card_name');
+            $notify_args['card_type'] = $this->card_types[$card['type']];
+            $notify_args['card_name'] = $this->card_types[$card['type']]['name'];
         }
+
+        self::notifyAllPlayers("outOfTheRound", $gameLogText, $notify_args);
     }
 
     function notifyPlayCard($card, $opponent_id) {
         self::notifycardPlayed($card, $opponent_id, null);
     }
 
-    function notifycardPlayed($card, $opponent_id, $guess_id) {
+    function notifycardPlayed($card, $opponent_id, $guess_id, $silent=false) {
         $player_id = self::getActivePlayerId();
         $players = self::loadPlayersBasicInfos();
         
@@ -922,6 +913,18 @@ class loveletter extends Table
                 'card' => $card,
                 'player_name2' => $players[$opponent_id]['player_name'],
                 'opponent_id' => $opponent_id,
+            ));
+        }
+        else if ($silent)
+        {
+            self::notifyAllPlayers('cardPlayed', '',
+            array(
+                'i18n' => array('card_name'),
+                'player_name' => $players[$player_id]['player_name'],
+                'player_id' => $player_id,
+                'card_type' => $this->card_types[$card['type']],
+                'card_name' => $this->card_types[$card['type']]['name'],
+                'card' => $card
             ));
         }
         else

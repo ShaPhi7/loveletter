@@ -593,6 +593,7 @@ function (dojo, declare) {
 
         updateUiForCardPlayed(id, type, playerId, value)
         {
+          debugger;
           let discardedCard = {};
           Object.assign(discardedCard, {
           id: id,
@@ -683,9 +684,9 @@ function (dojo, declare) {
           this.deck.removeAll();
           this.discard.removeAll();
 
-          Object.values(this.lvtPlayers).forEach(player => {
-            dojo.removeClass('lvt-player-table-' + player.id, 'out-of-the-round');
-            dojo.removeClass('lvt-player-table-' + player.id, 'protected');
+          Object.keys(gamedatas.players).forEach(playerId => {
+            dojo.removeClass('lvt-player-table-' + playerId, 'out-of-the-round');
+            dojo.removeClass('lvt-player-table-' + playerId, 'protected');
           });
 
           document.querySelectorAll('.lvt-card-badge.played').forEach(badge => {
@@ -700,8 +701,11 @@ function (dojo, declare) {
         notif_outOfTheRound: function(notif)
         {
           var player_id = notif.args.player_id;
-          this.updateUiForCardPlayed(notif.args.card.id, notif.args.card.type, player_id, notif.args.card_type.value);
           this.setOutOfTheRound(player_id);
+          if (notif.args.card)
+          {
+            this.updateUiForCardPlayed(notif.args.card.id, notif.args.card.type, player_id, notif.args.card_type.value);
+          }
         },
 
         notif_chancellor_draw: function( notif )
