@@ -718,6 +718,9 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'reveal', 2000 );
             this.notifqueue.setSynchronous( 'reveal_long', 3000 );
 
+            dojo.subscribe( 'compareCards', this, 'notif_compareCards' );
+            this.notifqueue.setSynchronous( 'compareCards', 3000 );
+
             dojo.subscribe( 'cardexchange', this, 'notif_cardexchange' );
             dojo.subscribe( 'cardexchange_opponents', this, 'notif_cardexchange_opponents' );
 
@@ -762,6 +765,7 @@ function (dojo, declare) {
         notif_outOfTheRound: function(notif)
         {
           var player_id = notif.args.player_id;
+          showDiscussion(notif);
           this.setOutOfTheRound(player_id);
           if (notif.args.card)
           {
