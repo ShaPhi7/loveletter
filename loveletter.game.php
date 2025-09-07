@@ -949,6 +949,16 @@ class loveletter extends Table
         return $bubbleText[$card['type']];
     }
 
+    function getBubbleTextNothingHappens($card)
+    {
+        $bubbleText = [
+            self::GUARD      => clienttranslate("I am not"),
+            self::BARON      => clienttranslate("Our cards are identical, nothing happens!"),
+        ]; 
+
+        return $bubbleText[$card['type']];
+    }
+
     function getBubbleTextOutOfTheRound($card)
     {
         $bubbleText = [

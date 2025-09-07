@@ -731,6 +731,8 @@ function (dojo, declare) {
             dojo.subscribe( 'score', this, 'notif_score' );
             this.notifqueue.setSynchronous( 'score', 1000 );
 
+            dojo.subscribe( 'simpleNote', this, 'notif_simpleNote' );
+
             dojo.subscribe( 'outOfTheRound', this, 'notif_outOfTheRound' );
 
             dojo.subscribe( 'newRound', this, 'notif_newRound' );
@@ -739,6 +741,15 @@ function (dojo, declare) {
         notif_score: function(notif)
         {
           this.scoreCtrl[notif.args.player_id].incValue(1);
+        },
+
+        notif_simpleNote: function(notif)
+        {
+          if (notif.args.bubble)
+          {
+            this.showDiscussion(notif);
+          }
+          //also adds a game log - this happens automatically.
         },
 
         notif_newRound: function(notif)
