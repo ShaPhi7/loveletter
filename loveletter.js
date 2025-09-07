@@ -151,6 +151,7 @@ function (dojo, declare) {
 
               document.getElementById(`lvt-player-area-${position}`).insertAdjacentHTML("beforeend", `
                     <div class="lvt-player-table" id="lvt-player-table-${player.id}">
+                    <div id="lvt-discussion-bubble-${player.id}" class="lvt-discussion-bubble"></div>
                         <div class="lvt-player-table-name" id="lvt-player-table-name-${player.id}" style="color:#${player.color};">${player.name}</div>
                         <div class="lvt-player-table-card" id="lvt-player-table-card-${player.id}"></div>
                     </div>
@@ -591,9 +592,69 @@ function (dojo, declare) {
           this.chancellorCardToPlaceOnBottomOfDeck = null;
         },
 
+                
+        // Bubble management
+        showDiscussion: function(notif)
+        {
+          const opponent = notif.args.opponent_id ? this.gamedatas.players[notif.args.opponent_id] : null;
+          player_id = notif.args.player_id;
+          var delay = notif.args.delay;
+          var duration = notif.args.duration;
+          debugger;
+          text = dojo.string.substitute( notif.args.bubble, {
+            opponent_name: opponent ? '<span style="color:#'+ opponent.color+'">'
+            + opponent.name +'</span>' : '',
+            guess_name: notif.args.guess_name ? notif.args.guess_name : '',
+          });
+
+            if( typeof delay == 'undefined' )
+            {   delay = 0;  }
+            if( typeof duration == 'undefined' )
+            {   duration = 3000;  }
+            
+            if( delay > 0 )
+            {
+                setTimeout( dojo.hitch( this, function() {  this.doShowDiscussion( player_id, text ); } ), delay );
+            }
+            else
+            {
+                this.doShowDiscussion( player_id, text );
+            }
+
+            if( this.discussionTimeout[ player_id ] )
+            {
+                clearTimeout( this.discussionTimeout[ player_id ] );
+                delete this.discussionTimeout[ player_id ];
+            }
+
+            
+            this.discussionTimeout[ player_id ] = setTimeout( dojo.hitch( this, function() {  this.doShowDiscussion( player_id, '' ); } ), delay+duration );
+        },
+        doShowDiscussion: function( player_id, text )
+        {
+            if( text == '' )
+            {
+                if( this.discussionTimeout[ player_id ] )
+                {   delete this.discussionTimeout[ player_id ]; }
+            
+                // Hide
+                var anim = dojo.fadeOut( { node : 'lvt-discussion-bubble-' + player_id, duration:100 } );
+                dojo.connect( anim, 'onEnd', function() {
+                    $('lvt-discussion-bubble-' + player_id).innerHTML = '';
+                } );
+                anim.play();
+            }        
+            else
+            {
+                $('lvt-discussion-bubble-' + player_id).innerHTML = text;
+                dojo.style( 'lvt-discussion-bubble-' + player_id, 'display', 'block' );
+                dojo.style( 'lvt-discussion-bubble-' + player_id, 'opacity', 0 );
+                dojo.fadeIn( { node : 'lvt-discussion-bubble-' + player_id, duration:100 } ).play();
+            }
+        },
+
         updateUiForCardPlayed(id, type, playerId, value)
         {
-          debugger;
           let discardedCard = {};
           Object.assign(discardedCard, {
           id: id,
@@ -777,7 +838,7 @@ function (dojo, declare) {
         notif_newCardPublic: function( notif )
         {
           let card = {
-            id: notif.args.card_id
+            id: notif.args.player_id + '-fake-0'
           };
 
           const opponentHand = this.opponentHands[notif.args.player_id];
@@ -787,6 +848,7 @@ function (dojo, declare) {
 
         notif_cardPlayed: function( notif )
         {
+          this.showDiscussion(notif);
           this.updateUiForCardPlayed(notif.args.card.id, notif.args.card.type, notif.args.player_id, notif.args.card_type.value);
         },
 

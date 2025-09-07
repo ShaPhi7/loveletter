@@ -406,7 +406,7 @@ class loveletter extends Table
         self::validateGuard($opponent_id, $guess_id);
 
         self::notifyCardPlayed($card, $opponent_id, $guess_id);
-        
+
         $players = self::loadPlayersBasicInfos();
 
         $opponentCards = $this->cards->getCardsInLocation('hand', $opponent_id);
@@ -623,7 +623,6 @@ class loveletter extends Table
             //the current player will ignore this notification on client side.
             self::notifyAllPlayers('newCardPublic', '', array(
                 'player_id' => $opponent_id,
-                'card_id' => $card['id']
             ));
         }
     }
@@ -662,7 +661,6 @@ class loveletter extends Table
                 //the current player will ignore this notification on client side.
                 self::notifyAllPlayers('newCardPublic', '', array(
                     'player_id' => $player_id,
-                    'card_id' => $card['id']
                 ));
 
                 $this->activateChancellorState = true;
@@ -688,7 +686,6 @@ class loveletter extends Table
                 //the current player will ignore this notification on client side.
                 // self::notifyAllPlayers('newCardPublic', '', array(
                 //     'player_id' => $player_id,
-                //     'card_id' => $card['id']
                 // ));
 
                 $this->activateChancellorState = true;
@@ -811,6 +808,7 @@ class loveletter extends Table
 
     function playCountess($card, $opponent_id)
     {
+        
         self::notifyPlayCard($card, $opponent_id);
 
         // nothing happens
@@ -874,6 +872,8 @@ class loveletter extends Table
         $player_id = self::getActivePlayerId();
         $players = self::loadPlayersBasicInfos();
         
+        $bubble_text = self::getBubbleText($card);
+
         if ($guess_id)
         {
             self::notifyAllPlayers('cardPlayed', clienttranslate('${player_name} plays a ${card_name} against ${player_name2} and asks, are you a ${guess_name}?'),
@@ -887,6 +887,7 @@ class loveletter extends Table
                 'card' => $card,
                 'player_id' => $player_id,
                 'opponent_id' => $opponent_id,
+                'bubble' => $bubble_text
             ));
         }
         else if ($opponent_id)
@@ -901,6 +902,7 @@ class loveletter extends Table
                 'card' => $card,
                 'player_name2' => $players[$opponent_id]['player_name'],
                 'opponent_id' => $opponent_id,
+                'bubble' => $bubble_text
             ));
         }
         else if ($silent)
@@ -912,7 +914,8 @@ class loveletter extends Table
                 'player_id' => $player_id,
                 'card_type' => $this->card_types[$card['type']],
                 'card_name' => $this->card_types[$card['type']]['name'],
-                'card' => $card
+                'card' => $card,
+                'bubble' => $bubble_text
             ));
         }
         else
@@ -924,10 +927,29 @@ class loveletter extends Table
                 'player_id' => $player_id,
                 'card_type' => $this->card_types[$card['type']],
                 'card_name' => $this->card_types[$card['type']]['name'],
-                'card' => $card
+                'card' => $card,
+                'bubble' => $bubble_text
             ));
         }
-    } 
+    }
+
+    function getBubbleText($card)
+    {
+        $bubbleText = [
+            self::GUARD      => '${opponent_name}, I think you are a ${guess_name}!',
+            self::PRIEST     => '${opponent_name}, please show me your card',
+            self::BARON      => '${opponent_name}, let`s compare our cards...',
+            self::HANDMAID   => 'I`m protected for one turn',
+            self::PRINCE     => '${opponent_name}, you must discard your card',
+            self::CHANCELLOR => 'I will take two more cards',
+            self::KING       => '${opponent_name}, we must swap our cards',
+            self::COUNTESS   => 'I play the Countess',
+            self::PRINCESS   => '${opponent_name}, I discard the princess and I am out of the round',
+            self::SPY        => 'I am watching you...',
+        ]; 
+
+        return $bubbleText[$card['type']];
+    }
 
     /** 
      * If all other alive players are protected by Handmaid 
@@ -1104,7 +1126,6 @@ class loveletter extends Table
         //the current player will ignore this notification on client side.
         self::notifyAllPlayers('newCardPublic', '', array(
             'player_id' => $next_player,
-            'card_id' => $card['id']
         ));
 
         $this->gamestate->nextState('playerTurn');

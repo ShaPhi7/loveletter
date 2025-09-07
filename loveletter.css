@@ -489,3 +489,33 @@ body > .card {
 .card-stock.all-visible-deck[data-empty=true] .bga-cards_deck-counter.hide-when-empty {
   display: none;
 }
+
+/***** bubbles ********/
+
+.lvt-discussion-bubble {
+  position:absolute;
+  padding:5px;
+  padding-left: 15px;
+  padding-right: 15px;
+  color:#000;
+  background:white; /* default background for browsers without gradient support */
+  /* css3 */
+   
+  -webkit-border-radius:10px;
+  -moz-border-radius:10px;
+  border-radius:10px;
+  z-index: 100;
+  font-weight: normal;
+  display: none;
+}
+.lvt-discussion-bubble:after {
+  content:"";
+  position:absolute;
+  border-width:15px 15px 0; /* vary these values to change the angle of the vertex */
+  border-style:solid;
+  border-color:#ffffff transparent;
+  /* reduce the damage in FF3.0 */
+  display:block;
+  
+  width:0;
+}
