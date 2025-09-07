@@ -419,24 +419,14 @@ class loveletter extends Table
         if ($this->card_types[$opponent_card['type']]['value'] == $this->card_types[$guess_id]['value']) {
             // Successfully guessed!
             self::incStat(1, 'guard_success', $player_id);
-            self::notifyAllPlayers('cardPlayedResult', '', array(
-                'i18n' => array('guess_name'),
-                'player_name' => $players[$opponent_id]['player_name'],
-                'player_name2' => $players[$player_id]['player_name'],
-                'guess_name' => $guess_name,
-                'success' => 1,
-                'card_type' => $card['type'],
-                'player_id' => $opponent_id
-            ));
             self::outOfTheRound($card, $opponent_id, $player_id);
         } else {
-            self::notifyAllPlayers('cardPlayedResult', clienttranslate('${player_name} is not a ${guess_name}'), array(
+            self::notifyAllPlayers('simpleNote', self::getLogTextNothingHappens($card), array(
                 'i18n' => array('guess_name'),
                 'player_name' => $players[$opponent_id]['player_name'],
+                'player_id' => $opponent_id,
                 'guess_name' => $guess_name,
-                'success' => 0,
-                'card_type' => $card['type'],
-                'player_id' => $opponent_id
+                'bubble' => self::getBubbleTextNothingHappens($card)
             ));
         }
     }
@@ -525,9 +515,8 @@ class loveletter extends Table
         $loser_id = ($this->card_types[$player_card['type']]['value'] < $this->card_types[$opponent_card['type']]['value']) ? $player_id : $opponent_id;
  
         if ($winner_id === $loser_id) {
-            // Tie, nothing happens
-            $log = clienttranslate('Baron: ${player_name} and ${player_name2} have the same card, so nothing happens.');
-            self::notifyAllPlayers('simpleNote', $log, array(
+            // Tie, nothing happens;
+            self::notifyAllPlayers('simpleNote', self::getLogTextNothingHappens($card), array(
                 'player_name' => $players[$player_id]['player_name'],
                 'player_name2' => $players[$opponent_id]['player_name'],
                 'player1' => $player_id,
@@ -952,11 +941,21 @@ class loveletter extends Table
     function getBubbleTextNothingHappens($card)
     {
         $bubbleText = [
-            self::GUARD      => clienttranslate("I am not"),
+            self::GUARD      => clienttranslate("I am not."),
             self::BARON      => clienttranslate("Our cards are identical, nothing happens!"),
         ]; 
 
         return $bubbleText[$card['type']];
+    }
+
+    function getLogTextNothingHappens($card)
+    {
+        $logText = [
+            self::GUARD      => clienttranslate('${player_name} is not a ${guess_name}'),
+            self::BARON      => clienttranslate('Baron: ${player_name} and ${player_name2} have the same card, so nothing happens.')
+        ]; 
+
+        return $logText[$card['type']];
     }
 
     function getBubbleTextOutOfTheRound($card)

@@ -83,8 +83,8 @@ function (dojo, declare) {
               cardWidth: this.cardWidth,
               
               setupDiv: (card, div) => {
-              div.classList.add('lvt-card-container');
-              div.style.position = 'relative';
+                div.classList.add('lvt-card-container');
+                div.style.position = 'relative';
               },
               
               setupFrontDiv: (card, div) => {
@@ -107,8 +107,7 @@ function (dojo, declare) {
               cardWidth: this.cardWidth,
               
               setupDiv: (card, div) => {
-              div.classList.add('lvt-card-container');
-              div.style.position = 'relative';
+                div.classList.add('lvt-card-container');
               },
               
               setupFrontDiv: (card, div) => {
@@ -205,22 +204,19 @@ function (dojo, declare) {
                 this.playerHand.setCardVisible(card, true);
               });
 
-              const opponentHand = gamedatas.cardcount.hand[this.player_id];
-              console.log("Setting up player table for opponent with hand", opponentHand);
-
               Object.values(gamedatas.players).forEach(player => {
                 if (player.id != this.player_id) {
-                  const opponentLine = new HandStock(this.handManager, document.getElementById('lvt-player-table-card-' + player.id), {});
-                  opponentLine.setSelectionMode('single');
+                  const opponentHand = new HandStock(this.handManager, document.getElementById('lvt-player-table-card-' + player.id), {});
+                  opponentHand.setSelectionMode('single');
                   const opponentHandSize = gamedatas.cardcount.hand[player.id];
                     for (let i = 0; i < opponentHandSize; i++) {
                       const fakeCard = {
-                        id: `${player.id}-fake-${i}`,
+                        id: `lvt-card-${player.id}-fake-${i}`,
                       };
-                      opponentLine.addCard(fakeCard);
-                      opponentLine.setCardVisible(fakeCard, false);
+                      opponentHand.addCard(fakeCard);
+                      opponentHand.setCardVisible(fakeCard, false);
                     }
-                  this.opponentHands[player.id] = opponentLine;
+                  this.opponentHands[player.id] = opponentHand;
                 }
 
                 if (player.alive == 0)
@@ -247,8 +243,14 @@ function (dojo, declare) {
               //   },
             });
 
-            this.discard = new Deck(this.deckManager, document.getElementById('lvt-badges-area'), {});
-            
+            this.discard = new ManualPositionStock(this.handManager, document.getElementById('lvt-badges-area'), {}, function (element, cards, card, stock) {
+        // Example: stack all cards at 0,0
+        cards.forEach((c, i) => {
+            const cardDiv = stock.getCardElement(c);
+            cardDiv.style.zIndex = i; // stack order
+        });
+    });
+
             // Testing only
             // this.deck.element.addEventListener('click', (event) => {
             //     this.handleDeckClick();
@@ -592,20 +594,19 @@ function (dojo, declare) {
           this.chancellorCardToPlaceOnBottomOfDeck = null;
         },
 
-                
         // Bubble management
         showDiscussion: function(notif)
         {
           const opponent = notif.args.opponent_id ? this.gamedatas.players[notif.args.opponent_id] : null;
-          player_id = notif.args.player_id;
+          var player_id = notif.args.player_id ? notif.args.player_id : notif.args.player1;
           var delay = notif.args.delay;
           var duration = notif.args.duration;
-          debugger;
-          text = dojo.string.substitute( notif.args.bubble, {
-            opponent_name: opponent ? '<span style="color:#'+ opponent.color+'">'
-            + opponent.name +'</span>' : '',
-            guess_name: notif.args.guess_name ? notif.args.guess_name : '',
-          });
+
+            text = dojo.string.substitute( notif.args.bubble, {
+            opponent_name: opponent ? '<b><span style="color:#'+ opponent.color+'">'
+            + opponent.name +'</span></b>' : '',
+            guess_name: notif.args.guess_name ? '<b>' + notif.args.guess_name + '</b>' : '',
+            });
 
             if( typeof delay == 'undefined' )
             {   delay = 0;  }
@@ -655,33 +656,35 @@ function (dojo, declare) {
 
         updateUiForCardPlayed(id, type, playerId, value)
         {
+          debugger;
           let discardedCard = {};
-          Object.assign(discardedCard, {
-          id: id,
-          type: type,
-          });
 
-          if(this.player_id == playerId)
+          if (this.player_id == playerId)
           {
-            this.discard.addCard(discardedCard, { fromStock: this.playerHand });
+            Object.assign(discardedCard, {
+              id: id,
+              type: type,
+            });
+
+            this.discard.addCard(discardedCard, { fromStock: this.playerHand, position: { x: 0, y: 0 }});
           }
           else
-          {
-            const opponentHand = this.opponentHands[playerId];
-            
-            discardedCard = {
-              id: playerId + '-fake-0',
+          {                        
+            Object.assign(discardedCard, {
+              id: `lvt-card-${playerId}-fake-0`,
               type: type
-            };
+            });
 
+            const opponentHand = this.opponentHands[playerId];
             this.discard.addCard(discardedCard, {
                 fromStock: opponentHand,
                 updateInformations: true,
-                visible: true
+                visible: true,
+                position: { x: 0, y: 0 }
             });
           }
           const cardElement = this.handManager.getCardElement(discardedCard);
-            cardElement.classList.add('fade-out');
+          cardElement.classList.add('fade-out');
             const allDescendants = cardElement.querySelectorAll('*');
             for (const descendant of allDescendants) {
               descendant.classList.add('fade-out');
@@ -689,7 +692,7 @@ function (dojo, declare) {
           setTimeout(() => {
             this.discard.removeCard(discardedCard);
             markBadgeAsPlayed(value);
-          }, 2000);
+          }, 3000);
         },
 
         setOutOfTheRound: function(playerId)
@@ -729,9 +732,10 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'score', 1000 );
 
             dojo.subscribe( 'simpleNote', this, 'notif_simpleNote' );
+            this.notifqueue.setSynchronous( 'simpleNote', 2000 );
 
             dojo.subscribe( 'outOfTheRound', this, 'notif_outOfTheRound' );
-
+            this.notifqueue.setSynchronous( 'outOfTheRound', 2000 );
             dojo.subscribe( 'newRound', this, 'notif_newRound' );
         },
 
@@ -773,7 +777,7 @@ function (dojo, declare) {
         notif_outOfTheRound: function(notif)
         {
           var player_id = notif.args.player_id;
-          showDiscussion(notif);
+          this.showDiscussion(notif);
           this.setOutOfTheRound(player_id);
           if (notif.args.card)
           {
@@ -850,7 +854,7 @@ function (dojo, declare) {
         notif_newCardPublic: function( notif )
         {
           let card = {
-            id: notif.args.player_id + '-fake-0'
+            id: `lvt-card-${notif.args.player_id}-fake-0`
           };
 
           const opponentHand = this.opponentHands[notif.args.player_id];
@@ -868,7 +872,7 @@ function (dojo, declare) {
         {
           let card = {};
           Object.assign(card, {
-            id: notif.args.player_id + '-fake-0',
+            id: `lvt-card-${notif.args.player_id}-fake-0`,
             type: notif.args.card_type,
           });
 
@@ -903,7 +907,7 @@ function (dojo, declare) {
             }
 
             newOpponentCard = {
-              id: `${otherPlayerId}-fake-0`, 
+              id: `lvt-card-${otherPlayerId}-fake-0`,
             }
 
             this.playerHand.addCard(newPlayerCard, {
@@ -935,11 +939,11 @@ function (dojo, declare) {
           stock2.removeAll();
 
           newPlayer1Card = {
-            id: `${firstPlayer}-fake-0`, 
+            id: `lvt-card-${firstPlayer}-fake-0`, 
           }
 
           newPlayer2Card = {
-            id: `${secondPlayer}-fake-0`, 
+            id: `lvt-card-${secondPlayer}-fake-0`, 
           }
 
           stock1.addCard(newPlayer1Card, {

@@ -191,6 +191,11 @@ html, body {
   position: relative;
 }
 
+#lvt-badges-area .lvt-card-container {
+  width: calc(var(--card-width) * var(--deck-scale));
+  height: calc(var(--card-height) * var(--deck-scale));
+}
+
 .lvt-card {
   background-image: url('img/cards.jpg');
   border-radius: 12%;
@@ -199,7 +204,7 @@ html, body {
 
 .lvt-card.fade-out {
   opacity: 0;
-  transition: opacity 2s;
+  transition: opacity 3s;
   pointer-events: none;
 }
 
@@ -217,6 +222,12 @@ html, body {
 }
 
 .deck .lvt-card {
+  width: calc(var(--card-width) * var(--deck-scale));
+  height: calc(var(--card-height) * var(--deck-scale));
+  background-size: 600% 200%
+}
+
+#lvt-badges-area .lvt-card {
   width: calc(var(--card-width) * var(--deck-scale));
   height: calc(var(--card-height) * var(--deck-scale));
   background-size: 600% 200%
@@ -316,7 +327,6 @@ body > .card {
   backface-visibility: hidden;
   transform-origin: center center;
   box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
 }
 .card .card-sides .card-side.front > * {
   pointer-events: none;
