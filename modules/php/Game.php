@@ -525,30 +525,18 @@ class loveletter extends Table
         $winner_id = ($this->card_types[$player_card['type']]['value'] > $this->card_types[$opponent_card['type']]['value']) ? $player_id : $opponent_id;
         $loser_id = ($this->card_types[$player_card['type']]['value'] < $this->card_types[$opponent_card['type']]['value']) ? $player_id : $opponent_id;
 
-        if ($winner_id === $loser_id) { //TODO - I need a nicer way to deal with players being knocked out, both here and Prince etc.
+        if ($winner_id === $loser_id) {
             // Tie, nothing happens
             $log = clienttranslate('Baron: ${player_name} and ${player_name2} have the same card, so nothing happens.');
-            self::notifyAllPlayers('cardPlayedResult', $log, array(
+            self::notifyAllPlayers('simpleNote', $log, array(
                 'player_name' => $players[$player_id]['player_name'],
                 'player_name2' => $players[$opponent_id]['player_name'],
-                'card_type' => $card['type'],
                 'player1' => $player_id,
                 'player2' => $opponent_id
             ));
         }
         else {
-            // Notify players about the result
             $log = clienttranslate('Out of the round: ${player_name} has the lower card, and discards a ${card_name}');
-            self::notifyAllPlayers('cardPlayedResult', '', array(
-                'i18n' => array('card_name'),
-                'player_name' => $players[$loser_id]['player_name'],
-                'card_name' => $this->card_types[$loser_id === $player_id ? $player_card['type'] : $opponent_card['type']]['name'],
-                'player_name2' => $players[$winner_id]['player_name'],
-                'card_type' => $card['type'],
-                'winner_id' => $winner_id,
-                'loser_id' => $loser_id
-            ));
-            // Remove the loser from the round
             self::outOfTheRound($loser_id, $winner_id, $log);
 
             if ($winner_id === $player_id) {
