@@ -520,7 +520,8 @@ class loveletter extends Table
                 'player_name' => $players[$player_id]['player_name'],
                 'player_name2' => $players[$opponent_id]['player_name'],
                 'player1' => $player_id,
-                'player2' => $opponent_id
+                'player2' => $opponent_id,
+                'bubble' => self::getBubbleTextNothingHappens($card)
             ));
         }
         else {

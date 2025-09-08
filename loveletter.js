@@ -143,45 +143,43 @@ function (dojo, declare) {
             _this = this;
             Object.values(orderedPlayers).forEach((playerId, index) => {
 
-              console.log(orderedPlayers[index]);
-              console.log(playerId);
-              const player = gamedatas.players[playerId];
-              const position = playerPositions[index];  
+            const player = gamedatas.players[playerId];
+            const position = playerPositions[index];  
 
-              document.getElementById(`lvt-player-area-${position}`).insertAdjacentHTML("beforeend", `
-                    <div class="lvt-player-table" id="lvt-player-table-${player.id}">
-                    <div id="lvt-discussion-bubble-${player.id}" class="lvt-discussion-bubble"></div>
-                        <div class="lvt-player-table-name" id="lvt-player-table-name-${player.id}" style="color:#${player.color};">${player.name}</div>
-                        <div class="lvt-player-table-card" id="lvt-player-table-card-${player.id}"></div>
-                    </div>
-                `);
+            document.getElementById(`lvt-player-area-${position}`).insertAdjacentHTML("beforeend", `
+                  <div class="lvt-player-table" id="lvt-player-table-${player.id}">
+                  <div id="lvt-discussion-bubble-${player.id}" class="lvt-discussion-bubble"></div>
+                      <div class="lvt-player-table-name" id="lvt-player-table-name-${player.id}" style="color:#${player.color};">${player.name}</div>
+                      <div class="lvt-player-table-card" id="lvt-player-table-card-${player.id}"></div>
+                  </div>
+              `);
 
-                const playerTable = document.getElementById(`lvt-player-table-${player.id}`);
-                playerTable.addEventListener('click', function(event) {
-                  if (playerTable.classList.contains('out-of-the-round')) return;
+              const playerTable = document.getElementById(`lvt-player-table-${player.id}`);
+              playerTable.addEventListener('click', function(event) {
+                if (playerTable.classList.contains('out-of-the-round')) return;
 
-                  const tablePlayerId = this.id.replace('lvt-player-table-', '');
-                  if (tablePlayerId === String(_this.player_id)) {
-                    // Check if click was in your own card area
-                    const cardArea = document.getElementById('lvt-player-table-card-' + tablePlayerId);
-                    if (cardArea.contains(event.target) && event.target !== cardArea) {
-                      return;
-                    }
-                  }
-
-                  if (this.classList.contains('selected')) {
-                    _this.removePlayerSelections();
+                const tablePlayerId = this.id.replace('lvt-player-table-', '');
+                if (tablePlayerId === String(_this.player_id)) {
+                  // Check if click was in your own card area
+                  const cardArea = document.getElementById('lvt-player-table-card-' + tablePlayerId);
+                  if (cardArea.contains(event.target) && event.target !== cardArea) {
                     return;
                   }
+                }
 
+                if (this.classList.contains('selected')) {
                   _this.removePlayerSelections();
-                  this.classList.add('selected');
+                  return;
+                }
 
-                  // Store selected opponent (even if it's yourself)
-                  // this.selectedOpponentId = tableId;
-                  // (If this is inside a class, use the right scope)
-                  _this.onSelectPlayer(tablePlayerId);
-                });
+                _this.removePlayerSelections();
+                this.classList.add('selected');
+
+                // Store selected opponent (even if it's yourself)
+                // this.selectedOpponentId = tableId;
+                // (If this is inside a class, use the right scope)
+                _this.onSelectPlayer(tablePlayerId);
+              });
             });
 
               this.playerHand = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
@@ -656,7 +654,6 @@ function (dojo, declare) {
 
         updateUiForCardPlayed(id, type, playerId, value)
         {
-          debugger;
           let discardedCard = {};
 
           if (this.player_id == playerId)
@@ -670,8 +667,10 @@ function (dojo, declare) {
           }
           else
           {                        
+            let fakeCardId = document.getElementById(`lvt-card-${playerId}-fake-1`) ? `lvt-card-${playerId}-fake-1` : `lvt-card-${playerId}-fake-0`;
+            
             Object.assign(discardedCard, {
-              id: `lvt-card-${playerId}-fake-0`,
+              id: fakeCardId,
               type: type
             });
 
@@ -854,7 +853,7 @@ function (dojo, declare) {
         notif_newCardPublic: function( notif )
         {
           let card = {
-            id: `lvt-card-${notif.args.player_id}-fake-0`
+            id: `lvt-card-${notif.args.player_id}-fake-1`
           };
 
           const opponentHand = this.opponentHands[notif.args.player_id];
