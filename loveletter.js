@@ -600,34 +600,34 @@ function (dojo, declare) {
           var delay = notif.args.delay;
           var duration = notif.args.duration;
 
-            text = dojo.string.substitute( notif.args.bubble, {
-            opponent_name: opponent ? '<b><span style="color:#'+ opponent.color+'">'
-            + opponent.name +'</span></b>' : '',
-            guess_name: notif.args.guess_name ? '<b>' + notif.args.guess_name + '</b>' : '',
-            });
+          text = dojo.string.substitute( notif.args.bubble, {
+          opponent_name: opponent ? `<b><span style="color:#${opponent.color}">${opponent.name}</span></b>` : '',
+          guess_name: notif.args.guess_name ?  `<b>${notif.args.guess_name}</b>` : '',
+          card_name: notif.args.card_name ?  `<b>${notif.args.card_name}</b>` : '',
+          });
 
-            if( typeof delay == 'undefined' )
-            {   delay = 0;  }
-            if( typeof duration == 'undefined' )
-            {   duration = 3000;  }
-            
-            if( delay > 0 )
-            {
-                setTimeout( dojo.hitch( this, function() {  this.doShowDiscussion( player_id, text ); } ), delay );
-            }
-            else
-            {
-                this.doShowDiscussion( player_id, text );
-            }
+          if( typeof delay == 'undefined' )
+          {   delay = 0;  }
+          if( typeof duration == 'undefined' )
+          {   duration = 3000;  }
+          
+          if( delay > 0 )
+          {
+              setTimeout( dojo.hitch( this, function() {  this.doShowDiscussion( player_id, text ); } ), delay );
+          }
+          else
+          {
+              this.doShowDiscussion( player_id, text );
+          }
 
-            if( this.discussionTimeout[ player_id ] )
-            {
-                clearTimeout( this.discussionTimeout[ player_id ] );
-                delete this.discussionTimeout[ player_id ];
-            }
+          if( this.discussionTimeout[ player_id ] )
+          {
+              clearTimeout( this.discussionTimeout[ player_id ] );
+              delete this.discussionTimeout[ player_id ];
+          }
 
-            
-            this.discussionTimeout[ player_id ] = setTimeout( dojo.hitch( this, function() {  this.doShowDiscussion( player_id, '' ); } ), delay+duration );
+          
+          this.discussionTimeout[ player_id ] = setTimeout( dojo.hitch( this, function() {  this.doShowDiscussion( player_id, '' ); } ), delay+duration );
         },
         doShowDiscussion: function( player_id, text )
         {
@@ -667,6 +667,7 @@ function (dojo, declare) {
           }
           else
           {                        
+            debugger;
             let fakeCardId = document.getElementById(`lvt-card-${playerId}-fake-1`) ? `lvt-card-${playerId}-fake-1` : `lvt-card-${playerId}-fake-0`;
             
             Object.assign(discardedCard, {
@@ -711,6 +712,8 @@ function (dojo, declare) {
             dojo.subscribe( 'newCardPrivate', this, "notif_newCardPrivate" );
             dojo.subscribe( 'newCardPublic', this, "notif_newCardPublic" );
             this.notifqueue.setIgnoreNotificationCheck( 'newCardPublic', (notif) => (notif.args.player_id == this.player_id) );
+            this.notifqueue.setSynchronous( 'newCardPrivate', 3000 );
+            this.notifqueue.setSynchronous( 'newCardPublic', 3000 );
 
             dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
             this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
@@ -722,6 +725,9 @@ function (dojo, declare) {
 
             dojo.subscribe( 'cardexchange', this, 'notif_cardexchange' );
             dojo.subscribe( 'cardexchange_opponents', this, 'notif_cardexchange_opponents' );
+
+            dojo.subscribe( 'discardCard', this, 'notif_discardCard' );
+            this.notifqueue.setSynchronous( 'discardCard', 3000 );
 
             dojo.subscribe( 'chancellor_draw', this, 'notif_chancellor_draw' );
             dojo.subscribe( 'chancellor_bury', this, 'notif_chancellor_bury' );
@@ -782,6 +788,13 @@ function (dojo, declare) {
           {
             this.updateUiForCardPlayed(notif.args.card.id, notif.args.card.type, player_id, notif.args.card_type.value);
           }
+        },
+
+        notif_discardCard: function( notif )
+        {
+          debugger;
+          this.showDiscussion(notif);
+          this.updateUiForCardPlayed(notif.args.card.id, notif.args.card.type, notif.args.player_id, notif.args.card_type.value);
         },
 
         notif_chancellor_draw: function( notif )
@@ -853,7 +866,8 @@ function (dojo, declare) {
         notif_newCardPublic: function( notif )
         {
           let card = {
-            id: `lvt-card-${notif.args.player_id}-fake-1`
+            id: `${notif.args.player_id}-fake-1` //TODO - I think I do not need the lvt-card as it is added as part of the getId function in the HandStock.
+            // However, is it always fake-1 I need? Because a player who draws prince, will want fake-0 again.
           };
 
           const opponentHand = this.opponentHands[notif.args.player_id];
@@ -869,6 +883,7 @@ function (dojo, declare) {
 
         notif_reveal: function( notif )
         {
+          debugger;
           let card = {};
           Object.assign(card, {
             id: `lvt-card-${notif.args.player_id}-fake-0`,

@@ -459,10 +459,8 @@ class loveletter extends Table
             'player_name' => $players[$opponent_id]['player_name'],
             'player_id' => $opponent_id,
             'card_type' => $opponent_card['type'],
-            'card_name' => $this->card_types[$opponent_card['type']]['name']
+            'card_name' => $this->card_types[$opponent_card['type']]['name'],
         ));
-
-        //self::notifyPlayer($player_id, 'unreveal', '', array('player_id' => $opponent_id));
     }
 
     function validateBaron($player_id, $opponent_id)
@@ -575,13 +573,14 @@ class loveletter extends Table
         
         $players = self::loadPlayersBasicInfos();
         // Notify all players about the card played
-        self::notifyAllPlayers("cardPlayed", clienttranslate('Prince : ${player_name} discards ${card_name}'), array(
+        self::notifyAllPlayers("discardCard", clienttranslate('Prince : ${player_name} discards ${card_name}'), array(
             'i18n' => array('card_name'),
             'player_id' => $opponent_id,
             'player_name' => $players[$opponent_id]['player_name'],
             'card_type' => $this->card_types[$card['type']],
             'card_name' => $this->card_types[$card['type']]['name'],
             'card' => $card,
+            'bubble' => clienttranslate('Ok, I`ll discard my ${card_name}')
         ));
 
         if($card['type'] == self::PRINCESS)
@@ -598,7 +597,8 @@ class loveletter extends Table
                 $card = $this->cards->pickCard('aside', $opponent_id);
                 self::notifyAllPlayers("simpleNote", clienttranslate('Prince: There are no more cards in the deck, so ${player_name} takes the card removed at the beginning of the round.'),
                 array(
-                    'player_name' => $players[$opponent_id]['player_name']
+                    'player_name' => $players[$opponent_id]['player_name'],
+                    'bubble' => clienttranslate('There are no more cards in the deck, so I take the spare card')
                 ));
             }
 
@@ -964,7 +964,7 @@ class loveletter extends Table
         $bubbleText = [
             self::GUARD      => clienttranslate('You got me!'),
             self::BARON      => clienttranslate('My ${card_name} was lower than ${opponent_name}`s card, so I`m out of the round!'),
-            self::PRINCE     => clienttranslate('I discarded the Princess so I`m out of the round!'),
+            self::PRINCESS   => clienttranslate('I discarded the Princess so I`m out of the round!'),
         ]; 
 
         return $bubbleText[$card['type']];
@@ -976,7 +976,7 @@ class loveletter extends Table
             self::GUARD      => clienttranslate('Out of the round: ${player_name} is actually a ${card_name}'),
             self::BARON      => clienttranslate('Out of the round: ${player_name} has the lower card, and discards a ${card_name}'),
             self::PRINCE     => clienttranslate('Out of the round: ${player_name} discards the Princess'),
-            self::PRINCESS   => clienttranslate('Out of the round: ${player_name} plays a Princess and discards a ${card_name}'),
+            self::PRINCESS   => clienttranslate('Out of the round: ${player_name} discards the Princess'),
         ]; 
 
         return $logText[$card['type']];
@@ -990,6 +990,11 @@ class loveletter extends Table
     function getLogTextCardExchange()
     {
         return clienttranslate('King: ${player_name} and ${player_name2} exchange their hand.');
+    }
+
+    function getLogTextDiscardCard()
+    {
+        return clienttranslate('Prince: ${player_name} discards a ${card_name}');
     }
 
     /** 
