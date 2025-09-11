@@ -90,13 +90,13 @@ function (dojo, declare) {
               setupFrontDiv: (card, div) => {
                     div.classList.add('lvt-card');
                         div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, window.CARD_CONSTANTS);
-                    div.id = `card-${card.id}-front`;
+                    div.id = `lvt-card-${card.id}-front`;
                 },
 
               setupBackDiv: (card, div) => {
                   div.classList.add('lvt-card');
                       div.style.backgroundPosition = getCardSpriteBackgroundPosition("back", window.CARD_CONSTANTS);
-                  div.id = `card-${card.id}-back`;
+                  div.id = `lvt-card-${card.id}-back`;
                 },
             });
 
@@ -113,13 +113,13 @@ function (dojo, declare) {
               setupFrontDiv: (card, div) => {
                     div.classList.add('lvt-card');
                         div.style.backgroundPosition = getCardSpriteBackgroundPosition(card, window.CARD_CONSTANTS);
-                    div.id = `card-${card.id}-front`;
+                    div.id = `lvt-card-${card.id}-front`;
                 },
 
               setupBackDiv: (card, div) => {
                   div.classList.add('lvt-card');
                       div.style.backgroundPosition = getCardSpriteBackgroundPosition("back", window.CARD_CONSTANTS);
-                  div.id = `card-${card.id}-back`;
+                  div.id = `lvt-card-${card.id}-back`;
                 },
             });
 
@@ -209,7 +209,7 @@ function (dojo, declare) {
                   const opponentHandSize = gamedatas.cardcount.hand[player.id];
                     for (let i = 0; i < opponentHandSize; i++) {
                       const fakeCard = {
-                        id: `lvt-card-${player.id}-fake-${i}`,
+                        id: `${player.id}-fake-${i}`,
                       };
                       opponentHand.addCard(fakeCard);
                       opponentHand.setCardVisible(fakeCard, false);
@@ -667,15 +667,15 @@ function (dojo, declare) {
           }
           else
           {                        
-            debugger;
-            let fakeCardId = document.getElementById(`lvt-card-${playerId}-fake-1`) ? `lvt-card-${playerId}-fake-1` : `lvt-card-${playerId}-fake-0`;
-            
+            debugger; //TODO - this line needs to be cleverer
+            const opponentHand = this.opponentHands[playerId];
+            let fakeCardId = opponentHand.getCards().some(c => String(c.id).includes('fake-0')) ? '1' : '0';
+
             Object.assign(discardedCard, {
-              id: fakeCardId,
+              id: `${playerId}-fake-${fakeCardId}`,
               type: type
             });
 
-            const opponentHand = this.opponentHands[playerId];
             this.discard.addCard(discardedCard, {
                 fromStock: opponentHand,
                 updateInformations: true,
@@ -792,7 +792,6 @@ function (dojo, declare) {
 
         notif_discardCard: function( notif )
         {
-          debugger;
           this.showDiscussion(notif);
           this.updateUiForCardPlayed(notif.args.card.id, notif.args.card.type, notif.args.player_id, notif.args.card_type.value);
         },
@@ -865,9 +864,11 @@ function (dojo, declare) {
 
         notif_newCardPublic: function( notif )
         {
+          const fake0Id = `lvt-card-${notif.args.player_id}-fake-0`;
+          fakeNumberToUse = document.getElementById(fake0Id) ? '1' : '0';
+
           let card = {
-            id: `${notif.args.player_id}-fake-1` //TODO - I think I do not need the lvt-card as it is added as part of the getId function in the HandStock.
-            // However, is it always fake-1 I need? Because a player who draws prince, will want fake-0 again.
+            id: `${notif.args.player_id}-fake-${fakeNumberToUse}` //the 'lvt-card' bit is added in the getId function of the HandStock
           };
 
           const opponentHand = this.opponentHands[notif.args.player_id];
@@ -883,10 +884,9 @@ function (dojo, declare) {
 
         notif_reveal: function( notif )
         {
-          debugger;
           let card = {};
           Object.assign(card, {
-            id: `lvt-card-${notif.args.player_id}-fake-0`,
+            id: `${notif.args.player_id}-fake-0`,
             type: notif.args.card_type,
           });
 
@@ -921,7 +921,7 @@ function (dojo, declare) {
             }
 
             newOpponentCard = {
-              id: `lvt-card-${otherPlayerId}-fake-0`,
+              id: `${otherPlayerId}-fake-0`,
             }
 
             this.playerHand.addCard(newPlayerCard, {

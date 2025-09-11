@@ -491,7 +491,7 @@ class loveletter extends Table
         $players = self::loadPlayersBasicInfos();
 
         // Reveal both cards for these 2 players
-        self::notifyPlayer($player_id, 'reveal', self::getLogTextCardReveal(), array(
+        self::notifyPlayer($player_id, 'reveal_long', self::getLogTextCardReveal(), array(
             'i18n' => array('card_name'),
             'player_name' => $players[$opponent_id]['player_name'],
             'player_id' => $opponent_id,
@@ -499,7 +499,7 @@ class loveletter extends Table
             'card_name' => $this->card_types[$opponent_card['type']]['name']
         ));
 
-        self::notifyPlayer($opponent_id, 'reveal', self::getLogTextCardReveal(), array(
+        self::notifyPlayer($opponent_id, 'reveal_long', self::getLogTextCardReveal(), array(
             'i18n' => array('card_name'),
             'player_name' => $players[$player_id]['player_name'],
             'player_id' => $player_id,
@@ -580,7 +580,7 @@ class loveletter extends Table
             'card_type' => $this->card_types[$card['type']],
             'card_name' => $this->card_types[$card['type']]['name'],
             'card' => $card,
-            'bubble' => clienttranslate('Ok, I`ll discard my ${card_name}')
+            'bubble' => clienttranslate('Ok, I\'ll discard my ${card_name}')
         ));
 
         if($card['type'] == self::PRINCESS)
@@ -831,7 +831,9 @@ class loveletter extends Table
         $notify_args = array(
             'player_id' => $player_id,
             'player_name' => $players[$player_id]['player_name'],
-            'bubble' => $this->getBubbleTextOutOfTheRound($cardPlayed)
+            'bubble' => $this->getBubbleTextOutOfTheRound($cardPlayed),
+            'opponent_id' => $killer_id,
+            'opponent_name' => $killer_id ? $players[$killer_id]['player_name'] : null
         );
 
         $cards = $this->cards->getCardsInLocation('hand', $player_id);
@@ -926,8 +928,8 @@ class loveletter extends Table
         $bubbleText = [
             self::GUARD      => clienttranslate('${opponent_name}, I think you are a ${guess_name}!'),
             self::PRIEST     => clienttranslate('${opponent_name}, please show me your card'),
-            self::BARON      => clienttranslate('${opponent_name}, let`s compare our cards...'),
-            self::HANDMAID   => clienttranslate('I`m protected for one turn'),
+            self::BARON      => clienttranslate('${opponent_name}, let\'s compare our cards...'),
+            self::HANDMAID   => clienttranslate('I\'m protected for one turn'),
             self::PRINCE     => clienttranslate('${opponent_name}, you must discard your card'),
             self::CHANCELLOR => clienttranslate('I will take two more cards'),
             self::KING       => clienttranslate('${opponent_name}, we must swap our cards'),
@@ -963,8 +965,8 @@ class loveletter extends Table
     {
         $bubbleText = [
             self::GUARD      => clienttranslate('You got me!'),
-            self::BARON      => clienttranslate('My ${card_name} was lower than ${opponent_name}`s card, so I`m out of the round!'),
-            self::PRINCESS   => clienttranslate('I discarded the Princess so I`m out of the round!'),
+            self::BARON      => clienttranslate('My ${card_name} was lower than ${opponent_name}\'s card, so I\'m out of the round!'),
+            self::PRINCESS   => clienttranslate('I discarded the Princess so I\'m out of the round!'),
         ]; 
 
         return $bubbleText[$card['type']];
