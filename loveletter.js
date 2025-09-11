@@ -667,9 +667,8 @@ function (dojo, declare) {
           }
           else
           {                        
-            debugger; //TODO - this line needs to be cleverer
             const opponentHand = this.opponentHands[playerId];
-            let fakeCardId = opponentHand.getCards().some(c => String(c.id).includes('fake-0')) ? '1' : '0';
+            let fakeCardId = opponentHand.getCards().some(c => String(c.id).includes('fake-1')) ? '1' : '0';
 
             Object.assign(discardedCard, {
               id: `${playerId}-fake-${fakeCardId}`,
