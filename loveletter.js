@@ -182,80 +182,80 @@ function (dojo, declare) {
               });
             });
 
-              this.playerHand = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
-              this.playerHand.setSelectionMode('single');
-              this.playerHand.onSelectionChange = (selectedCards) => {
-                if (this._suppressUnselectCallback) return;
-                if (selectedCards.length > 0) {
-                  this.onSelectCard(selectedCards[0]);
-                }
-                else
-                {
-                  this.removeCardSelections();
-                }
-              };
+            this.playerHand = new LineStock(this.handManager, document.getElementById('lvt-player-table-card-' + this.player_id), {});
+            this.playerHand.setSelectionMode('single');
+            this.playerHand.onSelectionChange = (selectedCards) => {
+              if (this._suppressUnselectCallback) return;
+              if (selectedCards.length > 0) {
+                this.onSelectCard(selectedCards[0]);
+              }
+              else
+              {
+                this.removeCardSelections();
+              }
+            };
 
-              const handValues = Object.values(gamedatas.hand);
-              handValues.forEach(card => {
-                console.log("Adding card to player table", card);
-                this.playerHand.addCard(card);
-                this.playerHand.setCardVisible(card, true);
-              });
-
-              Object.values(gamedatas.players).forEach(player => {
-                if (player.id != this.player_id) {
-                  const opponentHand = new HandStock(this.handManager, document.getElementById('lvt-player-table-card-' + player.id), {});
-                  opponentHand.setSelectionMode('single');
-                  const opponentHandSize = gamedatas.cardcount.hand[player.id];
-                    for (let i = 0; i < opponentHandSize; i++) {
-                      const fakeCard = {
-                        id: `${player.id}-fake-${i}`,
-                      };
-                      opponentHand.addCard(fakeCard);
-                      opponentHand.setCardVisible(fakeCard, false);
-                    }
-                  this.opponentHands[player.id] = opponentHand;
-                }
-
-                if (player.alive == 0)
-                {
-                  this.setOutOfTheRound(player.id);
-                }
-                
-                if (player.protection == 1)
-                {
-                  this.setProtected(player.id);
-                }
-              });
-
-            this.deck = new Deck(this.deckManager, document.getElementById('lvt-deck-area'), {
-              cardNumber: gamedatas.deck.length,
-              counter: {
-                    position: 'center',
-                    extraClasses: 'text-shadow',
-                    hideWhenEmpty: false,
-                },
-              // onCardClick: (card) => {
-              //     console.log("Deck clicked", card);
-              //     this.handleDeckClick();
-              //   },
+            const handValues = Object.values(gamedatas.hand);
+            handValues.forEach(card => {
+              console.log("Adding card to player table", card);
+              this.playerHand.addCard(card);
+              this.playerHand.setCardVisible(card, true);
             });
 
-            this.discard = new ManualPositionStock(this.handManager, document.getElementById('lvt-badges-area'), {}, function (element, cards, card, stock) {
-        // Example: stack all cards at 0,0
-        cards.forEach((c, i) => {
-            const cardDiv = stock.getCardElement(c);
-            cardDiv.style.zIndex = i; // stack order
-        });
-    });
+            Object.values(gamedatas.players).forEach(player => {
+              if (player.id != this.player_id) {
+                const opponentHand = new HandStock(this.handManager, document.getElementById('lvt-player-table-card-' + player.id), {});
+                opponentHand.setSelectionMode('single');
+                const opponentHandSize = gamedatas.cardcount.hand[player.id];
+                  for (let i = 0; i < opponentHandSize; i++) {
+                    const fakeCard = {
+                      id: `${player.id}-fake-${i}`,
+                    };
+                    opponentHand.addCard(fakeCard);
+                    opponentHand.setCardVisible(fakeCard, false);
+                  }
+                this.opponentHands[player.id] = opponentHand;
+              }
 
-            // Testing only
-            // this.deck.element.addEventListener('click', (event) => {
+              if (player.alive == 0)
+              {
+                this.setOutOfTheRound(player.id);
+              }
+              
+              if (player.protection == 1)
+              {
+                this.setProtected(player.id);
+              }
+            });
+
+          this.deck = new Deck(this.deckManager, document.getElementById('lvt-deck-area'), {
+            cardNumber: gamedatas.deck.length,
+            counter: {
+                  position: 'center',
+                  extraClasses: 'text-shadow',
+                  hideWhenEmpty: false,
+              },
+            // onCardClick: (card) => {
+            //     console.log("Deck clicked", card);
             //     this.handleDeckClick();
-            // });
+            //   },
+          });
 
-            buildPlayedCardBadges(gamedatas);
-            this.setupNotifications();
+          this.discard = new ManualPositionStock(this.handManager, document.getElementById('lvt-badges-area'), {}, function (element, cards, card, stock) {
+            // Example: stack all cards at 0,0
+            cards.forEach((c, i) => {
+                const cardDiv = stock.getCardElement(c);
+                cardDiv.style.zIndex = i; // stack order
+            });
+          });
+
+          // Testing only
+          // this.deck.element.addEventListener('click', (event) => {
+          //     this.handleDeckClick();
+          // });
+
+          buildPlayedCardBadges(gamedatas);
+          this.setupNotifications();
 
         },
 
@@ -605,8 +605,6 @@ function (dojo, declare) {
           var delay = notif.args.delay;
           var duration = notif.args.duration;
 
-          debugger;
-
           text = dojo.string.substitute( notif.args.bubble, {
           opponent_name: opponent ? `<b><span style="color:#${opponent.color}">${opponent.name}</span></b>` : '',
           guess_name: notif.args.guess_name ?  `<b>${notif.args.guess_name}</b>` : '',
@@ -766,21 +764,29 @@ function (dojo, declare) {
 
         notif_newRound: function(notif)
         {
+          debugger;
           Object.values(this.opponentHands).forEach(hand => hand.removeAll());
           this.playerHand.removeAll();
           this.deck.removeAll();
           this.discard.removeAll();
 
-          Object.keys(gamedatas.players).forEach(playerId => {
+          Object.keys(this.gamedatas.players).forEach(playerId => {
             dojo.removeClass('lvt-player-table-' + playerId, 'out-of-the-round');
             dojo.removeClass('lvt-player-table-' + playerId, 'protected');
           });
 
           document.querySelectorAll('.lvt-card-badge.played').forEach(badge => {
-          badge.classList.remove('played');
+            badge.classList.remove('played');
           });
 
-          this.deck.shuffle(); //TODO - move higher?
+          //TODO - this is not setting correctly and causing the number to disappear.
+          this.deck.setCardNumber(this.gamedatas.deck.length, null);
+          this.deck.shuffle();
+
+          Object.keys(this.gamedatas.players).forEach(pid => {
+            const bubble = document.getElementById(`lvt-discussion-bubble-${pid}`);
+            if (bubble) bubble.innerHTML = '';
+          });
 
           this.deselect();
         },

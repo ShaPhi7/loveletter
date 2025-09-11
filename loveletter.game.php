@@ -1095,8 +1095,6 @@ class loveletter extends Table
     function stNewRound()
     {   
         self::incStat( 1, 'round_number' );
-        
-        self::notifyAllPlayers( 'newRound', '', array() );
     
         self::setGameStateValue( 'last', 0 );
     
@@ -1108,6 +1106,8 @@ class loveletter extends Table
         
         // 1 card aside ...
         $this->cards->pickCardForLocation( 'deck', 'aside' );
+
+        self::notifyAllPlayers( 'newRound', '', array() );
     
         // Draw one card for each player
         $players = self::loadPlayersBasicInfos();
@@ -1119,8 +1119,12 @@ class loveletter extends Table
                 'card' => $card,
                 'card_name' => $this->card_types[$card['type']]['name'])
             );
-        }
 
+            self::notifyAllPlayers('newCardPublic', '', array(
+                'player_id' => $player_id,
+            ));
+        }
+        //TODO - might need to shorten the times for these ones.
         // +1 card for active player
         $card = $this->cards->pickCard( 'deck', self::getActivePlayerId() );    
         self::notifyPlayer( self::getActivePlayerId(), 'newCardPrivate', clienttranslate('At the start of your turn, you draw a ${card_name}'), array(
@@ -1128,6 +1132,10 @@ class loveletter extends Table
             'card' => $card,
             'card_name' => $this->card_types[$card['type']]['name'])
         );
+
+        self::notifyAllPlayers('newCardPublic', '', array(
+            'player_id' => $player_id,
+        ));
 
         self::DbQuery( "UPDATE player SET player_alive='1', player_protected='0' " );
 
