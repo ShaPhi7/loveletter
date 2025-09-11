@@ -1021,6 +1021,7 @@ class loveletter extends Table
             'card_type' => $this->card_types[$card['type']],
             'card_name' => $this->card_types[$card['type']]['name'],
             'card' => $card,
+            'bubble' => clienttranslate('I play a ${card_name}, but there is no possible target')
         ));
     }
     

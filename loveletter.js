@@ -595,10 +595,17 @@ function (dojo, declare) {
         // Bubble management
         showDiscussion: function(notif)
         {
+          if (!notif.args.bubble)
+          {
+            return;
+          }
+
           const opponent = notif.args.opponent_id ? this.gamedatas.players[notif.args.opponent_id] : null;
           var player_id = notif.args.player_id ? notif.args.player_id : notif.args.player1;
           var delay = notif.args.delay;
           var duration = notif.args.duration;
+
+          debugger;
 
           text = dojo.string.substitute( notif.args.bubble, {
           opponent_name: opponent ? `<b><span style="color:#${opponent.color}">${opponent.name}</span></b>` : '',
@@ -701,7 +708,7 @@ function (dojo, declare) {
 
         setProtected: function(playerId)
         {
-          //TODO
+          dojo.addClass( 'lvt-player-table-' + playerId, 'protected' );
         },
 
         setupNotifications: function()
