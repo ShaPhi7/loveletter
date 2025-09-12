@@ -225,6 +225,12 @@ function (dojo, declare) {
               {
                 this.setProtected(player.id);
               }
+
+              if (player.spied == 1)
+              {
+                this.setSpied(player.id);
+              }
+
             });
 
           this.deck = new Deck(this.deckManager, document.getElementById('lvt-deck-area'), {
@@ -454,7 +460,10 @@ function (dojo, declare) {
             }
           }
           if (this.selectedCardType === this.GUARD
-            || this.selectedCardType === this.PRINCESS)
+            || this.selectedCardType === this.PRINCESS
+            || (this.selectedCardType === this.PRINCE
+              && this.playerHand.getCards().some(c => c.type === this.PRINCESS))
+            )
           {
             this.showConfirmationDialog();
           }  
@@ -465,8 +474,10 @@ function (dojo, declare) {
         },
 
         showConfirmationDialog: function() {
-          if (this.selectedCardType === this.PRINCESS) {
-          this.confirmationDialog(_("Playing the Princess will knock you out of the round. Are you sure?"),
+          if (this.selectedCardType === this.PRINCESS
+            || this.selectedCardType === this.PRINCE
+          ) {
+          this.confirmationDialog(_("Discarding the Princess will knock you out of the round. Are you sure?"),
           ( () => {  
             this.playCard(this.selectedCardId, -1, this.selectedOpponentId);
             }
@@ -696,6 +707,16 @@ function (dojo, declare) {
             this.discard.removeCard(discardedCard);
             markBadgeAsPlayed(value);
           }, 3000);
+
+          if (type == this.HANDMAID)
+          {
+            this.setProtected(playerId);
+          }
+
+          if (type == this.SPY)
+          {
+            this.setSpied(playerId);
+          }
         },
 
         setOutOfTheRound: function(playerId)
@@ -708,6 +729,20 @@ function (dojo, declare) {
           dojo.addClass( 'lvt-player-table-' + playerId, 'protected' );
         },
 
+        setSpied: function(playerId)
+        {
+          dojo.addClass( 'lvt-player-table-' + playerId, 'spied' );
+        },
+
+        unsetPlayerStatuses: function()
+        {
+          Object.keys(this.gamedatas.players).forEach(playerId => {
+            dojo.removeClass('lvt-player-table-' + playerId, 'out-of-the-round');
+            dojo.removeClass('lvt-player-table-' + playerId, 'protected');
+            dojo.removeClass('lvt-player-table-' + playerId, 'spied');
+          });
+        },
+
         setupNotifications: function()
         {
             console.log( 'notifications subscriptions setup' );
@@ -717,6 +752,7 @@ function (dojo, declare) {
             dojo.subscribe( 'newCardPrivateQuick', this, "notif_newCardPrivate" );
             dojo.subscribe( 'newCardPublicQuick', this, "notif_newCardPublic" );
             this.notifqueue.setIgnoreNotificationCheck( 'newCardPublic', (notif) => (notif.args.player_id == this.player_id) );
+            this.notifqueue.setIgnoreNotificationCheck( 'newCardPublicQuick', (notif) => (notif.args.player_id == this.player_id) );
             this.notifqueue.setSynchronous( 'newCardPrivate', 3000 );
             this.notifqueue.setSynchronous( 'newCardPublic', 3000 );
             this.notifqueue.setSynchronous( 'newCardPrivateQuick', 300 );
@@ -727,7 +763,7 @@ function (dojo, declare) {
 
             dojo.subscribe( 'reveal', this, 'notif_reveal' );
             dojo.subscribe( 'reveal_long', this, 'notif_reveal' );
-            this.notifqueue.setSynchronous( 'reveal', 2000 );
+            this.notifqueue.setIgnoreNotificationCheck( 'reveal', (notif) => (notif.args.player_id == this.player_id) ); //TODO
             this.notifqueue.setSynchronous( 'reveal_long', 3000 );
 
             dojo.subscribe( 'cardexchange', this, 'notif_cardexchange' );
@@ -752,7 +788,7 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'chancellor_bury_public_second', 1000 );
 
             dojo.subscribe( 'score', this, 'notif_score' );
-            this.notifqueue.setSynchronous( 'score', 1000 );
+            this.notifqueue.setSynchronous( 'score', 4000 );
 
             dojo.subscribe( 'simpleNote', this, 'notif_simpleNote' );
             this.notifqueue.setSynchronous( 'simpleNote', 2000 );
@@ -764,6 +800,8 @@ function (dojo, declare) {
 
         notif_score: function(notif)
         {
+          //TODO - show cards revealed at end of the round
+          this.showDiscussion(notif);
           this.scoreCtrl[notif.args.player_id].incValue(1);
         },
 
@@ -778,16 +816,12 @@ function (dojo, declare) {
 
         notif_newRound: function(notif)
         {
-          debugger;
           Object.values(this.opponentHands).forEach(hand => hand.removeAll());
           this.playerHand.removeAll();
           this.deck.removeAll();
           this.discard.removeAll();
 
-          Object.keys(this.gamedatas.players).forEach(playerId => {
-            dojo.removeClass('lvt-player-table-' + playerId, 'out-of-the-round');
-            dojo.removeClass('lvt-player-table-' + playerId, 'protected');
-          });
+          this.unsetPlayerStatuses();
 
           document.querySelectorAll('.lvt-card-badge.played').forEach(badge => {
             badge.classList.remove('played');
@@ -960,9 +994,13 @@ function (dojo, declare) {
 
           opponentHand = this.opponentHands[notif.args.player_id];
           opponentHand.setCardVisible(card, true);
-          setTimeout(() => {
-            opponentHand.setCardVisible(card, false);
-          }, 2000);
+          
+          if (notif.args.timeout)
+          {
+            setTimeout(() => {
+              opponentHand.setCardVisible(card, false);
+            }, 2000);
+          }
         },
 
         notif_cardexchange: function( notif )

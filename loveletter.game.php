@@ -33,6 +33,10 @@ class loveletter extends Table
     public const PRINCESS   = 29;
     public const SPY        = 30;
 
+    public const SCORE_SPY = 'spy';
+    public const SCORE_HIGHEST = 'highest';
+    public const SCORE_REMAINING = 'remaining';
+
     public bool $activateChancellorState = false;
 
 	function __construct( )
@@ -151,7 +155,7 @@ class loveletter extends Table
     
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
-        $sql = "SELECT player_id id, player_score score, player_alive alive, player_protected protection FROM player ";
+        $sql = "SELECT player_id id, player_score score, player_alive alive, player_protected protection, player_spied spied FROM player ";
         $result['players'] = self::getCollectionFromDb($sql);
         $result['players_nbr'] = count($result['players']);
 
@@ -463,6 +467,7 @@ class loveletter extends Table
             'player_id' => $opponent_id,
             'card_type' => $opponent_card['type'],
             'card_name' => $this->card_types[$opponent_card['type']]['name'],
+            'timeout' => true
         ));
     }
 
@@ -499,7 +504,8 @@ class loveletter extends Table
             'player_name' => $players[$opponent_id]['player_name'],
             'player_id' => $opponent_id,
             'card_type' => $opponent_card['type'],
-            'card_name' => $this->card_types[$opponent_card['type']]['name']
+            'card_name' => $this->card_types[$opponent_card['type']]['name'],
+            'timeout' => true
         ));
 
         self::notifyPlayer($opponent_id, 'reveal_long', self::getLogTextCardReveal(), array(
@@ -507,7 +513,8 @@ class loveletter extends Table
             'player_name' => $players[$player_id]['player_name'],
             'player_id' => $player_id,
             'card_type' => $player_card['type'],
-            'card_name' => $this->card_types[$player_card['type']]['name']
+            'card_name' => $this->card_types[$player_card['type']]['name'],
+            'timeout' => true
         ));
 
         $players = self::loadPlayersBasicInfos();
@@ -570,10 +577,15 @@ class loveletter extends Table
         $cards = $this->cards->getCardsInLocation('hand', $opponent_id);
         $card = reset($cards);
 
+        if ($card['type'] == self::SPY)
+        {
+            self::DbQuery("UPDATE player SET player_spied='1' WHERE player_id='$player_id'");
+        }
+
         // Alright, discard this card
         $this->cards->insertCardOnExtremePosition($card['id'], 'discard'.$opponent_id, true);
         self::setGameStateValue('last', $card['type']);
-        
+
         $players = self::loadPlayersBasicInfos();
         // Notify all players about the card played
         self::notifyAllPlayers("discardCard", clienttranslate('Prince : ${player_name} discards ${card_name}'), array(
@@ -823,9 +835,11 @@ class loveletter extends Table
 
     function playSpy($card, $opponent_id)
     {
+        $player_id = self::getActivePlayerId();
+        
         self::notifyPlayCard($card, $opponent_id);
 
-        // nothing happens
+        self::DbQuery("UPDATE player SET player_spied='1' WHERE player_id='$player_id'");
     }
 
     function outOfTheRound($cardPlayed, $player_id, $killer_id)
@@ -849,6 +863,11 @@ class loveletter extends Table
         $cards = $this->cards->getCardsInLocation('hand', $player_id);
         if (count($cards) > 0) {
             $cardInHand = reset($cards);
+
+            if ($cardInHand['type'] == self::SPY) 
+            {
+                self::DbQuery("UPDATE player SET player_spied='1' WHERE player_id='$player_id'");
+            }
 
             $this->cards->insertCardOnExtremePosition($cardInHand['id'], 'discard' . $player_id, true);
             self::setGameStateValue('last', $cardInHand['type']);
@@ -1009,6 +1028,28 @@ class loveletter extends Table
         return clienttranslate('Prince: ${player_name} discards a ${card_name}');
     }
 
+    function getLogTextScore($type)
+    {
+        $logText = [
+            self::SCORE_SPY        => clienttranslate('Spy: ${player_name} was the only player still in the round who played a spy, and gains 1 favor token'),
+            self::SCORE_HIGHEST    => clienttranslate('Highest: ${player_name} has the highest card and gains 1 favor token'),
+            self::SCORE_REMAINING  => clienttranslate('Remaining: ${player_name} is the last player remaining and gains 1 favor token'),
+        ]; 
+
+        return $logText[$type];
+    }
+
+    function getBubbleTextScore($type)
+    {
+        $bubbleText = [
+            self::SCORE_SPY        => clienttranslate('I was the only player still in the round who played a spy, so I gain 1 favor token'),
+            self::SCORE_HIGHEST    => clienttranslate('I have the highest card so I gain 1 favor token'),
+            self::SCORE_REMAINING  => clienttranslate('I am the last player remaining so I gain 1 favor token'),
+        ]; 
+
+        return $bubbleText[$type];
+    }
+
     /** 
      * If all other alive players are protected by Handmaid 
      */
@@ -1136,7 +1177,7 @@ class loveletter extends Table
                 'player_id' => $player_id,
             ));
         }
-        //TODO - might need to shorten the times for these ones.
+
         // +1 card for active player
         $card = $this->cards->pickCard( 'deck', self::getActivePlayerId() );    
         self::notifyPlayer( self::getActivePlayerId(), 'newCardPrivateQuick', clienttranslate('At the start of your turn, you draw a ${card_name}'), array(
@@ -1146,10 +1187,10 @@ class loveletter extends Table
         );
 
         self::notifyAllPlayers('newCardPublicQuick', '', array(
-            'player_id' => $player_id,
+            'player_id' => self::getActivePlayerId(),
         ));
 
-        self::DbQuery( "UPDATE player SET player_alive='1', player_protected='0' " );
+        self::DbQuery( "UPDATE player SET player_alive='1', player_protected='0', player_spied='0' " );
 
         $this->updateCardCount();
         
@@ -1231,6 +1272,8 @@ class loveletter extends Table
 
     function stEndRound()
     {
+        self::revealAllCards();
+        
         //either last player left in, or any players with the joint highest cards.
         self::rewardRoundWinners();
         self::rewardSpy();
@@ -1248,26 +1291,22 @@ class loveletter extends Table
 
     function rewardSpy()
     {
-        $alive_player_ids = self::getCollectionFromDB( "SELECT player_id FROM player WHERE player_alive='1'");
-        $sql = "SELECT card_location FROM `card` WHERE card_location LIKE 'discard%' AND card_type='".self::SPY."'";
-        $spy_locations = self::getObjectListFromDb( $sql, true );
-        if (count($spy_locations) === 1)
-        {
-            $spy_player_id = substr($spy_locations[0], 7); //the card location looks like 'discard12345', so we need to remove the 'discard' part
-            if (isset($alive_player_ids[$spy_player_id]))
-            {
-                self::DbQuery("UPDATE player SET player_score=player_score+1 WHERE player_id='$spy_player_id'");
-                
-                $players = self::loadPlayersBasicInfos();
-                self::notifyAllPlayers('score', clienttranslate('Spy: ${player_name} played the only Spy and gains 1 favor token'), array(
-                    'player_name' => $players[$spy_player_id]['player_name'],
-                    'player_id' => $spy_player_id,
-                    'type' => 'spy'
-                ));
+        $alive_and_spied_player_ids = self::getCollectionFromDB( "SELECT player_id FROM player WHERE player_alive='1' AND player_spied='1'");
 
-                self::incStat( 1, 'tokens_gained_from_spy', $spy_player_id );
-            }
-            //TODO TEST - does this cover the case where one player played both spies?
+        if (count($alive_and_spied_player_ids) === 1)
+        {
+            $spy_scorer_id = array_key_first($alive_and_spied_player_ids);
+            self::DbQuery("UPDATE player SET player_score=player_score+1 WHERE player_id='$spy_scorer_id'");
+
+            $players = self::loadPlayersBasicInfos();
+            $type = 'spy';
+            self::notifyAllPlayers('score', self::getLogTextScore($type), array(
+                'player_name' => $players[$spy_scorer_id]['player_name'],
+                'player_id' => $spy_scorer_id,
+                'bubble' => self::getBubbleTextScore($type)
+            ));
+
+            self::incStat( 1, 'tokens_gained_from_spy', $spy_scorer_id );
         }
     }
 
@@ -1292,10 +1331,11 @@ class loveletter extends Table
         self::DbQuery("UPDATE player SET player_score=player_score+1 WHERE player_id='$winner_id'");
 
         $players = self::loadPlayersBasicInfos();
-        self::notifyAllPlayers( 'score', clienttranslate('${player_name} is the only player remaining and gains 1 favor token'), array(
+        $type = 'remaining';
+        self::notifyAllPlayers( 'score', self::getLogTextScore($type), array(
             'player_name' => $players[$winner_id]['player_name'],
             'player_id' => $winner_id,
-            'type' => 'remaining'
+            'bubble' => self::getBubbleTextScore($type)
         ) );
 
         self::incStat( 1, 'round_victory_by_latest', $winner_id );
@@ -1310,14 +1350,11 @@ class loveletter extends Table
         {
             self::DbQuery("UPDATE player SET player_score=player_score+1 WHERE player_id='$winner_id'");
             $players = self::loadPlayersBasicInfos();
-            $winning_card_type = $this->firstValue($this->cards->getCardsInLocation('hand', $winner_id))['type'];
-            self::notifyAllPlayers('score', clienttranslate('${player_name} has the highest card (${card_type} - ${card_name}) and gains 1 favor token'), array(
-                'i18n' => array('card_name'),
+            $type = 'highest';
+            self::notifyAllPlayers('score', self::getLogTextScore($type), array(
                 'player_name' => $players[$winner_id]['player_name'],
                 'player_id' => $winner_id,
-                'card_type' =>  $this->card_types[$winning_card_type]['value'],
-                'card_name' => $this->card_types[$winning_card_type]['name'],
-                'type' => 'highest'
+                'bubble' => self::getBubbleTextScore($type)
             ));
 
             self::incStat( 1, 'round_victory_by_highest', $winner_id );
@@ -1344,6 +1381,30 @@ class loveletter extends Table
         }
 
         return $winners;
+    }
+
+    function revealAllCards()
+    {
+        $players = $this->loadPlayersBasicInfos();
+
+        foreach ($players as $player_id => $opponent)
+        {
+            $opponent_cards = $this->cards->getCardsInLocation( 'hand', $opponent['player_id'] );
+            if (empty($opponent_cards))
+            {
+                continue;
+            }
+
+            $opponent_card = reset($opponent_cards);
+
+            self::notifyAllPlayers('reveal', '', array(
+                'player_name' => $opponent['player_name'],
+                'player_id' => $opponent['player_id'],
+                'card_type' => $opponent_card['type'],
+                'card_name' => $this->card_types[$opponent_card['type']]['name'],
+                'timeout' => false
+            ));
+        }
     }
 
     function s()

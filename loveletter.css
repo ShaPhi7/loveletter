@@ -290,6 +290,10 @@ html, body {
     display: inline-block;
 }
 
+.spied {
+    background-color: yellow;
+}
+
 .out-of-the-round {
     background-color: grey;
 }
