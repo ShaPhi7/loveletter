@@ -714,9 +714,14 @@ function (dojo, declare) {
 
             dojo.subscribe( 'newCardPrivate', this, "notif_newCardPrivate" );
             dojo.subscribe( 'newCardPublic', this, "notif_newCardPublic" );
+            dojo.subscribe( 'newCardPrivateQuick', this, "notif_newCardPrivate" );
+            dojo.subscribe( 'newCardPublicQuick', this, "notif_newCardPublic" );
             this.notifqueue.setIgnoreNotificationCheck( 'newCardPublic', (notif) => (notif.args.player_id == this.player_id) );
             this.notifqueue.setSynchronous( 'newCardPrivate', 3000 );
             this.notifqueue.setSynchronous( 'newCardPublic', 3000 );
+            this.notifqueue.setSynchronous( 'newCardPrivateQuick', 300 );
+            this.notifqueue.setSynchronous( 'newCardPublicQuick', 300 );
+
 
             dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
             this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
@@ -745,7 +750,7 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'chancellor_draw_public', 3000 );
             this.notifqueue.setSynchronous( 'chancellor_bury', 3000 );
             this.notifqueue.setSynchronous( 'chancellor_bury_public_first', 1000 );
-            this.notifqueue.setSynchronous( 'chancellor_bury_public_second', 3000 );
+            this.notifqueue.setSynchronous( 'chancellor_bury_public_second', 1000 );
 
             dojo.subscribe( 'score', this, 'notif_score' );
             this.notifqueue.setSynchronous( 'score', 1000 );

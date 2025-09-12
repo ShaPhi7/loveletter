@@ -1121,26 +1121,26 @@ class loveletter extends Table
         foreach( $players as $player_id => $player)
         {
             $card = $this->cards->pickCard( 'deck', $player_id );    
-            self::notifyPlayer( $player_id, 'newCardPrivate', clienttranslate('A new round begins: you draw a ${card_name}'), array(
+            self::notifyPlayer( $player_id, 'newCardPrivateQuick', clienttranslate('A new round begins: you draw a ${card_name}'), array(
                 'i18n' => array('card_name'),
                 'card' => $card,
                 'card_name' => $this->card_types[$card['type']]['name'])
             );
 
-            self::notifyAllPlayers('newCardPublic', '', array(
+            self::notifyAllPlayers('newCardPublicQuick', '', array(
                 'player_id' => $player_id,
             ));
         }
         //TODO - might need to shorten the times for these ones.
         // +1 card for active player
         $card = $this->cards->pickCard( 'deck', self::getActivePlayerId() );    
-        self::notifyPlayer( self::getActivePlayerId(), 'newCardPrivate', clienttranslate('At the start of your turn, you draw a ${card_name}'), array(
+        self::notifyPlayer( self::getActivePlayerId(), 'newCardPrivateQuick', clienttranslate('At the start of your turn, you draw a ${card_name}'), array(
             'i18n' => array('card_name'),
             'card' => $card,
             'card_name' => $this->card_types[$card['type']]['name'])
         );
 
-        self::notifyAllPlayers('newCardPublic', '', array(
+        self::notifyAllPlayers('newCardPublicQuick', '', array(
             'player_id' => $player_id,
         ));
 
