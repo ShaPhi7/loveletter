@@ -31,6 +31,7 @@
 
 ALTER TABLE  `player` ADD  `player_alive` TINYINT NOT NULL DEFAULT  '1';
 ALTER TABLE  `player` ADD  `player_protected` TINYINT NOT NULL DEFAULT  '0';
+ALTER TABLE  `player` ADD  `player_spied` TINYINT NOT NULL DEFAULT  '0';
 
 -- Example 2: add a custom field to the standard "player" table
 -- ALTER TABLE `player` ADD `player_my_custom_field` INT UNSIGNED NOT NULL DEFAULT '0';
