@@ -670,11 +670,9 @@ class loveletter extends Table
                 'card_name_2' => $this->card_types[$card_2['type']]['name']
                 ));
 
-                //TODO - other players need to see drawing two cards
-                //the current player will ignore this notification on client side.
-                // self::notifyAllPlayers('newCardPublic', '', array(
-                //     'player_id' => $player_id,
-                // ));
+                self::notifyAllPlayers('chancellor_draw_public', '', array(
+                    'player_id' => $player_id,
+                ));
 
                 $this->activateChancellorState = true;
             break;
@@ -733,6 +731,15 @@ class loveletter extends Table
             'i18n' => array('card_name'),
             'card' => $keep_card,
             'card_name' => $this->card_types[$keep_card['type']]['name'],
+        ));
+
+        self::notifyAllPlayers('chancellor_bury_public_first', clienttranslate('Chancellor: ${player_name} places two cards on the bottom of the deck'), array(
+            'player_id' => $player_id,
+            'player_name' => $players[$player_id]['player_name'],
+        ));
+
+        self::notifyAllPlayers('chancellor_bury_public_second', clienttranslate(''), array(
+            'player_id' => $player_id
         ));
 
         $this->gamestate->nextState('nextPlayer');
@@ -934,7 +941,7 @@ class loveletter extends Table
             self::CHANCELLOR => clienttranslate('I will take two more cards'),
             self::KING       => clienttranslate('${opponent_name}, we must swap our cards'),
             self::COUNTESS   => clienttranslate('I play the Countess'),
-            self::PRINCESS   => clienttranslate('I discard the princess and I am out of the round'),
+            self::PRINCESS   => clienttranslate(''), //covered by out of the round
             self::SPY        => clienttranslate('I am watching you...'),
         ]; 
 

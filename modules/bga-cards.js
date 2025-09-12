@@ -589,6 +589,7 @@ var CardStock = /** @class */ (function () {
      * @returns the promise when the animation is done (true if it was animated, false if it wasn't)
      */
     CardStock.prototype.addCard = function (card, animation, settings) {
+        debugger;
         var _this = this;
         var _a, _b, _c, _d, _e;
         if (!this.canAddCard(card, settings)) {

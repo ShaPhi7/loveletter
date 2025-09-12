@@ -84,7 +84,6 @@ function (dojo, declare) {
               
               setupDiv: (card, div) => {
                 div.classList.add('lvt-card-container');
-                div.style.position = 'relative';
               },
               
               setupFrontDiv: (card, div) => {
@@ -729,13 +728,24 @@ function (dojo, declare) {
 
             dojo.subscribe( 'cardexchange', this, 'notif_cardexchange' );
             dojo.subscribe( 'cardexchange_opponents', this, 'notif_cardexchange_opponents' );
+            this.notifqueue.setSynchronous( 'cardexchange', 2000 );
+            this.notifqueue.setSynchronous( 'cardexchange_opponents', 1000 );
 
             dojo.subscribe( 'discardCard', this, 'notif_discardCard' );
             this.notifqueue.setSynchronous( 'discardCard', 3000 );
 
             dojo.subscribe( 'chancellor_draw', this, 'notif_chancellor_draw' );
             dojo.subscribe( 'chancellor_bury', this, 'notif_chancellor_bury' );
+            dojo.subscribe( 'chancellor_draw_public', this, "notif_chancellor_draw_public" );
+            dojo.subscribe( 'chancellor_bury_public_first', this, "notif_chancellor_bury_public_first" );
+            dojo.subscribe( 'chancellor_bury_public_second', this, "notif_chancellor_bury_public_second" );
+            this.notifqueue.setIgnoreNotificationCheck( 'chancellor_draw_public', (notif) => (notif.args.player_id == this.player_id) );
+            this.notifqueue.setIgnoreNotificationCheck( 'chancellor_bury_public_first', (notif) => (notif.args.player_id == this.player_id) );
+            this.notifqueue.setIgnoreNotificationCheck( 'chancellor_bury_public_second', (notif) => (notif.args.player_id == this.player_id) );
+            this.notifqueue.setSynchronous( 'chancellor_draw_public', 3000 );
             this.notifqueue.setSynchronous( 'chancellor_bury', 3000 );
+            this.notifqueue.setSynchronous( 'chancellor_bury_public_first', 1000 );
+            this.notifqueue.setSynchronous( 'chancellor_bury_public_second', 3000 );
 
             dojo.subscribe( 'score', this, 'notif_score' );
             this.notifqueue.setSynchronous( 'score', 1000 );
@@ -808,6 +818,25 @@ function (dojo, declare) {
           this.updateUiForCardPlayed(notif.args.card.id, notif.args.card.type, notif.args.player_id, notif.args.card_type.value);
         },
 
+        notif_chancellor_draw_public: function( notif )
+        {
+          let card = {
+            id: `${notif.args.player_id}-fake-1` //the 'lvt-card' bit is added in the getId function of the HandStock
+          };
+
+          let card2 = {
+            id: `${notif.args.player_id}-fake-2` //the 'lvt-card' bit is added in the getId function of the HandStock
+          };
+
+          const opponentHand = this.opponentHands[notif.args.player_id];
+        
+          opponentHand.addCard(card, { fromStock: this.deck });
+          opponentHand.setCardVisible(card, false);
+
+          opponentHand.addCard(card2, { fromStock: this.deck });
+          opponentHand.setCardVisible(card2, false);
+        },
+
         notif_chancellor_draw: function( notif )
         {
           if (notif.args.card)
@@ -833,6 +862,30 @@ function (dojo, declare) {
             this.playerHand.addCard(card2, { fromStock: this.deck });
             this.playerHand.setCardVisible(card2, true);
           }
+        },
+
+        notif_chancellor_bury_public_first: function( notif )
+        {
+          let card2 = {};
+          Object.assign(card2, {
+            id: `${notif.args.player_id}-fake-2` //the 'lvt-card' bit is added in the getId function of the HandStock
+          });
+
+          this.deck.addCard(card2, {
+            fromStock: this.opponentHands[notif.args.player_id],
+          });
+        },
+
+        notif_chancellor_bury_public_second: function( notif )
+        {
+          let card = {};
+          Object.assign(card, {
+            id: `${notif.args.player_id}-fake-1` //the 'lvt-card' bit is added in the getId function of the HandStock
+          });
+
+          this.deck.addCard(card, {
+            fromStock: this.opponentHands[notif.args.player_id],
+          });
         },
 
         notif_chancellor_bury: function( notif )

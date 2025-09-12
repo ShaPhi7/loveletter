@@ -136,6 +136,10 @@ html, body {
 
 #lvt-deck-area {
   margin: 16px;
+  min-width: calc(var(--card-width) * var(--hand-scale));
+  min-height: calc(var(--card-height) * var(--hand-scale));
+  max-width: calc(var(--card-width) * var(--hand-scale));
+  max-height: calc(var(--card-height) * var(--hand-scale));
 }
 
 #lvt-badges-area {
@@ -188,7 +192,6 @@ html, body {
 .deck .lvt-card-container {
   width: calc(var(--card-width) * var(--deck-scale));
   height: calc(var(--card-height) * var(--deck-scale));
-  position: relative;
 }
 
 #lvt-badges-area .lvt-card-container {
