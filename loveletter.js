@@ -722,7 +722,6 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'newCardPrivateQuick', 300 );
             this.notifqueue.setSynchronous( 'newCardPublicQuick', 300 );
 
-
             dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
             this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
 
@@ -794,8 +793,7 @@ function (dojo, declare) {
             badge.classList.remove('played');
           });
 
-          //TODO - this is not setting correctly and causing the number to disappear.
-          this.deck.setCardNumber(this.gamedatas.deck.length, null);
+          this.deck.setCardNumber(this.gamedatas.fulldeck, null);
           this.deck.shuffle();
 
           Object.keys(this.gamedatas.players).forEach(pid => {

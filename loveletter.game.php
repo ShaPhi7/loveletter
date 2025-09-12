@@ -158,6 +158,11 @@ class loveletter extends Table
         // Gather all information about current game situation (visible by player $current_player_id).
 		$result['hand'] = $this->cards->getCardsInLocation('hand', $current_player_id);
 		$result['deck'] = $this->cards->getCardsInLocation('deck', null, 'card_location_arg');
+        $result['fulldeck'] = 0;
+        foreach ($this->card_types as $type_id => $type)
+		{
+            $result['fulldeck'] += $type['qt'];
+		}
 		// Note : discarded cards
 		$players = self::loadPlayersBasicInfos();
 		$result['discard'] = array();
@@ -172,7 +177,7 @@ class loveletter extends Table
 		$result['cardcount']['hand'] = $this->cards->countCardsByLocationArgs('hand');
         if (!isset($result['cardcount']['deck']))
             $result['cardcount']['deck'] = 0;
-
+        
         $result['card_types'] = $this->card_types;
   
         return $result;
@@ -185,8 +190,6 @@ class loveletter extends Table
 
         if (!isset($count['deck']))
             $count['deck'] = 0;
-
-        self::notifyAllPlayers('updateCount', '', array('count' => $count));
     }
 
     /*
@@ -1113,6 +1116,8 @@ class loveletter extends Table
         
         // 1 card aside ...
         $this->cards->pickCardForLocation( 'deck', 'aside' );
+
+        $this->updateCardCount();
 
         self::notifyAllPlayers( 'newRound', '', array() );
     
