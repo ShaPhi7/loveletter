@@ -74,7 +74,7 @@ html, body {
     padding: 0;
 }
 
-#lvt-background {
+.background_lvt #lvt-background {
     background-image: url(img/background-no-borders.jpg);
     background-size: cover;
     background-repeat: no-repeat;
@@ -85,6 +85,10 @@ html, body {
     right: 0;
     position: fixed;
     z-index: -1;
+}
+
+.background_bga #lvt-background {
+    background: none;
 }
 
 #lvt-play-area {

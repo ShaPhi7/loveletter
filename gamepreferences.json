@@ -1,0 +1,17 @@
+{
+  "100": {
+    "name": "Background",
+    "needReload": false,
+    "values": {
+      "0": {
+        "name": "BGA Default",
+        "cssPref": "background_bga"
+      },
+      "1": {
+        "name": "Love Letter",
+        "cssPref": "background_lvt"
+      }
+    },
+    "default": 1
+  }
+}
