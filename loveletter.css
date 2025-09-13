@@ -187,9 +187,6 @@ html, body {
   max-height: 100%;
   padding: 10px;
   box-sizing: border-box;
-  background: #fff8;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px #0002;
 }
 
 .lvt-badge-grid {
@@ -207,6 +204,9 @@ html, body {
   max-width: calc(var(--card-width) * var(--deck-scale));
   max-height: calc(var(--card-height) * var(--deck-scale));
   transform-origin: center center;
+  background: #fff8;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #0002;
 }
 
 .lvt-card-badge.played {
