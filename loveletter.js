@@ -1149,8 +1149,30 @@ function (dojo, declare) {
       }
 
       container.appendChild(grid);
-
+      fitBadgesToArea();
       markBadgesAsPlayed(gamedatas);
+  }
+
+  function fitBadgesToArea() {
+    const area = document.getElementById('lvt-badges-area');
+    if (!area) return;
+    const grid = area.querySelector('.lvt-badge-grid');
+    if (!grid) return;
+
+    // intrinsic (unscaled) size of the grid built with 36px badges, etc.
+    const iw = grid.scrollWidth;
+    const ih = grid.scrollHeight;
+    if (!iw || !ih) return;
+
+    // available size in the center box
+    const aw = area.clientWidth;
+    const ah = area.clientHeight;
+
+    // scale to the smaller ratio; cap at 1 so desktop keeps your intended size
+    const scale = Math.min(aw / iw, ah / ih, 1);
+
+    grid.style.transform = `scale(${scale})`;
+
   }
 
   function markBadgesAsPlayed(gamedatas) {
