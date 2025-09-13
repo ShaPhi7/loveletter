@@ -97,24 +97,48 @@ html, body {
   position: relative;
   box-sizing: border-box;
   overflow: clip;
+
+  container-type: size;
+  container-name: playarea;
 }
 
-#lvt-play-area-grid {
-  display: grid;
-  height: auto;
-  width: auto;
-  flex: 2 1 0;
-  overflow: clip;
-  grid-template-areas:
-    "top-left    top    top-right"
-    "left        center right";
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-rows: auto 1fr auto;
-  gap: 10px;
-  position: relative;
-  flex-direction: row;
-  align-items: stretch;
-  justify-items: stretch;
+@container playarea (min-aspect-ratio: 3/4) {
+  #lvt-play-area-grid {
+    display: grid;
+    height: auto;
+    width: auto;
+    flex: 2 1 0;
+    overflow: clip;
+    grid-template-areas:
+      "top-left    top    top-right"
+      "left        center right";
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    gap: 10px;
+    position: relative;
+    flex-direction: row;
+    align-items: stretch;
+    justify-items: stretch;
+  }
+}
+
+@container playarea (max-aspect-ratio: 3/4) {
+  #lvt-play-area-grid {
+    display: grid;
+    height: auto;
+    width: auto;
+    flex: 2 1 0;
+    grid-template-areas:
+      "top-left    top"
+      "left        top-right"
+      "center      right";
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    position: relative;
+    flex-direction: row;
+    align-items: stretch;
+    justify-items: stretch;
+  }
 }
 
 #lvt-play-area-grid > * {
@@ -224,7 +248,6 @@ html, body {
 .lvt-player-table .lvt-card-container {
   width: calc(var(--display-card-width) * var(--hand-scale));
   height: calc(var(--display-card-height) * var(--hand-scale)); 
-  min-height: 10%;
   position: relative;
 }
 
@@ -276,7 +299,7 @@ html, body {
 }
 
 .lvt-player-table {
-    min-height: 30svh;
+    min-height: 20svh;
     min-width: 10svw;
     height: auto;
     background: #fff8;
@@ -288,6 +311,12 @@ html, body {
     justify-content: center;
     font-weight: bold;
     cursor: pointer;
+}
+
+@container playarea (min-aspect-ratio: 3/4) {
+  .lvt-player-table {
+    min-height: 30svh;
+  }
 }
 
 .lvt-player-table.selected {
