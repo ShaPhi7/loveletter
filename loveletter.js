@@ -129,6 +129,7 @@ function (dojo, declare) {
               5: ['bottom', 'left', 'top-left', 'top', 'right'],
               6: ['bottom', 'left', 'top-left', 'top', 'top-right', 'right']
             };
+            //TODO - for thin screens, add the ability to use an extra row and two columns perhaps?
             
             const playerPositions = layoutOrder[playerIds.length];
             const startIndex = gamedatas.playerorder.findIndex(id => id == this.player_id);
@@ -337,6 +338,12 @@ function (dojo, declare) {
 
         doChancellorAction: function()
         {
+          if (this.gamedatas.gamestate.active_player != this.player_id) {
+            this.showMessage(_("It is not your turn."), "error");
+            this.deselect();
+            return;
+          }
+          
           if (!this.chancellorCardToKeep)
           {
             this.chancellorCardToKeep = this.playerHand.selectedCards[0];
@@ -403,7 +410,7 @@ function (dojo, declare) {
 
           if (this.chancellorState)
           {
-            this.showMessage(_("You must a select cards."), "error");
+            this.showMessage(_("You must select cards only."), "error");
             this.removePlayerSelections();
             return;
           }
