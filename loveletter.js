@@ -419,14 +419,9 @@ function (dojo, declare) {
             this.showMessage(_("Please select a card to play."), "info");
             return;
           }
-
           const cardType = this.selectedCardType;
           const requiresOpponent = [this.GUARD, this.PRIEST, this.BARON, this.PRINCE, this.KING].includes(cardType);
-          const canTargetSomeone = Object.values(this.gamedatas.players).some(player => 
-              player.id != this.player_id &&
-              player.alive == 1 &&
-              player.protection != 1
-          );
+          const canTargetSomeone = getAllPlayerIdsFromUI().some(pid => isTargetable(pid, this.player_id));
           if (!requiresOpponent
             || !canTargetSomeone)
           {
@@ -450,21 +445,18 @@ function (dojo, declare) {
               return;
             }
 
-            // Check out of the round
-            if(dojo.hasClass('lvt-player-table-' + this.selectedOpponentId, 'out-of-the-round'))
-            {
-              this.showMessage( _("This player is out of the round"), 'error' );
-              this.deselect();
-              return;
-            }   
-        
-            // Check protection
-            if(dojo.style('lvt-player-table-' + this.selectedOpponentId, 'protected'))
-            {
-              this.showMessage( _("This player is protected and cannot be targeted by any card effect."), 'error' );
+            if (this.isOutOfRound(this.selectedOpponentId)) {
+              this.showMessage(_("This player is out of the round"), 'error');
               this.deselect();
               return;
             }
+
+            if (this.isProtected(this.selectedOpponentId)) {
+              this.showMessage(_("This player is protected and cannot be targeted by any card effect."), 'error');
+              this.deselect();
+              return;
+            }
+
           }
           if (this.selectedCardType === this.GUARD
             || this.selectedCardType === this.PRINCESS
@@ -760,10 +752,10 @@ function (dojo, declare) {
             dojo.subscribe( 'newCardPublicQuick', this, "notif_newCardPublic" );
             this.notifqueue.setIgnoreNotificationCheck( 'newCardPublic', (notif) => (notif.args.player_id == this.player_id) );
             this.notifqueue.setIgnoreNotificationCheck( 'newCardPublicQuick', (notif) => (notif.args.player_id == this.player_id) );
-            this.notifqueue.setSynchronous( 'newCardPrivate', 3000 );
-            this.notifqueue.setSynchronous( 'newCardPublic', 3000 );
-            this.notifqueue.setSynchronous( 'newCardPrivateQuick', 300 );
-            this.notifqueue.setSynchronous( 'newCardPublicQuick', 300 );
+            //this.notifqueue.setSynchronous( 'newCardPrivate', 3000 );
+            //this.notifqueue.setSynchronous( 'newCardPublic', 3000 );
+            //this.notifqueue.setSynchronous( 'newCardPrivateQuick', 300 );
+            //this.notifqueue.setSynchronous( 'newCardPublicQuick', 300 );
 
             dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
             this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
@@ -1084,6 +1076,21 @@ function (dojo, declare) {
           });
         }
     });
+
+  function getAllPlayerIdsFromUI() {
+    return Array.from(document.querySelectorAll('.lvt-player-table'))
+      .map(el => Number(el.id.replace('lvt-player-table-', '')))
+      .filter(pid => !Number.isNaN(pid));
+  }
+  function isOutOfRound(pid) {
+    return dojo.hasClass('lvt-player-table-' + pid, 'out-of-the-round');
+  }
+  function isProtected(pid)  {
+    return dojo.hasClass('lvt-player-table-' + pid, 'protected');
+  }
+  function isTargetable(pid, thisPlayer) { 
+    return pid !== thisPlayer && !isOutOfRound(pid) && !isProtected(pid);
+  }
 
   function getCardSpriteBackgroundPosition(card, cardConstants) {
 
