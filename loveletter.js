@@ -1129,11 +1129,8 @@ function (dojo, declare) {
       // Gather all badges in a flat array (sorted for consistent order)
       const badges = [];
       Object.values(gamedatas.card_types).forEach(cardInfo => {
-          const value = cardInfo.value;
-          const count = cardInfo.qt;
-          for (let i = 0; i < count; i++) {
-              badges.push(value);
-          }
+          const count = (gamedatas.classic == true) ? cardInfo.qt_classic : cardInfo.qt;
+          badges.push(...Array(count).fill(cardInfo.value));
       });
       badges.sort((a, b) => a - b);
 

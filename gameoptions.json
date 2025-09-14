@@ -1,0 +1,35 @@
+{
+  "100": {
+    "name": "Edition",
+    "level": "base",
+    "values": {
+      "1": {
+        "name": "Classic",
+        "description": "Use the classic 16-card deck and rules. Supports 2-4 players.",
+        "tmdisplay": "Classic"
+      },
+      "2": {
+        "name": "New Edition",
+        "description": "Use the new edition 21-card deck and rules. Supports 2-6 players.",
+        "tmdisplay": "New edition"
+      }
+    },
+    "default": 2,
+    "startcondition": {
+      "1": [
+        {
+          "type": "maxplayers",
+          "value": 4,
+          "message": "Classic edition is limited to 4 players."
+        }
+      ],
+      "2": [
+        {
+          "type": "maxplayers",
+          "value": 6,
+          "message": "New edition supports up to 6 players."
+        }
+      ]
+    }
+  }
+}

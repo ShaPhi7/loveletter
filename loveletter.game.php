@@ -41,8 +41,6 @@ class loveletter extends Table
 
 	function __construct( )
 	{
-        	
- 
         // Your global variables labels:
         //  Here, you can assign labels to global variables you are using for this game.
         //  You can use any number of global variables with IDs between 10 and 99.
@@ -51,13 +49,6 @@ class loveletter extends Table
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();self::initGameStateLabels( array(
             'last' => 10, //TODO - what does this do?
-            
-            //    "my_first_global_variable" => 10,
-            //    "my_second_global_variable" => 11,
-            //      ...
-            //    "my_first_game_variant" => 100,
-            //    "my_second_game_variant" => 101,
-            //      ...
         ) );
 		
 		$this->cards = self::getNew( "module.common.deck" );
@@ -130,7 +121,8 @@ class loveletter extends Table
 
 		foreach ($this->card_types as $type_id => $type)
 		{
-    		$cards[] = array('type' => $type_id, 'type_arg' => $type_id, 'nbr' => $type['qt']);
+            $nbr = $this->isClassicMode() ? (int) $type['qt_classic'] : (int) $type['qt'];
+    		$cards[] = array('type' => $type_id, 'type_arg' => $type_id, 'nbr' => $nbr);
 		}
 
 		$this->cards->createCards($cards, 'deck');
@@ -163,9 +155,11 @@ class loveletter extends Table
 		$result['hand'] = $this->cards->getCardsInLocation('hand', $current_player_id);
 		$result['deck'] = $this->cards->getCardsInLocation('deck', null, 'card_location_arg');
         $result['fulldeck'] = 0;
+        $result['classic'] = $this->isClassicMode();
         foreach ($this->card_types as $type_id => $type)
 		{
-            $result['fulldeck'] += $type['qt'];
+            $quantity = $this->isClassicMode() ? (int) $type['qt_classic'] : (int) $type['qt'];
+            $result['fulldeck'] += $quantity;
 		}
 		// Note : discarded cards
 		$players = self::loadPlayersBasicInfos();
@@ -263,6 +257,11 @@ class loveletter extends Table
             $result[ $player_id ] = array_shift( $directions );
         }
         return $result;
+    }
+
+    function isClassicMode()
+    {
+       return ((int) $this->tableOptions->get(100) === 1);
     }
 	
 
