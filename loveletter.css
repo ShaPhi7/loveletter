@@ -365,7 +365,7 @@ html, body {
 }
 
 .spied {
-    background-color: yellow;
+    background-color: rgba(255, 251, 28, 0.5);
 }
 
 .out-of-the-round {
