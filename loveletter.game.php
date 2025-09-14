@@ -2,7 +2,7 @@
  /**
   *------
   * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
-  * loveletter implementation : © <Your name here> <Your email address here>
+  * loveletter implementation : © Shaun Phillips <smphillips@alumni.york.ac.uk>
   * 
   * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
   * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -102,6 +102,7 @@ class loveletter extends Table
         // (note: statistics used in this file must be defined in your stats.inc.php file)
         //self::initStat( 'table', 'table_teststat1', 0 );    // Init a table statistics
         //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
+        self::initStats();
 
         //useful for testing only.
         /*$end_score = $this->getEndScore();
@@ -128,6 +129,48 @@ class loveletter extends Table
 		$this->cards->createCards($cards, 'deck');
 
         /************ End of the game initialization *****/
+    }
+
+    function initStats()
+    {
+        self::initStat('table', 'round_number', 0);
+        self::initStat('player', 'round_victory_by_highest', 0);
+        self::initStat('player', 'round_victory_by_latest', 0);
+        self::initStat('player', 'tokens_gained_from_spy', 0);
+
+        self::initStat('player', 'killed', 0);
+        self::initStat('player', 'kills', 0);
+
+        if (!self::isClassicMode())
+        {
+            self::initStat('player', 'game_played_classic', 0);
+            self::initStat('player', 'guard_played', 0);
+            self::initStat('player', 'guard_success', 0);
+            self::initStat('player', 'priest_played', 0);
+            self::initStat('player', 'baron_played', 0);
+            self::initStat('player', 'baron_success', 0);
+            self::initStat('player', 'handmaid_played', 0);
+            self::initStat('player', 'prince_played', 0);
+            self::initStat('player', 'chancellor_played', 0);
+            self::initStat('player', 'king_played', 0);
+            self::initStat('player', 'countess_played', 0);
+            self::initStat('player', 'princess_played', 0);
+            self::initStat('player', 'spy_played', 0);
+        }
+        else
+        {
+            self::initStat('player', 'game_played_classic', 1);
+            self::initStat('player', 'guard_played_classic', 0);
+            self::initStat('player', 'guard_success_classic', 0);
+            self::initStat('player', 'priest_played_classic', 0);
+            self::initStat('player', 'baron_played_classic', 0);
+            self::initStat('player', 'baron_success_classic', 0);
+            self::initStat('player', 'handmaid_played_classic', 0);
+            self::initStat('player', 'prince_played_classic', 0);
+            self::initStat('player', 'king_played_classic', 0);
+            self::initStat('player', 'countess_played_classic', 0);
+            self::initStat('player', 'princess_played_classic', 0);
+        }
     }
     
     /*
@@ -263,6 +306,18 @@ class loveletter extends Table
     {
        return ((int) $this->tableOptions->get(100) === 1);
     }
+
+    function retUnderscoreClassicIfClassicGame()
+    {
+        if (self::isClassicMode())
+        {
+            return '_classic';
+        }
+        else
+        {
+            return '';
+        }
+    }
 	
 
 //////////////////////////////////////////////////////////////////////////////
@@ -310,7 +365,7 @@ class loveletter extends Table
 
         // the name of the stat is of the form "cardtype_played"
         // e.g. "guard_played", "priest_played", etc.
-        self::incStat(1, strtolower($this->card_types[$card['type']]['name']) . '_played', $player_id);
+        self::incStat(1, strtolower($this->card_types[$card['type']]['name']) . '_played' . self::retUnderscoreClassicIfClassicGame(), $player_id);
        
         if ($this->activateChancellorState) {
             $this->gamestate->nextState('chancellor');
@@ -424,7 +479,7 @@ class loveletter extends Table
 
         if ($this->card_types[$opponent_card['type']]['value'] == $this->card_types[$guess_id]['value']) {
             // Successfully guessed!
-            self::incStat(1, 'guard_success', $player_id);
+            self::incStat(1, 'guard_success' . self::retUnderscoreClassicIfClassicGame(), $player_id);
             self::outOfTheRound($card, $opponent_id, $player_id);
         } else {
             self::notifyAllPlayers('simpleNote', self::getLogTextNothingHappens($card), array(
@@ -535,7 +590,7 @@ class loveletter extends Table
             self::outOfTheRound($card, $loser_id, $winner_id);
 
             if ($winner_id === $player_id) {
-                self::incStat(1, 'baron_played_success', $player_id);
+                self::incStat(1, 'baron_success' . self::retUnderscoreClassicIfClassicGame(), $player_id);
             }
         }
     }
