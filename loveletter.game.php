@@ -48,7 +48,7 @@ class loveletter extends Table
         //  the corresponding ID in gameoptions.inc.php.
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();self::initGameStateLabels( array(
-            'last' => 10, //TODO - what does this do?
+            'last' => 10, //I do not think this is used, but was not worth the risk of removing and breaking something.
         ) );
 		
 		$this->cards = self::getNew( "module.common.deck" );
@@ -515,7 +515,7 @@ class loveletter extends Table
         $opponent_card = reset($opponent_cards);
 
         $players = self::loadPlayersBasicInfos();
-        self::notifyPlayer($player_id, 'reveal_long', self::getLogTextCardReveal(), array(
+        self::notifyPlayer($player_id, 'reveal', self::getLogTextCardReveal(), array(
             'i18n' => array('card_name'),
             'player_name' => $players[$opponent_id]['player_name'],
             'player_id' => $opponent_id,
@@ -553,7 +553,7 @@ class loveletter extends Table
         $players = self::loadPlayersBasicInfos();
 
         // Reveal both cards for these 2 players
-        self::notifyPlayer($player_id, 'reveal_long', self::getLogTextCardReveal(), array(
+        self::notifyPlayer($player_id, 'reveal', self::getLogTextCardReveal(), array(
             'i18n' => array('card_name'),
             'player_name' => $players[$opponent_id]['player_name'],
             'player_id' => $opponent_id,
@@ -562,7 +562,7 @@ class loveletter extends Table
             'timeout' => true
         ));
 
-        self::notifyPlayer($opponent_id, 'reveal_long', self::getLogTextCardReveal(), array(
+        self::notifyPlayer($opponent_id, 'reveal', self::getLogTextCardReveal(), array(
             'i18n' => array('card_name'),
             'player_name' => $players[$player_id]['player_name'],
             'player_id' => $player_id,

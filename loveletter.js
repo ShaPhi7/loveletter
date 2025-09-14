@@ -1,7 +1,7 @@
 /**
  *------
  * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
- * loveletter implementation : © <Your name here> <Your email address here>
+ * loveletter implementation : © Shaun Phillips <smphillips@alumni.york.ac.uk>
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -129,7 +129,6 @@ function (dojo, declare) {
               5: ['bottom', 'left', 'top-left', 'top', 'right'],
               6: ['bottom', 'left', 'top-left', 'top', 'top-right', 'right']
             };
-            //TODO - for thin screens, add the ability to use an extra row and two columns perhaps?
             
             const playerPositions = layoutOrder[playerIds.length];
             const startIndex = gamedatas.playerorder.findIndex(id => id == this.player_id);
@@ -175,9 +174,6 @@ function (dojo, declare) {
                 _this.removePlayerSelections();
                 this.classList.add('selected');
 
-                // Store selected opponent (even if it's yourself)
-                // this.selectedOpponentId = tableId;
-                // (If this is inside a class, use the right scope)
                 _this.onSelectPlayer(tablePlayerId);
               });
             });
@@ -241,10 +237,6 @@ function (dojo, declare) {
                   extraClasses: 'text-shadow',
                   hideWhenEmpty: false,
               },
-            // onCardClick: (card) => {
-            //     console.log("Deck clicked", card);
-            //     this.handleDeckClick();
-            //   },
           });
 
           this.discard = new ManualPositionStock(this.handManager, document.getElementById('lvt-badges-area'), {}, function (element, cards, card, stock) {
@@ -255,85 +247,9 @@ function (dojo, declare) {
             });
           });
 
-          // Testing only
-          // this.deck.element.addEventListener('click', (event) => {
-          //     this.handleDeckClick();
-          // });
-
           buildPlayedCardBadges(gamedatas);
           this.setupNotifications();
 
-        },
-
-      //   handleDeckClick: function() {
-      //     // console.log("Deck clicked!");
-      //     // const othercard = this.playerHand.getCards()[0];
-      //     const card = {
-      //       id: 12345,
-      //       type: 25,
-      //       type_arg: 25
-      //     };
-      //     // this.playerHand.addCard(card, { fromStock: this.deck });
-      //     // this.discard.addCard(othercard, { fromStock: this.playerHand });
-
-      //   //this is how to flip the card
-      //   opponentStock = this.opponentHands[Object.keys(this.opponentHands)[0]];
-      //   opponentCard = opponentStock.getCards()[0];
-      //   // Object.assign(opponentCard, {
-      //   //   type: 25,
-      //   //   type_arg: 25
-      //   // });
-      //   // console.log("Adding card to opponent hand", opponentCard);
-
-      //   //this.opponentHands[Object.keys(this.opponentHands)[0]].setCardVisible(opponentCard, true);
-      //   Object.assign(opponentCard, {
-      //       type: this.PRINCE,
-      //       type_arg: this.PRINCE
-      //   });
-      //   this.discard.addCard(opponentCard, {
-      //       fromStock: opponentStock,
-      //       updateInformations: {
-      //           id: opponentCard.id,
-      //           type: this.PRINCE,
-      //           type_arg: this.PRINCE
-      //       },
-      //       visible: true
-      //   });
-      // },
-
-        // handleHandClick: async function(card) {
-        //   console.log("Hand clicked!", card);
-        //   const cardElement = this.handManager.getCardElement(card); // your card object
-
-        //   const opponentHandElementId = this.opponentHands[Object.keys(this.opponentHands)[0]].element.id;
-        //   const opponentId = opponentHandElementId.replace('lvt-player-table-card-', '');
-        //   this.opponentHands[Object.keys(this.opponentHands)[0]].element.classList.add('highlight');
-        //   document.getElementById(`lvt-player-table-${opponentId}`).classList.add('highlight');
-
-        //   await this.discard.addCard(card, { fromStock: this.playerHand });
-
-        //   cardElement.classList.add('fade-out');
-        //   const allDescendants = cardElement.querySelectorAll('*');
-        //   for (const descendant of allDescendants) {
-        //     descendant.classList.add('fade-out');
-        //   }
-
-        //   setTimeout(() => {
-        //     this.discard.removeCard(card);
-        //   }, 2000);
-
-        // },
-
-        resetActions: function () { //TODO - needed?
-          let e = document.getElementById("pagemaintitletext");
-          e.innerHTML = "";
-          this.removeActionButtons();
-          KvBoard.removeTargets();
-        },
-
-        setInvite: function (pInvite) {
-          let e = document.getElementById("pagemaintitletext");
-          e.innerHTML = pInvite;
         },
 
         doChancellorAction: function()
@@ -401,7 +317,7 @@ function (dojo, declare) {
         },
 
         playCardOrShowMessage: function()
-        {     
+        {
           if (this.gamedatas.gamestate.active_player != this.player_id) {
             this.showMessage(_("It is not your turn."), "error");
             this.deselect();
@@ -445,13 +361,13 @@ function (dojo, declare) {
               return;
             }
 
-            if (this.isOutOfRound(this.selectedOpponentId)) {
+            if (isOutOfRound(this.selectedOpponentId)) {
               this.showMessage(_("This player is out of the round"), 'error');
               this.deselect();
               return;
             }
 
-            if (this.isProtected(this.selectedOpponentId)) {
+            if (isProtected(this.selectedOpponentId)) {
               this.showMessage(_("This player is protected and cannot be targeted by any card effect."), 'error');
               this.deselect();
               return;
@@ -761,9 +677,8 @@ function (dojo, declare) {
             this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
 
             dojo.subscribe( 'reveal', this, 'notif_reveal' );
-            dojo.subscribe( 'reveal_long', this, 'notif_reveal' );
-            this.notifqueue.setIgnoreNotificationCheck( 'reveal', (notif) => (notif.args.player_id == this.player_id) ); //TODO
-            this.notifqueue.setSynchronous( 'reveal_long', 3000 );
+            this.notifqueue.setIgnoreNotificationCheck( 'reveal', (notif) => (notif.args.player_id == this.player_id) );
+            this.notifqueue.setSynchronous( 'reveal', 3000 );
 
             dojo.subscribe( 'cardexchange', this, 'notif_cardexchange' );
             dojo.subscribe( 'cardexchange_opponents', this, 'notif_cardexchange_opponents' );
@@ -799,7 +714,6 @@ function (dojo, declare) {
 
         notif_score: function(notif)
         {
-          //TODO - show cards revealed at end of the round
           this.showDiscussion(notif);
           this.scoreCtrl[notif.args.player_id].incValue(1);
         },
@@ -1115,7 +1029,6 @@ function (dojo, declare) {
         return `-${x}% -${y}%`;
     }
 
-    //TODO - can we make this also use percentages?
     function buildPlayedCardBadges(gamedatas) {
       const rootStyles = getComputedStyle(document.documentElement);
       const SPRITE_WIDTH_ORIGINAL = parseFloat(rootStyles.getPropertyValue('--badge-sprite-width'));
