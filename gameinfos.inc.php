@@ -3,10 +3,10 @@
 $gameinfos = array( 
 
 // Game publisher
-'publisher' => 'Alderac Entertainment Group',                     
+'publisher' => 'Z-Man Games',                     
 
 // Url of game publisher website
-'publisher_website' => 'https://www.alderac.com/',   
+'publisher_website' => 'https://www.zmangames.com/',   
 
 // Board Game Geek ID of the publisher
 'publisher_bgg_id' => 396,
