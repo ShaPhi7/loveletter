@@ -9,11 +9,10 @@ $gameinfos = array(
 'publisher_website' => 'https://www.zmangames.com/',   
 
 // Board Game Geek ID of the publisher
-'publisher_bgg_id' => 396,
+'publisher_bgg_id' => 538,
 
 // Board game geek if of the game
-'bgg_id' => 129622,
-
+'bgg_id' => 277085,
 
 // Players configuration that can be played (ex: 2 to 4 players)
 'players' => array( 2,3,4,5,6 ),    
